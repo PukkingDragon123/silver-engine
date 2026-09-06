@@ -1,0 +1,248 @@
+/* ==========================================================================
+   THE WISE OAK TREE — interface
+   Chunky, pixel-adjacent UI built to sit around a 256x192 canvas.
+   ========================================================================== */
+:root {
+  --bg:      #14100f;
+  --bg2:     #1e1815;
+  --panel:   #2a211c;
+  --panel2:  #3a2e26;
+  --ink:     #f2e6d0;
+  --ink-dim: #b9a88c;
+  --gold:    #ffd24a;
+  --green:   #6cc73f;
+  --red:     #d64545;
+  --purple:  #a06bd8;
+  --edge:    #0a0807;
+  --font: ui-monospace, "SFMono-Regular", "Cascadia Mono", "Consolas", "Liberation Mono", Menlo, monospace;
+}
+
+* { box-sizing: border-box; }
+
+html, body {
+  margin: 0; padding: 0;
+  background: var(--bg);
+  background-image:
+    radial-gradient(circle at 50% 0%, #2a211c 0%, #14100f 70%),
+    repeating-linear-gradient(0deg, rgba(255,255,255,.012) 0 2px, transparent 2px 4px);
+  color: var(--ink);
+  font-family: var(--font);
+  font-size: 13px;
+  line-height: 1.5;
+  min-height: 100%;
+  -webkit-font-smoothing: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+#stage {
+  margin: 0 auto;
+  padding: 10px 12px 28px;
+  max-width: 100%;
+}
+
+/* ---------------- top bar ---------------- */
+#topbar {
+  display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between;
+  gap: 8px; margin-bottom: 8px;
+}
+#topbar h1 {
+  font-size: 15px; letter-spacing: 3px; margin: 0;
+  color: var(--gold);
+  text-shadow: 2px 2px 0 var(--edge);
+}
+#topbar nav { display: flex; flex-wrap: wrap; gap: 6px; }
+
+button {
+  font-family: var(--font); font-size: 11px; letter-spacing: 1px;
+  cursor: pointer; color: var(--ink);
+  background: var(--panel2);
+  border: 2px solid var(--edge);
+  box-shadow: inset -2px -2px 0 rgba(0,0,0,.35), inset 2px 2px 0 rgba(255,255,255,.08);
+  padding: 6px 10px;
+  text-transform: uppercase;
+}
+button:hover { background: #4a3b30; }
+button:active { transform: translate(1px, 1px); box-shadow: inset 2px 2px 0 rgba(0,0,0,.4); }
+button:disabled { opacity: .45; cursor: not-allowed; }
+button.danger { color: #ffb3b3; }
+.key {
+  display: inline-block; margin-left: 4px; padding: 0 3px;
+  background: var(--edge); color: var(--ink-dim); font-size: 9px;
+}
+
+/* ---------------- screen ---------------- */
+#screen { position: relative; line-height: 0; }
+#game {
+  display: block;
+  image-rendering: pixelated;
+  image-rendering: crisp-edges;
+  border: 3px solid var(--edge);
+  box-shadow: 0 0 0 3px #3a2e26, 0 10px 30px rgba(0,0,0,.6);
+  background: #79c7f2;
+  width: 100%;
+  touch-action: manipulation;
+}
+
+/* ---------------- hud ---------------- */
+#hud {
+  position: absolute; top: 8px; left: 8px;
+  display: flex; align-items: center; gap: 6px; line-height: 1;
+}
+.pill {
+  background: rgba(10,8,7,.75); border: 2px solid var(--edge);
+  padding: 4px 8px; font-size: 12px; color: var(--ink);
+  display: flex; align-items: center; gap: 5px;
+}
+.leaficon { color: var(--green); font-size: 14px; }
+#items { display: flex; gap: 3px; }
+.itemicon {
+  width: 22px; height: 22px; image-rendering: pixelated;
+  background: rgba(10,8,7,.7); border: 2px solid var(--edge); padding: 1px;
+}
+
+/* ---------------- toasts (minecraft style) ---------------- */
+#toasts {
+  position: absolute; top: 8px; right: 8px;
+  display: flex; flex-direction: column; gap: 6px; align-items: flex-end;
+  pointer-events: none;
+}
+.toast {
+  display: flex; align-items: center; gap: 8px;
+  background: #2a211c; border: 2px solid var(--edge);
+  border-left: 4px solid var(--green);
+  padding: 6px 10px 6px 8px;
+  transform: translateX(130%); opacity: 0;
+  transition: transform .45s cubic-bezier(.2,1.3,.5,1), opacity .3s;
+  line-height: 1.25; min-width: 190px;
+  box-shadow: 0 4px 0 rgba(0,0,0,.4);
+}
+.toast.in { transform: translateX(0); opacity: 1; }
+.toast.goal { border-left-color: var(--gold); }
+.toast.chal { border-left-color: var(--purple); background: #241c2c; }
+.ticon { width: 26px; height: 26px; image-rendering: pixelated; flex: none; }
+.tkind { font-size: 10px; color: var(--gold); letter-spacing: 1px; }
+.toast.chal .tkind { color: var(--purple); }
+.tname { font-size: 12px; color: var(--ink); }
+
+/* ---------------- dialogue ---------------- */
+.dialogue {
+  border: 3px solid var(--edge);
+  background: var(--panel);
+  box-shadow: inset 0 0 0 2px #4a3b30, 0 6px 0 rgba(0,0,0,.35);
+  padding: 10px 12px 12px;
+  margin-top: 10px;
+  min-height: 86px;
+  line-height: 1.55;
+}
+.dialogue.hidden { display: none; }
+#speaker {
+  font-size: 11px; letter-spacing: 2px; color: var(--gold);
+  margin-bottom: 6px;
+}
+#dtext { font-size: 13px; color: var(--ink); }
+#dtext::after { content: '▌'; opacity: .5; animation: blink 1s steps(2) infinite; }
+@keyframes blink { 50% { opacity: 0; } }
+.dialogue.serious { background: #1c2028; box-shadow: inset 0 0 0 2px #2e3a48, 0 6px 0 rgba(0,0,0,.35); }
+.dialogue.serious #speaker { color: #8fb8d8; }
+.dialogue.heaven { background: #e8f2fb; box-shadow: inset 0 0 0 2px #ffffff, 0 6px 0 rgba(0,0,0,.35); }
+.dialogue.heaven #dtext { color: #22364a; }
+.dialogue.heaven #speaker { color: #4a7ba8; }
+
+/* ---------------- action buttons ---------------- */
+#actions { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+.act { font-size: 11px; padding: 7px 12px; }
+.act.good { border-bottom: 3px solid #3f7a28; }
+.act.bad  { border-bottom: 3px solid #7a2a2a; color: #ffc9c9; }
+.act.bad:hover { background: #5a2a24; }
+
+#tip { color: var(--ink-dim); font-size: 11px; margin: 12px 0 0; line-height: 1.6; }
+
+/* ---------------- squirrel shop ---------------- */
+.panel {
+  position: absolute; right: 8px; bottom: 8px; width: min(300px, calc(100% - 16px));
+  background: var(--panel); border: 3px solid var(--edge);
+  box-shadow: 0 6px 0 rgba(0,0,0,.4); line-height: 1.4;
+}
+.panel.hidden, .hidden { display: none !important; }
+.paneltop {
+  display: flex; justify-content: space-between; align-items: center;
+  background: var(--panel2); padding: 6px 8px;
+  font-size: 11px; letter-spacing: 2px; color: var(--gold);
+  border-bottom: 2px solid var(--edge);
+}
+.paneltop button { padding: 0 6px; font-size: 14px; line-height: 1; background: transparent; border: none; box-shadow: none; }
+#shoplist { max-height: 210px; overflow-y: auto; }
+.shoprow {
+  display: flex; align-items: center; gap: 8px;
+  padding: 6px 8px; border-bottom: 1px solid #1a1411;
+}
+.shoprow.owned { opacity: .5; }
+.shopinfo { flex: 1; display: flex; flex-direction: column; }
+.shopinfo b { font-size: 12px; color: var(--ink); }
+.shopinfo span { font-size: 10px; color: var(--ink-dim); }
+.buy { font-size: 11px; padding: 5px 8px; color: var(--green); }
+.shoprow.poor .buy { color: #a08a70; }
+.panelfoot { font-size: 10px; color: var(--ink-dim); padding: 6px 8px; border-top: 2px solid var(--edge); }
+
+#hint {
+  position: absolute; bottom: 8px; left: 50%; transform: translateX(-50%);
+  background: rgba(10,8,7,.7); border: 2px solid var(--edge);
+  padding: 4px 10px; font-size: 11px; color: var(--ink); line-height: 1.3;
+  white-space: nowrap;
+}
+
+/* ---------------- modal ---------------- */
+#modal {
+  position: fixed; inset: 0; background: rgba(6,4,3,.85);
+  display: flex; align-items: center; justify-content: center; padding: 16px; z-index: 40;
+}
+.modalbox {
+  background: var(--panel); border: 3px solid var(--edge);
+  box-shadow: 0 8px 0 rgba(0,0,0,.5);
+  width: min(680px, 100%); max-height: 86vh; display: flex; flex-direction: column;
+}
+#modalbody { padding: 12px; overflow-y: auto; line-height: 1.6; }
+#modalbody p { margin: 0 0 10px; }
+.small { font-size: 11px; color: var(--ink-dim); }
+.modalbtns { display: flex; gap: 8px; margin-top: 12px; flex-wrap: wrap; }
+
+.grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 6px; }
+.tro {
+  display: flex; gap: 8px; align-items: flex-start;
+  background: var(--bg2); border: 2px solid var(--edge);
+  border-left: 4px solid var(--green);
+  padding: 6px 8px; line-height: 1.3;
+}
+.tro.goal { border-left-color: var(--gold); }
+.tro.chal { border-left-color: var(--purple); }
+.tro.locked { border-left-color: #4a4038; opacity: .55; }
+.tro b { font-size: 11px; display: block; color: var(--ink); }
+.tro span { font-size: 10px; color: var(--ink-dim); }
+.troicon { width: 22px; height: 22px; image-rendering: pixelated; flex: none; }
+
+/* ---------------- ending card ---------------- */
+#endingcard {
+  position: fixed; inset: 0; z-index: 60;
+  background: rgba(4,3,2,.94);
+  display: flex; align-items: center; justify-content: center; padding: 16px;
+  animation: fadein .6s ease;
+}
+@keyframes fadein { from { opacity: 0; } }
+.ecard {
+  width: min(560px, 100%); text-align: center;
+  border: 3px solid var(--gold); background: #1a1512;
+  box-shadow: 0 0 0 3px var(--edge), 0 0 40px rgba(255,210,74,.15);
+  padding: 22px 20px;
+}
+.ecard canvas { width: 48px; height: 48px; image-rendering: pixelated; }
+.etop { font-size: 10px; letter-spacing: 4px; color: var(--ink-dim); margin: 8px 0 4px; }
+.ename { font-size: 20px; letter-spacing: 3px; color: var(--gold); text-shadow: 2px 2px 0 var(--edge); }
+.etitle { font-size: 13px; color: var(--ink); margin-top: 10px; }
+.ebody { font-size: 12px; color: var(--ink-dim); line-height: 1.7; margin: 12px 0 18px; text-align: left; }
+
+@media (max-width: 560px) {
+  #topbar h1 { font-size: 12px; }
+  button { font-size: 10px; padding: 5px 7px; }
+  .panel { width: calc(100% - 16px); }
+  #hint { white-space: normal; width: 90%; text-align: center; }
+}

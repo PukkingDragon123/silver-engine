@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<title>THE WISE OAK TREE</title>
+<meta name="description" content="A very goofy pixel-art game about a four-hundred-year-old oak tree who has seen everything. Collect every achievement. Find every ending.">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'><text y='14' font-size='14'>🌳</text></svg>">
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<div id="stage">
+
+  <header id="topbar">
+    <h1>THE WISE OAK TREE</h1>
+    <nav>
+      <button id="btnTrophies" class="chrome">Trophies <span class="key">T</span></button>
+      <button id="btnEndings" class="chrome">Endings <span class="key">E</span></button>
+      <button id="btnShop" class="chrome">Trade</button>
+      <button id="btnMute" class="chrome">Sound: on</button>
+      <button id="btnReset" class="chrome danger">Erase</button>
+    </nav>
+  </header>
+
+  <div id="screen">
+    <canvas id="game"></canvas>
+
+    <div id="hud">
+      <div class="pill"><span class="leaficon">&#9752;</span> <span id="leafcount">0</span></div>
+      <div class="pill" id="seasonpill">spring</div>
+      <div id="items"></div>
+    </div>
+
+    <div id="toasts"></div>
+
+    <div id="shop" class="panel hidden">
+      <div class="paneltop">SQUIRREL'S GOODS <button id="shopclose">&times;</button></div>
+      <div id="shoplist"></div>
+      <div class="panelfoot">leaves only. no refunds. no memory of this conversation.</div>
+    </div>
+
+    <div id="hint" class="hidden"></div>
+  </div>
+
+  <div id="dialogue" class="dialogue hidden">
+    <div id="speaker">THE WISE OAK TREE</div>
+    <div id="dtext"></div>
+  </div>
+
+  <div id="actions"></div>
+
+  <p id="tip">Click the tree to talk &middot; he never says the same thing twice &middot; pick up fallen leaves &middot; the squirrel deals in goods</p>
+</div>
+
+<div id="modal" class="hidden">
+  <div class="modalbox">
+    <div class="paneltop"><span id="modaltitle">TROPHY ROOM</span><button id="modalclose">&times;</button></div>
+    <div id="modalbody"></div>
+  </div>
+</div>
+
+<div id="endingcard" class="hidden"></div>
+
+<script src="js/data.js"></script>
+<script src="js/audio.js"></script>
+<script src="js/sprites.js"></script>
+<script src="js/game.js"></script>
+</body>
+</html>
