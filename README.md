@@ -17,7 +17,17 @@ no server required.
 ## What you do
 
 - **Click the tree.** He never repeats himself — every line is drawn from a
-  shuffled bag, so you hear all 100 of them before you hear any of them twice.
+  shuffled bag, so you hear all 145 of them before you hear any of them twice.
+  45 of those are pop-culture references he picked up by eavesdropping on the
+  bench: marching tree armies, the talking tree who only says his own name, the
+  game where you punch a tree until it becomes furniture, the wizarding school
+  tree that hits people, the man with the excellent hair who called us happy.
+- **He is not one big button.** Poke him in the eye, boop his nose, put your
+  hand in his mouth, scratch his moss, pat his roots, or grab a handful of
+  canopy — each gets its own reaction. Knock three times at an even tempo and
+  he answers the door. Grab the trunk and waggle to shake the leaves out of
+  him. Scrub the cursor over him fast enough and you find out bark has nerve
+  endings. Reach up and touch the moon.
 - **Wait for the sneeze.** He is allergic to his own pollen. Leaves go
   everywhere. Pick them up off the grass.
 - **Trade with the squirrel.** Leaves buy acorns, a watering can, a mushroom
@@ -29,28 +39,40 @@ no server required.
 
 ## Cinematics
 
-Dying and coming back are not cuts to black. Burning him plays a six-shot
-sequence: the camera pushes into his face while the fire climbs the trunk and
-his expression goes from grief to sleep, the trunk snaps and falls, the ash
-settles over the stump, something bright lifts out of the wood and rises, the
-clouds rush past, and a winged ghost tree descends onto a cloud in heaven.
-Reincarnating dives back down through the clouds, lands, and grows the tree
-from a seedling to full height in one continuous shot. Letterbox bars and
-captions throughout; click to skip a beat.
+Six of them, all letterboxed and captioned, all skippable with a click.
+
+- **The opening.** The wood, then the tree, then the camera pushes right into
+  his face and his eyes snap open. He was asleep. You woke him.
+- **The handover.** The squirrel gives you the lighter "for nest purposes",
+  then a slow shot of the tree, chatting away, who does not know you have it.
+- **The burning.** The camera pushes into his face while the fire climbs the
+  trunk and his expression goes from grief to sleep, the trunk snaps and falls,
+  the ash settles over the stump, something bright lifts out of the wood and
+  rises on radiating light, the clouds rush past, and a winged ghost tree
+  descends onto a cloud in heaven.
+- **The pond.** The lighter turning over in the air, the splash, and his face
+  when he realises what you just did.
+- **The grove.** A hundred and forty years of day and night while five acorns
+  grow into a wood.
+- **Reincarnation.** A dive back down through the clouds, a landing, and the
+  tree growing from a seedling to full height in one continuous shot at dawn.
 
 ## The Hall of Trophies
 
 Death is not the end of the collection. In heaven there is a marble gallery
 under vaulted arches, with a red carpet running away into the light and a
-plinth for every one of the **49 achievements** — each with its own carved
-trophy: a stone tissue for the sneeze, a leaf vault for the hoarder, a lighter
-sinking into water for the one who threw it away. Unearned plinths stand
-shrouded.
+plinth for every one of the **59 achievements** — each with its own carved
+trophy on a gold mount: a stone tissue for the sneeze, a leaf vault for the
+hoarder, a lighter sinking into water for the one who threw it away, a film
+reel for the whole canon. Chandeliers burn overhead, a skylight throws shafts
+down the length of it, tier-coloured spotlights pick out each earned trophy,
+and the polished marble carries their reflections. Unearned plinths stand
+shrouded under cloth behind a velvet rope.
 
 Drag the hall left and right to walk it. Lift a trophy off its plinth and drop
 it on another to rearrange the collection; your arrangement is remembered.
 Achievements arrive in Minecraft-style corner popups in three tiers — plain
-achievements, gold goals, and purple challenges — and there are **8 endings**,
+achievements, gold goals, and purple challenges — and there are **9 endings**,
 each with its own card and a hint for the ones you haven't found.
 
 Endings include burning him down, throwing the lighter in the pond, hearing
@@ -95,6 +117,12 @@ The scene is built in depth like the photograph it is chasing: framing foliage
 hanging into the top of frame, a cached sky gradient on a full day/night cycle,
 misty background woods fading into a pale bloom, god rays, drifting dust motes
 and fireflies, then the tree, then bushes in the foreground.
+
+Every solid thing in the foreground — tree, squirrel, fallen leaves, saplings —
+is composited into one layer and given a single dark contour: the layer is
+tinted to a silhouette, stamped at eight offsets, and the layer goes back on
+top. One clean pixel-art edge, no gaps, no per-sprite bookkeeping. Trophies get
+the same treatment individually, cached after the first draw.
 
 The face is drawn feature by feature under a single light direction — a heavy
 lit brow with deep shadow beneath, amber eyes with a real iris and a moving

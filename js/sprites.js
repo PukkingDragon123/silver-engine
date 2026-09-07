@@ -41,6 +41,65 @@ function glow(c, cx, cy, r, col, alpha) {
   c.globalAlpha = 1;
 }
 
+/* -------------------------------------------------------------------------
+   OUTLINES
+   Classic pixel-art contours. A sprite is drawn into a scratch canvas, the
+   scratch is tinted solid to make a silhouette, that silhouette is stamped
+   at eight offsets, and the sprite goes on top. One dark edge, no gaps.
+   ------------------------------------------------------------------------- */
+function makeCanvas(w, h) {
+  const c = document.createElement('canvas');
+  c.width = w; c.height = h;
+  const x = c.getContext('2d');
+  x.imageSmoothingEnabled = false;
+  return { cv: c, ctx: x };
+}
+
+const _layer = makeCanvas(W, H);      // foreground actors, outlined as a group
+const _silo = makeCanvas(W, H);       // their silhouette
+const _tro = makeCanvas(64, 64);      // one trophy at a time
+const _troSilo = makeCanvas(64, 64);
+
+const OUTLINE_OFFSETS = [[-1, 0], [1, 0], [0, -1], [0, 1], [-1, -1], [1, -1], [-1, 1], [1, 1]];
+
+function layerBegin() {
+  _layer.ctx.setTransform(1, 0, 0, 1, 0, 0);
+  _layer.ctx.clearRect(0, 0, W, H);
+  return _layer.ctx;
+}
+
+/* stamp the collected layer onto `c` with a contour around it */
+function layerEnd(c, col, thick) {
+  const s = _silo.ctx;
+  s.setTransform(1, 0, 0, 1, 0, 0);
+  s.clearRect(0, 0, W, H);
+  s.globalCompositeOperation = 'source-over';
+  s.drawImage(_layer.cv, 0, 0);
+  s.globalCompositeOperation = 'source-in';
+  s.fillStyle = col; s.fillRect(0, 0, W, H);
+  s.globalCompositeOperation = 'source-over';
+  for (const [dx, dy] of OUTLINE_OFFSETS) c.drawImage(_silo.cv, dx * (thick || 1), dy * (thick || 1));
+  c.drawImage(_layer.cv, 0, 0);
+}
+
+/* the same trick for a single small sprite, with a cache */
+const _spriteCache = new Map();
+function outlinedSprite(key, w, h, draw, col) {
+  let hit = _spriteCache.get(key);
+  if (hit) return hit;
+  const a = makeCanvas(w, h), b = makeCanvas(w, h);
+  draw(a.ctx, w / 2, h / 2);
+  b.ctx.drawImage(a.cv, 0, 0);
+  b.ctx.globalCompositeOperation = 'source-in';
+  b.ctx.fillStyle = col; b.ctx.fillRect(0, 0, w, h);
+  b.ctx.globalCompositeOperation = 'source-over';
+  const out = makeCanvas(w, h);
+  for (const [dx, dy] of OUTLINE_OFFSETS) out.ctx.drawImage(b.cv, dx, dy);
+  out.ctx.drawImage(a.cv, 0, 0);
+  _spriteCache.set(key, out.cv);
+  return out.cv;
+}
+
 function hex2rgb(h) { return [parseInt(h.slice(1, 3), 16), parseInt(h.slice(3, 5), 16), parseInt(h.slice(5, 7), 16)]; }
 function rgb2hex(r) { return '#' + r.map(v => Math.max(0, Math.min(255, v | 0)).toString(16).padStart(2, '0')).join(''); }
 function mix(a, b, t) {
@@ -1192,6 +1251,46 @@ const TROPHY_ART = {
   idle: (c, x, y) => { px(c, x - 10, y - 1, 20, 3, '#8a6141'); px(c, x - 10, y + 3, 20, 2, '#6b4a30');
     px(c, x - 8, y + 5, 2, 4, '#5a3a20'); px(c, x + 6, y + 5, 2, 4, '#5a3a20');
     for (let i = 0; i < 5; i++) px(c, x - 9 + i * 5, y - 4, 2, 3, JADE[2]); },
+  /* --- pop culture --- */
+  pop1: (c, x, y) => { px(c, x - 10, y - 8, 20, 14, STONE[1]); px(c, x - 8, y - 6, 16, 10, '#6ba8d8');
+    px(c, x - 8, y - 6, 16, 3, '#9fd0ee'); px(c, x - 2, y + 6, 4, 4, STONE[2]); px(c, x - 7, y + 9, 14, 2, STONE[3]);
+    px(c, x - 9, y - 13, 2, 6, STONE[3]); px(c, x + 7, y - 13, 2, 6, STONE[3]); },
+  pop20: (c, x, y) => { px(c, x - 10, y - 8, 20, 14, '#3a2f4a'); px(c, x - 8, y - 6, 16, 10, '#8a6bd8');
+    for (let i = 0; i < 3; i++) star(c, x - 5 + i * 5, y - 1, 3, GOLD[3], '#ffffff');
+    px(c, x - 7, y + 9, 14, 2, STONE[3]); px(c, x - 2, y + 6, 4, 4, STONE[2]); },
+  popall: (c, x, y) => { pcircle(c, x, y, 10, '#2a2a34'); pcircle(c, x, y, 9, '#4a4a58');
+    pcircle(c, x, y, 3, STONE[4]);
+    for (let i = 0; i < 4; i++) { const A = i / 4 * 6.28 + 0.4; pcircle(c, x + Math.cos(A) * 5.5, y + Math.sin(A) * 5.5, 2.6, '#1e1e26'); }
+    px(c, x + 8, y - 2, 8, 4, '#4a4a58'); px(c, x + 8, y - 2, 8, 1, STONE[3]); },
+
+  /* --- hands on --- */
+  eyepoke: (c, x, y) => { pellipse(c, x, y, 11, 7, '#f2e6cc'); pellipse(c, x, y, 10, 6, '#fbf3e2');
+    pcircle(c, x, y, 4.5, '#7a4512'); pcircle(c, x, y, 3.6, '#c9862a'); pcircle(c, x, y, 2, '#160c04');
+    dot(c, x - 2, y - 2, '#ffffff'); px(c, x - 12, y - 6, 24, 2, GOLD[1]);
+    px(c, x + 4, y - 10, 2, 7, '#e8b98a'); px(c, x + 2, y - 12, 6, 3, '#d9a878'); },
+  nosepoke: (c, x, y) => { pellipse(c, x - 2, y + 2, 8, 6, '#a07a4c'); pellipse(c, x - 4, y + 1, 5, 3, '#c9a06a');
+    px(c, x - 5, y + 4, 2, 2, '#432c17'); px(c, x + 2, y + 4, 2, 2, '#432c17');
+    px(c, x + 7, y - 6, 3, 8, '#e8b98a'); px(c, x + 5, y - 9, 7, 4, '#d9a878');
+    for (let i = 0; i < 3; i++) px(c, x - 10 + i, y - 6 - i, 2, 1, GOLD[4]); },
+  mouthbite: (c, x, y) => { pellipse(c, x, y + 1, 12, 8, '#2a1508');
+    for (let i = -9; i <= 9; i += 3) { px(c, x + i, y - 6, 3, 5, '#e6d9bb'); px(c, x + i, y + 3, 3, 5, '#e6d9bb'); }
+    px(c, x - 12, y - 9, 24, 3, '#a07a4c'); px(c, x - 12, y + 7, 24, 3, '#6f4f2e');
+    px(c, x + 3, y - 3, 3, 7, '#e8b98a'); },
+  tickle: (c, x, y) => { for (let i = 0; i < 16; i++) { const p = i / 16; px(c, x - 6 + i * 0.8, y + 8 - i, 2, 2, mix('#e8e2d0', GOLD[3], p)); }
+    for (let i = 0; i < 5; i++) { px(c, x + 2 + i, y - 8 + i, 5 - i, 1, '#ffffff'); px(c, x - 2 - i, y - 8 + i, 5 - i, 1, '#ffffff'); }
+    px(c, x - 8, y + 8, 16, 3, GOLD[1]); },
+  shake: (c, x, y) => { px(c, x - 4, y - 6, 8, 15, '#a07a4c'); px(c, x - 4, y - 6, 3, 15, '#c9a06a');
+    for (let i = 0; i < 3; i++) { px(c, x - 10 - i * 2, y - 4 + i * 3, 4, 1, GOLD[3]); px(c, x + 7 + i * 2, y - 4 + i * 3, 4, 1, GOLD[3]); }
+    drawLeafSprite(c, x - 9, y + 4, JADE[3], JADE[1]); drawLeafSprite(c, x + 4, y + 6, JADE[2], JADE[0]); },
+  knock: (c, x, y) => { px(c, x - 9, y - 8, 18, 17, '#8a6141'); px(c, x - 9, y - 8, 18, 2, '#a67a4e');
+    px(c, x - 6, y - 5, 12, 11, '#6f4f2e'); pcircle(c, x + 4, y + 1, 2, GOLD[3]);
+    px(c, x - 12, y - 6, 4, 7, '#e8b98a'); px(c, x - 14, y - 3, 4, 4, '#d9a878');
+    for (let i = 0; i < 3; i++) px(c, x - 13 - i, y - 10 + i, 2, 1, GOLD[4]); },
+  moon: (c, x, y) => { pcircle(c, x + 1, y, 9, '#e9eeff'); pcircle(c, x + 5, y - 3, 8, '#2a3a6a');
+    pcircle(c, x - 2, y + 2, 2, '#c9d4e8'); pcircle(c, x - 1, y - 4, 1.5, '#c9d4e8');
+    px(c, x - 10, y + 6, 4, 6, '#e8b98a'); px(c, x - 12, y + 9, 6, 3, '#d9a878');
+    star(c, x + 10, y - 8, 3, '#ffffff', '#ffffff'); },
+
   refresh: (c, x, y) => { px(c, x - 6, y - 8, 12, 16, '#e8e2d0'); px(c, x - 6, y - 8, 12, 2, GOLD[2]);
     px(c, x + 2, y - 8, 3, 11, '#c9453b'); px(c, x + 2, y + 3, 1, 3, '#c9453b'); px(c, x + 4, y + 3, 1, 3, '#c9453b');
     for (let i = 0; i < 3; i++) px(c, x - 4, y - 3 + i * 3, 5, 1, '#8a8a8a'); }
@@ -1226,45 +1325,76 @@ function hallWidth(n) { return HALL.pad * 2 + n * (HALL.gap / 2); }
 
 function drawHall(c, g) {
   const sc = g.hall.scroll;
-  const t = g.t;
 
   // ceiling and sky
   for (let y = 0; y < H; y++) {
     const f = y / H;
-    px(c, 0, y, W, 1, quant(mix(mix('#6a86c8', '#cfe2f5', Math.min(1, f * 1.6)), '#ffffff', f * 0.5), 8));
+    px(c, 0, y, W, 1, quant(mix(mix('#5c78bd', '#cfe2f5', Math.min(1, f * 1.6)), '#ffffff', f * 0.5), 8));
   }
-  // vaulted arches overhead
+
+  // a domed skylight throwing the whole hall into shafts
+  const dcx = W / 2 - (sc * 0.12) % W;
+  glow(c, dcx, -10, 90, '#ffffff', 0.8);
+  for (let i = 0; i < 9; i++) {
+    const a = -0.9 + i * 0.22;
+    c.globalAlpha = 0.10 + 0.04 * Math.sin(g.t * 0.6 + i);
+    for (let r = 10; r < 220; r += 2) {
+      const w = 2 + r * 0.05;
+      px(c, dcx + Math.sin(a) * r, -6 + Math.cos(a) * r, w, 3, '#ffffff');
+    }
+    c.globalAlpha = 1;
+  }
+
+  // vaulted arches
   for (let i = -1; i < 8; i++) {
     const x = i * 96 - (sc * 0.25) % 96;
     for (let a = 0; a <= 46; a++) {
       const A = (a / 46) * Math.PI;
-      px(c, x + 48 - Math.cos(A) * 48, 34 - Math.sin(A) * 30, 3, 3, '#b9cbe4');
-      px(c, x + 48 - Math.cos(A) * 48, 34 - Math.sin(A) * 30, 3, 1, '#dcebf8');
+      const ax = x + 48 - Math.cos(A) * 48, ay = 34 - Math.sin(A) * 30;
+      px(c, ax, ay, 3, 4, '#93a9c6');
+      px(c, ax, ay, 3, 1, '#e2eefa');
     }
   }
-  px(c, 0, 0, W, 8, '#9fb6d6'); px(c, 0, 8, W, 3, '#cadaee');
+  px(c, 0, 0, W, 7, '#8298b8'); px(c, 0, 7, W, 3, '#cadaee'); px(c, 0, 10, W, 1, '#7286a6');
 
-  // far light at the end of the hall
-  c.globalAlpha = 0.5; glow(c, W / 2, 70, 60, '#ffffff', 0.6); c.globalAlpha = 1;
-
-  // columns behind the back row
-  for (let i = -1; i < 10; i++) {
-    const x = i * 108 - (sc * 0.55) % 108;
-    px(c, x - 9, 24, 18, 4, '#e6eff8'); px(c, x - 7, 28, 14, 92, '#d2e0ee');
-    px(c, x - 7, 28, 3, 92, '#eef5fb'); px(c, x + 4, 28, 3, 92, '#aec2d8');
-    px(c, x - 10, 118, 20, 5, '#e6eff8');
+  // chandeliers hanging between the arches
+  for (let i = -1; i < 6; i++) {
+    const x = i * 96 - (sc * 0.25) % 96 + 48;
+    px(c, x, 10, 1, 14, '#8298b8');
+    pellipse(c, x, 26, 9, 3, '#c8a44a');
+    px(c, x - 9, 26, 19, 2, '#e8c96a');
+    for (let j = -2; j <= 2; j++) {
+      const fx = x + j * 4;
+      px(c, fx - 1, 28, 2, 4, '#e8c96a');
+      flame(c, fx, 27, 5, g.t * 2 + j + i);
+      glow(c, fx, 25, 7, '#ffce6a', 0.5);
+    }
   }
 
-  // banners between the columns
+  // far light at the end of the hall
+  c.globalAlpha = 0.5; glow(c, W / 2, 74, 66, '#ffffff', 0.7); c.globalAlpha = 1;
+
+  // columns
+  for (let i = -1; i < 10; i++) {
+    const x = i * 108 - (sc * 0.55) % 108;
+    px(c, x - 10, 22, 20, 5, '#eef5fb'); px(c, x - 10, 27, 20, 1, '#93a9c6');
+    px(c, x - 7, 28, 14, 92, '#d2e0ee');
+    for (let f = 0; f < 4; f++) px(c, x - 6 + f * 4, 28, 1, 92, '#b8cadd');
+    px(c, x - 7, 28, 3, 92, '#f4fafd'); px(c, x + 4, 28, 3, 92, '#a2b8ce');
+    px(c, x - 11, 118, 22, 6, '#eef5fb'); px(c, x - 11, 123, 22, 1, '#93a9c6');
+  }
+
+  // banners
   for (let i = -1; i < 10; i++) {
     const x = i * 108 - (sc * 0.55) % 108 + 54;
-    const tier = i % 3;
+    const tier = ((i % 3) + 3) % 3;
     const col = tier === 0 ? '#a06bd8' : tier === 1 ? '#e0b23a' : '#6ba8d8';
-    px(c, x - 7, 12, 14, 44, mix(col, '#ffffff', 0.35));
-    px(c, x - 7, 12, 14, 3, mix(col, '#000000', 0.25));
-    px(c, x - 7, 12, 3, 44, mix(col, '#ffffff', 0.6));
-    for (let j = 0; j < 4; j++) px(c, x - 5 + j * 4, 56, 3, 3 + (j % 2) * 3, mix(col, '#ffffff', 0.35));
-    star(c, x, 32, 5, '#fff6d0', '#ffffff');
+    px(c, x - 8, 12, 16, 46, mix(col, '#000000', 0.2));
+    px(c, x - 8, 12, 14, 46, mix(col, '#ffffff', 0.3));
+    px(c, x - 8, 12, 3, 46, mix(col, '#ffffff', 0.62));
+    px(c, x - 9, 11, 18, 3, GOLD[2]);
+    for (let j = 0; j < 4; j++) px(c, x - 6 + j * 4, 58, 3, 3 + (j % 2) * 4, mix(col, '#ffffff', 0.3));
+    star(c, x - 1, 32, 5, '#fff6d0', '#ffffff');
   }
 
   // floor
@@ -1279,10 +1409,9 @@ function drawHall(c, g) {
     }
   }
   for (let y = 124; y < H; y += 8 + (y - 120) / 6) px(c, 0, y, W, 1, '#bccfe1');
-  // reflections
   c.globalAlpha = 0.18; px(c, 0, 120, W, H - 120, '#ffffff'); c.globalAlpha = 1;
 
-  // a long red carpet down the middle of the hall
+  // carpet
   for (let y = 122; y < H; y++) {
     const spread = (y - 120) / (H - 120);
     const hw = 18 + spread * 66;
@@ -1290,17 +1419,37 @@ function drawHall(c, g) {
     px(c, W / 2 - hw, y, 3 + spread * 4, 1, '#6b2029');
     px(c, W / 2 + hw - (3 + spread * 4), y, 3 + spread * 4, 1, '#6b2029');
     if ((y % 9) === 0) px(c, W / 2 - hw + 4, y, hw * 2 - 8, 1, '#a03a46');
+    if ((y % 18) === 0) px(c, W / 2 - hw + 8, y, hw * 2 - 16, 1, '#c8a44a');
   }
 
-  // plinths
   const list = g.hall.order;
+  // reflections first, then the plinths that cast them
+  for (let i = 0; i < list.length; i++) {
+    if (g.hall.dragIndex === i) continue;
+    const p = hallSlotPos(i);
+    const x = Math.round(p.x - sc);
+    if (x < -50 || x > W + 50 || p.back) continue;
+    if (g.hall.unlocked[list[i]]) drawTrophyReflection(c, g, list[i], x, p.y - Math.round(26 * p.scale), p.scale);
+  }
   for (let i = 0; i < list.length; i++) {
     if (g.hall.dragIndex === i) continue;
     drawPlinth(c, g, i, list[i], sc);
   }
+
+  // velvet rope across the front of the gallery
+  for (let i = -1; i < 8; i++) {
+    const x = i * 58 - (sc % 58) + 20;
+    px(c, x - 2, 168, 5, 20, '#c8a44a'); px(c, x - 2, 168, 2, 20, '#e8c96a');
+    pcircle(c, x, 166, 3, '#e8c96a'); pcircle(c, x - 1, 165, 2, '#fff0b8');
+    for (let j = 0; j < 58; j++) {
+      const t = j / 58;
+      px(c, x + j, 172 + Math.sin(t * Math.PI) * 7, 1, 3, '#8a2f3a');
+      px(c, x + j, 172 + Math.sin(t * Math.PI) * 7, 1, 1, '#b0455a');
+    }
+  }
+
   if (g.hall.dragIndex >= 0) {
-    const id = list[g.hall.dragIndex];
-    drawTrophy(c, g, id, g.hall.dragX, g.hall.dragY, 1.15, true);
+    drawTrophy(c, g, list[g.hall.dragIndex], g.hall.dragX, g.hall.dragY, 1.2, true);
   }
 
   // haze at the edges so the hall feels endless
@@ -1314,54 +1463,118 @@ function drawHall(c, g) {
 function drawPlinth(c, g, i, id, scroll) {
   const p = hallSlotPos(i);
   const x = Math.round(p.x - scroll);
-  if (x < -40 || x > W + 40) return;
+  if (x < -50 || x > W + 50) return;
   const unlocked = !!g.hall.unlocked[id];
   const tier = g.hall.tier[id] || 'task';
   const s = p.scale;
   const w = Math.round(15 * s), h = Math.round(26 * s);
   const top = p.y - h;
+  const tierCol = tier === 'chal' ? '#a06bd8' : tier === 'goal' ? '#ffd24a' : '#8fd95a';
 
-  // shadow
-  c.globalAlpha = 0.2; pellipse(c, x, p.y + 2, w + 4, 3, '#5a7090'); c.globalAlpha = 1;
-  // stepped marble plinth
-  px(c, x - w - 2, p.y - 3, (w + 2) * 2, 4, '#c2d2e2');
-  px(c, x - w, top + 3, w * 2, h - 6, '#dde8f2');
-  px(c, x - w, top + 3, 3, h - 6, '#f2f8fd');
-  px(c, x + w - 3, top + 3, 3, h - 6, '#b6c8dc');
-  px(c, x - w - 2, top, (w + 2) * 2, 4, '#e8f0f8');
-  px(c, x - w - 2, top, (w + 2) * 2, 1, '#ffffff');
-  // plaque
-  const pc = unlocked ? (tier === 'chal' ? '#a06bd8' : tier === 'goal' ? '#ffd24a' : '#8fd95a') : '#8a97a8';
-  px(c, x - Math.round(9 * s), top + Math.round(10 * s), Math.round(18 * s), Math.round(6 * s), '#9fb0c4');
-  px(c, x - Math.round(8 * s), top + Math.round(11 * s), Math.round(16 * s), Math.round(4 * s), pc);
-  if (!unlocked) { px(c, x - 1, top + Math.round(11 * s), 2, Math.round(4 * s), '#5a6a7a'); }
+  // a spotlight from the ceiling, tinted to the trophy's tier
+  if (unlocked) {
+    for (let yy = 0; yy < top - 6; yy++) {
+      const k = yy / Math.max(1, top - 6);
+      const hw = 3 + k * 16 * s;
+      c.globalAlpha = 0.05 + 0.05 * k;
+      px(c, x - hw, yy + 6, hw * 2, 1, tierCol);
+      c.globalAlpha = 1;
+    }
+  }
+
+  c.globalAlpha = 0.22; pellipse(c, x, p.y + 3, w + 6, 4, '#5a7090'); c.globalAlpha = 1;
+
+  // stepped marble plinth with a moulded cap
+  px(c, x - w - 3, p.y - 4, (w + 3) * 2, 5, '#b6c8dc');
+  px(c, x - w - 3, p.y - 4, (w + 3) * 2, 1, '#e8f0f8');
+  px(c, x - w, top + 4, w * 2, h - 8, '#dde8f2');
+  px(c, x - w, top + 4, 3, h - 8, '#f6fbff');
+  px(c, x + w - 3, top + 4, 3, h - 8, '#adc0d6');
+  for (let f = 1; f < 3; f++) px(c, x - w + f * Math.round(w * 0.66), top + 6, 1, h - 12, '#c2d2e4');
+  px(c, x - w - 3, top, (w + 3) * 2, 5, '#e8f0f8');
+  px(c, x - w - 3, top, (w + 3) * 2, 1, '#ffffff');
+  px(c, x - w - 3, top + 4, (w + 3) * 2, 1, '#9fb4cc');
+
+  // engraved plaque
+  const pw = Math.round(19 * s), ph = Math.round(7 * s);
+  px(c, x - pw, top + Math.round(11 * s), pw * 2, ph, '#8a9bb0');
+  px(c, x - pw + 1, top + Math.round(11 * s) + 1, pw * 2 - 2, ph - 2, unlocked ? tierCol : '#67788c');
+  px(c, x - pw + 1, top + Math.round(11 * s) + 1, pw * 2 - 2, 1, '#ffffff');
+  if (unlocked) {
+    for (let l = 0; l < 2; l++) {
+      const lw = pw * (l === 0 ? 1.3 : 0.9);
+      px(c, x - lw / 2, top + Math.round(13 * s) + l * 2, lw, 1, mix(tierCol, '#000000', 0.45));
+    }
+  } else px(c, x - 1, top + Math.round(12 * s), 2, ph - 3, '#3f4d5e');
 
   if (unlocked) {
     drawTrophy(c, g, id, x, top, s, false);
   } else {
     // a shrouded shape, waiting
-    c.globalAlpha = 0.55;
-    pellipse(c, x, top - Math.round(8 * s), Math.round(9 * s), Math.round(11 * s), '#b9c8d8');
-    px(c, x - Math.round(9 * s), top - 2, Math.round(18 * s), 3, '#a8b8c8');
+    c.globalAlpha = 0.6;
+    pellipse(c, x, top - Math.round(9 * s), Math.round(10 * s), Math.round(12 * s), '#aebfd0');
+    pellipse(c, x - 2, top - Math.round(11 * s), Math.round(6 * s), Math.round(7 * s), '#c6d5e4');
+    px(c, x - Math.round(10 * s), top - 3, Math.round(20 * s), 4, '#9db0c4');
+    for (let f = 0; f < 4; f++) px(c, x - Math.round(8 * s) + f * Math.round(5 * s), top - Math.round(14 * s), 1, Math.round(11 * s), '#9db0c4');
     c.globalAlpha = 1;
   }
 }
 
+/* the little plinth-top base every sculpture is mounted on */
+function trophyBase(c, x, y) {
+  pellipse(c, x, y + 2, 12, 3, GOLD[0]);
+  pellipse(c, x, y, 11, 3, GOLD[1]);
+  px(c, x - 8, y - 3, 17, 3, GOLD[1]);
+  px(c, x - 8, y - 3, 17, 1, GOLD[3]);
+  pellipse(c, x, y - 4, 7, 2, GOLD[2]);
+  for (let i = -6; i <= 6; i += 4) dot(c, x + i, y - 3, GOLD[4]);
+}
+
+/* rendered once per trophy, contour and all, then cached */
+function trophySprite(id) {
+  return outlinedSprite('tro:' + id, 64, 64, (tc, cx, cy) => {
+    trophyBase(tc, cx, cy + 13);
+    const art = TROPHY_ART[id];
+    if (art) art(tc, cx, cy - 1);
+    else { pcircle(tc, cx, cy - 2, 8, GOLD[2]); pcircle(tc, cx - 2, cy - 4, 4, GOLD[4]); }
+  }, '#150f1a');
+}
+
 function drawTrophy(c, g, id, x, y, s, lifted) {
-  const art = TROPHY_ART[id];
+  const sprite = trophySprite(id);
+  const sc = s * 1.28;
   const bob = lifted ? 0 : Math.sin(g.t * 1.6 + x * 0.1) * 0.5;
-  s = s * 1.3;
-  const cy = y - Math.round(8 * s) + bob;
-  if (lifted) { c.globalAlpha = 0.25; pellipse(c, x, y + 16, 12, 4, '#5a7090'); c.globalAlpha = 1; }
-  glow(c, x, cy, Math.round(15 * s), '#fff3c0', lifted ? 0.5 : 0.28);
-  if (!art) { pcircle(c, x, cy, 7 * s, GOLD[2]); return; }
-  if (s !== 1) {
-    // draw small trophies by simply pulling the art in tighter
-    c.save();
-    c.translate(x, cy); c.scale(s, s); c.translate(-x, -cy);
-    art(c, x, cy);
-    c.restore();
-  } else art(c, x, cy);
+  const w = 64 * sc, h = 64 * sc;
+  const dx = Math.round(x - w / 2), dy = Math.round(y - 46 * sc + bob);
+
+  if (lifted) { c.globalAlpha = 0.25; pellipse(c, x, y + 18, 13, 4, '#5a7090'); c.globalAlpha = 1; }
+  glow(c, x, y - 16 * sc, 20 * sc, '#fff3c0', lifted ? 0.75 : 0.4);
+  c.imageSmoothingEnabled = false;
+  c.drawImage(sprite, dx, dy, w, h);
+
+  // a slow highlight travelling over the metal
+  const ph = (g.t * 0.5 + x * 0.03) % 3;
+  if (ph < 0.5) {
+    const k = ph / 0.5;
+    c.globalAlpha = 0.5 * Math.sin(k * Math.PI);
+    for (let i = 0; i < 10; i++) px(c, dx + w * 0.15 + k * w * 0.7 + i, dy + h * 0.2 + i * 2.2, 2, 3, '#ffffff');
+    c.globalAlpha = 1;
+  }
+  if (Math.sin(g.t * 1.3 + x) > 0.94) star(c, x + 9 * sc, y - 26 * sc, 3, '#ffffff', '#ffffff');
+}
+
+/* the same sprite, upside down and faded, on the polished floor */
+function drawTrophyReflection(c, g, id, x, y, s) {
+  const sprite = trophySprite(id);
+  const sc = s * 1.28, w = 64 * sc, h = 64 * sc;
+  c.save();
+  c.globalAlpha = 0.16;
+  c.translate(0, y * 2 + 4);
+  c.scale(1, -1);
+  c.imageSmoothingEnabled = false;
+  c.drawImage(sprite, Math.round(x - w / 2), Math.round(y - 46 * sc), w, h);
+  c.restore();
+  c.globalAlpha = 1;
 }
 
 /* =========================================================================
@@ -1553,12 +1766,12 @@ function drawGrowingTree(c, g, p) {
 }
 
 window.SPR = {
-  W, H, GROUND_Y, CANOPY, TWIGS, SEASON, SEASON_NAMES, TROPHY_ART, HALL,
+  W, H, GROUND_Y, layerBegin, layerEnd, outlinedSprite, makeCanvas, CANOPY, TWIGS, SEASON, SEASON_NAMES, TROPHY_ART, HALL,
   px, dot, pcircle, pellipse, glow, mix, mulberry, star, quant,
   isNight, darkness, trunkHalfWidth, hallSlotPos, hallWidth,
   drawBackdrop, drawBokeh, drawGround, drawForeground, drawFrameFoliage,
   drawTree, drawWatchers, drawSquirrel, drawGroundItems, drawParticles,
   drawFireOnTree, drawFireGlow, drawPond, drawOverlay, drawAshScene, drawStump, drawItemIcon, drawLeafSprite,
-  drawHall, drawTrophy, drawPlinth, drawHeaven, drawHeavenBackdrop, drawGhostTree, drawSoul,
+  drawHall, drawTrophy, drawTrophyReflection, trophySprite, drawPlinth, drawHeaven, drawHeavenBackdrop, drawGhostTree, drawSoul,
   drawCloudTunnel, drawLetterbox, drawRays, drawGrowingTree, flame
 };

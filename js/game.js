@@ -31,7 +31,11 @@ const hadSave = save.sessions > 0;
 save.sessions++;
 
 let saveTimer = 0;
-function persist() { try { localStorage.setItem(SAVE_KEY, JSON.stringify(save)); } catch (e) {} }
+let erased = false;     // once wiped, never write the old save back on unload
+function persist() {
+  if (erased) return;
+  try { localStorage.setItem(SAVE_KEY, JSON.stringify(save)); } catch (e) {}
+}
 
 /* ---------------------------------------------------------------------
    STATE
@@ -252,6 +256,34 @@ function drawIcon(c, id, size) {
       pcircle(c, 8, 7, 6, '#c9453b'); P(2, 7, 13, 2, '#c9453b'); dot(c, 5, 4, '#fff'); dot(c, 10, 6, '#fff'); P(5, 9, 6, 5, '#f0e2cc'); break;
     case 'can':
       P(3, 5, 8, 8, '#8a9aa8'); P(11, 4, 4, 3, '#8a9aa8'); P(1, 6, 2, 5, '#6d7c88'); P(4, 6, 3, 2, '#b0bcc8'); break;
+    case 'tv':
+      P(1, 3, 14, 10, '#3a3a44'); P(2, 4, 12, 8, '#6ba8d8'); P(2, 4, 12, 2, '#9fd0ee');
+      P(6, 13, 4, 2, '#555'); P(3, 1, 1, 3, '#888'); P(12, 1, 1, 3, '#888'); break;
+    case 'reel':
+      pcircle(c, 8, 8, 7, '#2a2a34'); pcircle(c, 8, 8, 6, '#4a4a58'); pcircle(c, 8, 8, 2, '#ddd');
+      for (let i = 0; i < 4; i++) { const A = i / 4 * 6.28 + .4; pcircle(c, 8 + Math.cos(A) * 3.6, 8 + Math.sin(A) * 3.6, 1.6, '#1e1e26'); } break;
+    case 'eye':
+      P(1, 6, 14, 5, '#f2e6cc'); P(2, 5, 12, 7, '#fbf3e2'); pcircle(c, 8, 8, 3, '#c9862a');
+      pcircle(c, 8, 8, 1.6, '#160c04'); dot(c, 7, 7, '#fff'); P(1, 4, 14, 1, '#8a6141'); break;
+    case 'boop':
+      pcircle(c, 6, 9, 4, '#a07a4c'); pcircle(c, 5, 8, 2, '#c9a06a'); dot(c, 4, 11, '#432c17'); dot(c, 8, 11, '#432c17');
+      P(11, 3, 3, 6, '#e8b98a'); P(10, 1, 5, 3, '#d9a878'); dot(c, 2, 3, '#ffd24a'); dot(c, 14, 12, '#ffd24a'); break;
+    case 'teeth':
+      P(2, 6, 12, 5, '#2a1508'); for (let i = 2; i < 14; i += 3) { P(i, 4, 2, 3, '#e6d9bb'); P(i, 10, 2, 3, '#e6d9bb'); }
+      P(1, 2, 14, 2, '#a07a4c'); P(1, 12, 14, 2, '#6f4f2e'); break;
+    case 'feather':
+      for (let i = 0; i < 12; i++) P(3 + i * 0.7, 13 - i, 2, 2, i > 7 ? '#ffffff' : '#e8e2d0');
+      for (let i = 0; i < 4; i++) { P(9 + i, 2 + i, 3 - i, 1, '#fff'); P(6 - i, 3 + i, 3, 1, '#fff'); } break;
+    case 'shake':
+      P(6, 3, 4, 11, '#a07a4c'); P(6, 3, 2, 11, '#c9a06a');
+      for (let i = 0; i < 3; i++) { P(3 - i, 5 + i * 3, 2, 1, '#ffd24a'); P(11 + i, 5 + i * 3, 2, 1, '#ffd24a'); }
+      SPR.drawLeafSprite(c, 1, 10, '#6cc73f', '#2d6b1f'); break;
+    case 'knock':
+      P(1, 2, 12, 12, '#8a6141'); P(2, 3, 10, 10, '#6f4f2e'); pcircle(c, 10, 8, 1.6, '#ffd24a');
+      P(12, 4, 3, 4, '#e8b98a'); dot(c, 14, 2, '#ffd24a'); dot(c, 15, 5, '#ffd24a'); break;
+    case 'reach':
+      pcircle(c, 10, 5, 5, '#e9eeff'); pcircle(c, 12, 3, 4, '#1a2050');
+      P(3, 9, 3, 5, '#e8b98a'); P(2, 7, 5, 3, '#d9a878'); dot(c, 1, 3, '#fff'); break;
     default:
       P(4, 4, 8, 8, '#888'); break;
   }
@@ -330,8 +362,33 @@ function checkWorldProgress() {
   if (heardCount('world') >= totalCount('world')) { ACH('worldall'); reachEnding('witness'); }
 }
 
+let knocks = [];
+/* Three taps at an even tempo is a knock; the same three taps at random
+   speed is just someone jabbing at a tree. The gaps have to match. */
+function isKnockRhythm() {
+  if (knocks.length < 3) return false;
+  const [a, b, c] = knocks.slice(-3);
+  const g1 = b - a, g2 = c - b;
+  if (g1 < 0.14 || g1 > 0.75 || g2 < 0.14 || g2 > 0.75) return false;
+  return Math.abs(g1 - g2) < Math.max(g1, g2) * 0.42;
+}
+
 function talkToTree() {
   if (G.dead || G.scene !== 'game') return;
+
+  // tracked before anything else, so taps that only skip the typing count too
+  knocks = knocks.filter(k => G.t - k < 2.2);
+  knocks.push(G.t);
+  if (isKnockRhythm()) {
+    knocks = [];
+    skipType();
+    ACH('knock');
+    SFX.click(); setTimeout(() => SFX.click(), 130); setTimeout(() => SFX.click(), 260);
+    G.shake = 2; G.sinceTreeClick = 0;
+    say('THE WISE OAK TREE', DATA.knockLines[Math.floor(Math.random() * DATA.knockLines.length)], 'smug');
+    return;
+  }
+
   if (skipType()) return;
   G.sinceTreeClick = 0;
 
@@ -358,7 +415,10 @@ function talkToTree() {
   if (hc >= 60) ACH('chat60');
   if (heardCount() >= totalCount()) { ACH('chatall'); reachEnding('listener'); }
   if (line.tag === 'world') ACH('world1');
+  if (line.tag === 'pop') ACH('pop1');
   checkWorldProgress();
+  if (heardCount('pop') >= 20) ACH('pop20');
+  if (heardCount('pop') >= totalCount('pop')) { ACH('popall'); reachEnding('canon'); }
   if (line.tag === 'meta' && Math.random() < 0.2) spawnParticles('star', 128, 60, 10);
 }
 
@@ -439,7 +499,13 @@ function doPlant() {
   const x = 30 + Math.random() * 190;
   G.saplings.push({ x: Math.floor(x), age: 0, ph: Math.random() * 6.28 });
   ACH('plant');
-  if (save.stats.plants >= 5) { ACH('plant5'); reachEnding('grove'); }
+  if (save.stats.plants >= 5 && !save.endings.grove) {
+    ACH('plant5');
+    refreshHUD();
+    startGroveCine();
+    return;
+  }
+  if (save.stats.plants >= 5) ACH('plant5');
   const lines = [
     "You planted one. You PLANTED one. Do you understand what you just did? You will never see it finished. That is the whole point.",
     "Another one! I am going to be a FATHER. Again. Statistically for the four thousandth time.",
@@ -521,12 +587,9 @@ function askBurn() {
 function doThrowAway() {
   G.flags.lighterGone = true;
   G.inv.items.lighter = false;
-  SFX.water();
-  spawnParticles('drop', 30, GROUND_Y + 6, 14);
   ACH('refuse');
-  say('THE WISE OAK TREE', "You threw it in the pond. It went 'sss'. That is the best sound I have ever heard and I have heard four hundred springs.", 'happy');
-  reachEnding('mercy');
   refreshHUD();
+  startMercyCine();
 }
 
 const BURN_LINES = [
@@ -619,7 +682,9 @@ function buy(it) {
   ACH('trade1');
   if (it.id === 'lighter') {
     ACH('lighter');
-    say('SQUIRREL', "for NEST purposes. that's what you said. that's what i heard. good luck buddy. i'm gonna go be somewhere else.", null);
+    refreshHUD(); closeShop();
+    startLighterCine();
+    return;
   } else {
     say('SQUIRREL', "pleasure doing business. don't tell the tree. he thinks i'm a saver.", null);
   }
@@ -926,6 +991,72 @@ function startDeathCine() {
   ], () => { goHeaven(); reachEnding('arson'); });
 }
 
+/* ---- the opening: the wood, then the tree, then he notices you ---- */
+function startIntroCine() {
+  G.mood = 'sleepy'; G.blinkTimer = 99; G.blink = 1;
+  playCine('intro', [
+    { id: 'wide', dur: 3.4, cam: [-18, -4, 1.28], snap: true, caption: 'There is a tree in this park.' },
+    { id: 'near', dur: 3.2, cam: [0, 8, 1.35], caption: 'Nobody remembers who planted it.' },
+    { id: 'wake', dur: 3.6, cam: [0, 18, 1.75], caption: '',
+      enter: () => { G.mood = 'sleepy'; },
+      tick: (p) => {
+        G.blink = p < 0.45 ? 1 : 0;
+        if (p > 0.45 && G.mood === 'sleepy') { G.mood = 'shock'; SFX.pickup(); }
+        if (p > 0.7) G.mood = 'chill';
+      } },
+    { id: 'settle', dur: 2.4, cam: [0, 5, 1.09], caption: 'Oh. You are new.' }
+  ], () => {
+    G.blinkTimer = 2;
+    G.scene = 'game';
+    refreshHUD(); refreshActions();
+    say('THE WISE OAK TREE', "Hello. I am an oak tree. I am four hundred years old. Click me and I will say things. That is the entire product.", 'happy');
+  });
+}
+
+/* ---- the squirrel hands over the lighter ---- */
+function startLighterCine() {
+  playCine('lighter', [
+    { id: 'deal', dur: 3.2, cam: [(G.squirrel.x - 128) * 0.5, 40, 1.9], caption: '"For nest purposes."',
+      enter: () => { G.squirrel.face = 1; G.squirrel.holding = 'lighter'; SFX.trade(); } },
+    { id: 'oblivious', dur: 3.4, cam: [0, 16, 1.6], caption: 'He does not know you have it.',
+      enter: () => { G.squirrel.holding = null; G.mood = 'happy'; } }
+  ], () => {
+    G.scene = 'game'; refreshHUD(); refreshActions();
+    say('THE WISE OAK TREE', "You have gone very quiet. Everything alright? You have got a face like a man holding something behind his back.", 'think');
+  });
+}
+
+/* ---- the lighter goes in the pond ---- */
+function startMercyCine() {
+  playCine('mercy', [
+    { id: 'throw', dur: 2.8, cam: [-40, 30, 1.5], caption: '',
+      enter: () => { SFX.water(); },
+      tick: (p) => { if (p > 0.55 && !G._splashed) { G._splashed = true; spawnParticles('drop', 30, GROUND_Y + 16, 22); SFX.pickup(); } } },
+    { id: 'relief', dur: 3.6, cam: [0, 10, 1.4], caption: 'sss.',
+      enter: () => { G._splashed = false; G.mood = 'happy'; spawnParticles('heart', 128, 110, 6); } }
+  ], () => {
+    G.scene = 'game'; refreshHUD(); refreshActions();
+    reachEnding('mercy');
+  });
+}
+
+/* ---- five acorns, and a very long time ---- */
+function startGroveCine() {
+  const day0 = G.timeOfDay;
+  playCine('grove', [
+    { id: 'plant', dur: 2.4, cam: [0, 30, 1.7], caption: 'Five.' },
+    { id: 'years', dur: 7.0, cam: [0, 0, 1.0], caption: 'One hundred and forty years.',
+      tick: (p, dt) => {
+        G.timeOfDay = (day0 + p * 14) % 1;
+        for (const sp of G.saplings) sp.age += dt * 26;
+      } },
+    { id: 'wood', dur: 3.6, cam: [0, 5, 1.09], caption: 'Nobody here will know your name.' }
+  ], () => {
+    G.scene = 'game'; refreshHUD(); refreshActions();
+    reachEnding('grove');
+  });
+}
+
 /* ---- reincarnation: dive out of heaven and grow back ---- */
 function startRebirthCine() {
   save.stats.rebirths++; persist();
@@ -1044,6 +1175,8 @@ function update(dt) {
       if (G.watcherHold <= 0) G.watchers = Math.max(0, G.watchers - dt * 1.2);
     }
 
+    if (tickle.cool > 0) tickle.cool -= dt;
+
     // stillness ending
     G.sinceTreeClick += dt;
     if (save.ach.hello && G.sinceTreeClick > 180) { ACH('silence'); reachEnding('stillness'); G.sinceTreeClick = -1e9; }
@@ -1140,27 +1273,30 @@ function drawWorld(opts) {
   }
   SPR.drawGround(dc, G);
   SPR.drawPond(dc, G);
-  SPR.drawGroundItems(dc, G);
   SPR.drawFireGlow(dc, G);
 
+  // everything solid in the foreground shares one dark contour
+  const L = SPR.layerBegin();
+  SPR.drawGroundItems(L, G);
   if (o.fall) {
-    SPR.drawStump(dc, G);
+    SPR.drawStump(L, G);
     // the trunk goes over, hinged where it snapped
-    dc.save();
-    dc.translate(128, GROUND_Y + 4);
-    dc.rotate(o.fall * 1.15);
-    dc.translate(-128, -(GROUND_Y + 4));
-    SPR.drawTree(dc, G);
-    dc.restore();
+    L.save();
+    L.translate(128, GROUND_Y + 4);
+    L.rotate(o.fall * 1.15);
+    L.translate(-128, -(GROUND_Y + 4));
+    SPR.drawTree(L, G);
+    L.restore();
   } else if (o.growing !== undefined) {
-    SPR.drawGrowingTree(dc, G, o.growing);
+    SPR.drawGrowingTree(L, G, o.growing);
   } else {
-    SPR.drawTree(dc, G);
-    SPR.drawWatchers(dc, G);
+    SPR.drawTree(L, G);
+    SPR.drawWatchers(L, G);
   }
+  SPR.drawSquirrel(L, G);
+  SPR.layerEnd(dc, '#1a0f08');
 
   SPR.drawFireOnTree(dc, G);
-  SPR.drawSquirrel(dc, G);
   SPR.drawParticles(dc, G);
   SPR.drawForeground(dc, G);
   SPR.drawFrameFoliage(dc, G);
@@ -1180,7 +1316,30 @@ function drawWorld(opts) {
 
 function drawCineFrame() {
   const st = cineStage(), p = cineProgress();
-  if (G.cine.name === 'death') {
+  const name = G.cine.name;
+
+  if (name === 'intro' || name === 'lighter' || name === 'mercy' || name === 'grove') {
+    drawWorld();
+    if (name === 'intro' && st === 'wide') {
+      dc.globalAlpha = Math.max(0, 1 - p * 2.2);
+      SPR.px(dc, 0, 0, W, H, '#000000');
+      dc.globalAlpha = 1;
+    }
+    if (name === 'intro' && st === 'wake' && p > 0.45 && p < 0.75) {
+      SPR.drawRays(dc, G, (p - 0.45) * 2, 128, 106);
+    }
+    if (name === 'mercy' && st === 'throw' && p < 0.6) {
+      // the lighter turning over in the air on its way to the water
+      const k = p / 0.6;
+      const lx = 128 - k * 96, ly = 120 - Math.sin(k * Math.PI) * 46 + k * 44;
+      dc.save(); dc.translate(lx, ly); dc.rotate(k * 9); dc.translate(-lx, -ly);
+      SPR.drawItemIcon(dc, lx, ly, 'lighter');
+      dc.restore();
+    }
+    return;
+  }
+
+  if (name === 'death') {
     if (st === 'collapse') { drawWorld(); }
     else if (st === 'fall') { drawWorld({ fall: Math.pow(p, 1.6) }); }
     else if (st === 'ash') { SPR.drawAshScene(dc, G); SPR.drawParticles(dc, G); SPR.drawFrameFoliage(dc, G); }
@@ -1204,7 +1363,7 @@ function drawCineFrame() {
       SPR.drawRays(dc, G, 0.8 * (1 - p * 0.6), 128, 70);
       dc.globalAlpha = Math.max(0, 1 - p * 2.2); SPR.px(dc, 0, 0, W, H, '#ffffff'); dc.globalAlpha = 1;
     }
-  } else {
+  } else if (name === 'rebirth') {
     if (st === 'leave') {
       SPR.drawHeaven(dc, G);
       SPR.drawSoul(dc, G, 128, 120 + p * 60, 1.2);
@@ -1247,8 +1406,10 @@ function render() {
   const cam = G.cam;
   const sh = G.cine && G.shake > 0 ? G.shake : 0;
   const sw = W / cam.z, sHt = H / cam.z;
-  const sx = (W - sw) / 2 + cam.x + (Math.random() * 2 - 1) * sh;
-  const sy = (H - sHt) / 2 + cam.y + (Math.random() * 2 - 1) * sh;
+  // the buffer is the whole world; a pan that runs off it would show bare canvas
+  const clamp = (v, hi) => Math.max(0, Math.min(hi, v));
+  const sx = clamp((W - sw) / 2 + cam.x + (Math.random() * 2 - 1) * sh, W - sw);
+  const sy = clamp((H - sHt) / 2 + cam.y + (Math.random() * 2 - 1) * sh, H - sHt);
   ctx.setTransform(1, 0, 0, 1, 0, 0);
   ctx.imageSmoothingEnabled = false;
   ctx.clearRect(0, 0, W, H);
@@ -1306,21 +1467,107 @@ function hitTest(x, y) {
   const s = G.squirrel;
   if (s.active && Math.abs(x - s.x) < 11 && y > s.y - 16 && y < s.y + 4) return { kind: 'squirrel', i: -1 };
   if (!G.dead) {
-    // trunk / face
-    if (y > 92 && y < GROUND_Y + 4 && Math.abs(x - 128) < SPR.trunkHalfWidth(y) + 4) return { kind: 'tree', i: -1 };
-    // canopy ellipse
-    const dx = (x - 128) / 68, dy = (y - 62) / 40;
-    if (dx * dx + dy * dy < 1) return { kind: 'tree', i: -1 };
+    // he is not one big button: every part of him answers differently
+    const fx = x - 128, fy = y;
+    if (Math.abs(fx) < 34 && fy > 84 && fy < 152) {
+      if (fy > 96 && fy < 112 && Math.abs(Math.abs(fx) - 13) < 9) return { kind: 'part', part: 'eye', i: -1 };
+      if (fy >= 100 && fy < 128 && Math.abs(fx) < 9) return { kind: 'part', part: 'nose', i: -1 };
+      if (fy >= 128 && fy < 145 && Math.abs(fx) < 20) return { kind: 'part', part: 'mouth', i: -1 };
+      if (fy >= 145 && Math.abs(fx) < 26) return { kind: 'part', part: 'beard', i: -1 };
+    }
+    if (y > GROUND_Y - 6 && y < GROUND_Y + 12 && Math.abs(x - 128) > 24 && Math.abs(x - 128) < 56)
+      return { kind: 'part', part: 'root', i: -1 };
+    // trunk
+    if (y > 88 && y < GROUND_Y + 6 && Math.abs(x - 128) < SPR.trunkHalfWidth(y) + 4) return { kind: 'tree', i: -1 };
+    // canopy
+    const dx = (x - 128) / 68, dy = (y - 52) / 40;
+    if (dx * dx + dy * dy < 1) return { kind: 'part', part: 'canopy', i: -1 };
   }
+  // the sky above: sun by day, moon by night
+  const ang = Math.PI * (G.timeOfDay * 2 % 2);
+  const sx = 20 + (1 - Math.cos(ang)) * 108, sy = 118 - Math.sin(ang) * 92;
+  const night = SPR.isNight(G.timeOfDay);
+  const bx = night ? W - sx : sx;
+  if (Math.hypot(x - bx, y - sy) < 14) return { kind: night ? 'moon' : 'sun', i: -1 };
   return { kind: null, i: -1 };
 }
 
+/* ------------------ touching him in specific places ------------------ */
+const partAch = { eye: 'eyepoke', nose: 'nosepoke', mouth: 'mouthbite' };
+const partCount = {};
+
+function touchPart(part) {
+  if (G.dead || G.scene !== 'game') return;
+  if (skipType()) return;
+  G.sinceTreeClick = 0;
+  const t = DATA.touch[part];
+  if (!t) { talkToTree(); return; }
+  partCount[part] = (partCount[part] || 0) + 1;
+  if (partAch[part]) ACH(partAch[part]);
+  if (part === 'eye') { G.shake = 3; SFX.deny(); G.blink = 0.5; }
+  else if (part === 'nose') { SFX.squeak(); if (Math.random() < 0.35) setTimeout(triggerSneeze, 900); }
+  else if (part === 'mouth') { G.stare = 1; G.stareHold = 2.2; SFX.boom(); }
+  else if (part === 'canopy') { SFX.pickup(); for (let i = 0; i < 4; i++) dropLeaf(100 + Math.random() * 56, 40 + Math.random() * 30, i < 2); }
+  else if (part === 'root') { SFX.click(); }
+  else SFX.click();
+  say('THE WISE OAK TREE', t.lines[partCount[part] % t.lines.length], t.mood);
+}
+
+function touchSky(kind) {
+  if (skipType()) return;
+  if (kind === 'moon') {
+    ACH('moon'); SFX.ach();
+    spawnParticles('star', 128, 40, 12);
+    say('THE WISE OAK TREE', DATA.moonLines[Math.floor(Math.random() * DATA.moonLines.length)], 'sleepy');
+  } else {
+    SFX.deny();
+    say('THE WISE OAK TREE', DATA.sunLines[Math.floor(Math.random() * DATA.sunLines.length)], 'shock');
+  }
+}
+
 let pan = null;      // { startX, startScroll }
+let grab = null;     // dragging the trunk about
+let tickle = { energy: 0, last: null, cool: 0 };
 
 function onMove(ev) {
   const p = toLogical(ev);
   G.look.x = Math.max(-1.4, Math.min(1.4, (p.x - 128) / 60));
   G.look.y = Math.max(-1.2, Math.min(1.2, (p.y - 116) / 50));
+
+  // hold the trunk and waggle the mouse: he gets shaken
+  if (grab && G.scene === 'game' && !G.dead) {
+    grab.moved += Math.abs(p.x - grab.lastX);
+    G.shake = Math.min(5, G.shake + Math.abs(p.x - grab.lastX) * 0.25);
+    grab.lastX = p.x;
+    if (grab.moved > 70 && !grab.paid) {
+      grab.paid = true;
+      ACH('shake'); SFX.sneeze();
+      for (let i = 0; i < 5; i++) dropLeaf(96 + Math.random() * 64, 40 + Math.random() * 40, i < 3);
+      for (let i = 0; i < 10; i++) dropLeaf(90 + Math.random() * 76, 30 + Math.random() * 50, false);
+      say('THE WISE OAK TREE', DATA.shakeLines[Math.floor(Math.random() * DATA.shakeLines.length)], 'shock');
+    }
+    return;
+  }
+
+  // scrub the cursor quickly over him without pressing: he is ticklish
+  if (G.scene === 'game' && !G.dead && tickle.cool <= 0) {
+    const onHim = Math.abs(p.x - 128) < 40 && p.y > 88 && p.y < GROUND_Y;
+    if (onHim && tickle.last) {
+      const d = Math.abs(p.x - tickle.last.x) + Math.abs(p.y - tickle.last.y);
+      tickle.energy += d > 3 ? d * 0.5 : -1;
+    } else tickle.energy -= 2;
+    tickle.energy = Math.max(0, Math.min(120, tickle.energy));
+    tickle.last = onHim ? { x: p.x, y: p.y } : null;
+    if (tickle.energy > 100) {
+      tickle.energy = 0; tickle.cool = 12;
+      ACH('tickle');
+      G.mood = 'laugh'; G.moodTimer = 6; G.shake = 3;
+      SFX.hug();
+      spawnParticles('heart', 128, 110, 5);
+      for (let i = 0; i < 6; i++) dropLeaf(96 + Math.random() * 64, 40 + Math.random() * 40, i < 2);
+      say('THE WISE OAK TREE', DATA.tickleLines[Math.floor(Math.random() * DATA.tickleLines.length)], 'laugh');
+    }
+  }
 
   if (G.scene === 'hall') {
     const h = G.hall;
@@ -1344,6 +1591,7 @@ cv.addEventListener('mousemove', onMove);
 cv.addEventListener('touchmove', ev => { ev.preventDefault(); onMove(ev); }, { passive: false });
 
 function onRelease() {
+  grab = null;
   const h = G.hall;
   if (G.scene === 'hall' && h.dragIndex >= 0) {
     const target = h.hover;
@@ -1399,7 +1647,13 @@ function onPress(ev) {
   }
   if (h.kind === 'leaf') { collectLeaf(h.i); return; }
   if (h.kind === 'squirrel') { clickSquirrel(); return; }
-  if (h.kind === 'tree') { talkToTree(); return; }
+  if (h.kind === 'part') { grab = { x: p.x, lastX: p.x, moved: 0, t: 0 }; touchPart(h.part); return; }
+  if (h.kind === 'moon' || h.kind === 'sun') { touchSky(h.kind); return; }
+  if (h.kind === 'tree') {
+    grab = { x: p.x, lastX: p.x, moved: 0, t: 0 };
+    talkToTree();
+    return;
+  }
   skipType();
 }
 cv.addEventListener('mousedown', onPress);
@@ -1430,7 +1684,11 @@ $('btnReset').onclick = () => {
   SFX.click();
   openModal('ERASE EVERYTHING?',
     "<p>Every trophy. Every ending. Every line you ever heard him say.</p><p class='small'>He will not remember you.</p>",
-    [['Cancel', closeModal], ['Erase it all', () => { localStorage.removeItem(SAVE_KEY); location.reload(); }, 'bad']]);
+    [['Cancel', closeModal], ['Erase it all', () => {
+      erased = true;
+      try { localStorage.removeItem(SAVE_KEY); } catch (e) {}
+      location.reload();
+    }, 'bad']]);
 };
 $('modalclose').onclick = () => { SFX.click(); closeModal(); };
 $('shopclose').onclick = (e) => { e.stopPropagation(); SFX.click(); closeShop(); };
@@ -1462,11 +1720,13 @@ refreshHUD();
 updateSeasonPill();
 persist();
 
-say('THE WISE OAK TREE',
-  hadSave
-    ? "You came back. I did not think you would. I have been standing here in the exact same spot, which is my only move."
-    : "Oh! A person. Hello. I am an oak tree. I am four hundred years old. Click me and I will say things. That is the entire product.",
-  'happy');
+if (hadSave) {
+  say('THE WISE OAK TREE',
+      "You came back. I did not think you would. I have been standing here in the exact same spot, which is my only move.",
+      'happy');
+} else {
+  startIntroCine();
+}
 
 /* Debug hooks, only when the page is opened with ?debug — used by the
    automated smoke test to reach the late game without playing for an hour. */

@@ -115,6 +115,55 @@ DATA.lines = [
   { id: 'm09', tag: 'meta', mood: 'idle', text: "There are several endings. Most of them are worse for me than they are for you. Just so we understand each other." },
   { id: 'm10', tag: 'meta', mood: 'happy',text: "If you refresh, I forget this conversation but I keep the trophies. That is the most human thing about me." },
 
+  /* ---------- POP CULTURE ----------
+     Allusions, not quotations. He has had four hundred years and a very
+     good view of everyone's picnic blanket, including their phone screen. */
+  { id: 'p01', tag: 'pop', mood: 'smug',  text: "There is a whole film about trees like me marching off to war. I was invited. I said I would think about it. That was in 1954 and I am still thinking about it." },
+  { id: 'p02', tag: 'pop', mood: 'happy', text: "There is a talking tree in the films who only ever says his own name. Icon. Absolute legend. Zero effort. I say four hundred things and get nothing." },
+  { id: 'p03', tag: 'pop', mood: 'sad',   text: "You know the story about the tree who gives a boy everything until she is a stump? I have READ it. To CHILDREN. Under my OWN BRANCHES. Nobody thought to ask me first." },
+  { id: 'p04', tag: 'pop', mood: 'smug',  text: "In one game you punch a tree with your bare hands until it becomes a table. I want everyone to sit with the violence of that for a moment." },
+  { id: 'p05', tag: 'pop', mood: 'idle',  text: "There is a great deku tree in a video game who gives a small boy a sword and then immediately dies. I want you to know that is not the standard arrangement." },
+  { id: 'p06', tag: 'pop', mood: 'shock', text: "A wizarding school planted a tree that HITS PEOPLE. That tree is not a hero. That tree needs help. I have written to him. He hit the letter." },
+  { id: 'p07', tag: 'pop', mood: 'happy', text: "A very calm man with excellent hair used to paint us on television. Happy little trees, he called us. I have never been called happy by anyone before or since." },
+  { id: 'p08', tag: 'pop', mood: 'smug',  text: "In the blue alien film all the trees are one enormous network and everyone found it profound. That is just FUNGUS. We have had that for four hundred million years. Get a grip." },
+  { id: 'p09', tag: 'pop', mood: 'sad',   text: "A grandmother willow gives excellent advice in a cartoon and everyone loves her. I give excellent advice and a man tried to nail a birdhouse to my face." },
+  { id: 'p10', tag: 'pop', mood: 'idle',  text: "Somewhere there is a golden tree the size of a country and everyone keeps trying to burn it. I feel we are being singled out as a species." },
+  { id: 'p11', tag: 'pop', mood: 'smug',  text: "You died. You will respawn at the last bonfire, which is me. Yes, I am a bonfire now. This is what you people have done to me." },
+  { id: 'p12', tag: 'pop', mood: 'sleepy',text: "I used to be an adventurous tree like you. Then I took a woodpecker to the knee." },
+  { id: 'p13', tag: 'pop', mood: 'shock', text: "There is a small round forest spirit who lives in a tree and does a rain dance at a bus stop. He is the greatest artist of the twentieth century and I will not be taking questions." },
+  { id: 'p14', tag: 'pop', mood: 'happy', text: "In one game a tiny leaf child hides under a rock and gives you a seed for finding him. Nine hundred of them. NINE HUNDRED. Their parents must be exhausted." },
+  { id: 'p15', tag: 'pop', mood: 'smug',  text: "You are trapped in a small town paying off a mortgage to a raccoon, and the trees are the only honest characters. That is not a game. That is a documentary." },
+  { id: 'p16', tag: 'pop', mood: 'idle',  text: "The cake is a lie. The acorn, however, is real, load-bearing, and available for three leaves from a squirrel with no licence." },
+  { id: 'p17', tag: 'pop', mood: 'shock', text: "Somebody made a film where the trees throw apples at people and it was played for LAUGHS. That was our Vietnam." },
+  { id: 'p18', tag: 'pop', mood: 'smug',  text: "Red pill, blue pill. Third option: sit under a tree for an afternoon and discover the thing they were both pointing at. Costs nothing. No sequels." },
+  { id: 'p19', tag: 'pop', mood: 'sad',   text: "There was a spaceship crew whose whole mission was finding a new planet because we ruined this one, and the saddest part is they had to go past all the good trees to get there." },
+  { id: 'p20', tag: 'pop', mood: 'happy', text: "The answer is forty-two. The question is 'how many woodpecker holes is too many', and the answer is still forty-two, and I am AT forty-one." },
+  { id: 'p21', tag: 'pop', mood: 'idle',  text: "Life, uh, finds a way. Usually through a crack in the tarmac, usually a dandelion, usually about eleven days after everyone gives up." },
+  { id: 'p22', tag: 'pop', mood: 'smug',  text: "Somebody down the road built a whole underground bunker for the end of the world. I have been through nine plagues, two famines and a civil war standing completely still in a field. Amateur." },
+  { id: 'p23', tag: 'pop', mood: 'shock', text: "There is an upside-down version of this park where everything is dead and covered in tendrils. I have SEEN it. It is called AUTUMN and it happens every YEAR and nobody makes a series about MY suffering." },
+  { id: 'p24', tag: 'pop', mood: 'happy', text: "Two children asked me if I was the wardrobe. I said no. They went into the hedge instead. They came back six seconds later and they were both forty." },
+  { id: 'p25', tag: 'pop', mood: 'smug',  text: "A yellow sponge lives in a fruit under the sea and has a better work ethic than everyone in this postcode. I include myself. I do photosynthesis and complaining." },
+  { id: 'p26', tag: 'pop', mood: 'idle',  text: "In one game you are a plumber and every question box you hit gives you a mushroom. In this game you are a person and every squirrel you meet gives you a lighter. Ours is worse." },
+  { id: 'p27', tag: 'pop', mood: 'sad',   text: "A man built an entire empire cooking something in the desert and lost his family doing it. I grew four hundred thousand leaves and lost every single one of them, every autumn, on purpose. Different show. Same lesson." },
+  { id: 'p28', tag: 'pop', mood: 'smug',  text: "That's what she said. ...I do not know who she is. I have been listening to this bench for thirty years and the joke never once got explained to me." },
+  { id: 'p29', tag: 'pop', mood: 'shock', text: "A knight came through here once with no arms and no legs insisting it was merely a flesh wound. I lost a branch in 1988 and I have not shut up about it since. He was a better tree than me." },
+  { id: 'p30', tag: 'pop', mood: 'idle',  text: "There is a disc-shaped world on the back of four elephants standing on a turtle, and honestly? More structurally sound than most of the plans I hear discussed under my branches." },
+  { id: 'p31', tag: 'pop', mood: 'happy', text: "A robot from the future came back to stop a war. I am a tree from the past and I am here to tell you the war is mostly about water and it started already." },
+  { id: 'p32', tag: 'pop', mood: 'smug',  text: "There was room on that door. I have thought about it for a hundred and ten years, from a fixed position, with no other hobbies. There was room on that door." },
+  { id: 'p33', tag: 'pop', mood: 'sleepy',text: "We need to go deeper. Deeper. Deeper. ...That is just my roots. That is where I keep everything. It is a dream within a dream within a taproot." },
+  { id: 'p34', tag: 'pop', mood: 'idle',  text: "One anime is about giant humans eating people behind a wall, and one is about a boy who becomes strong by running. I have been standing in one place for four centuries. Guess which one I am." },
+  { id: 'p35', tag: 'pop', mood: 'shock', text: "A man found a notebook that kills people whose names he writes in it. Someone carved four names into my bark in 1987. I have been wondering about this ever since." },
+  { id: 'p36', tag: 'pop', mood: 'smug',  text: "There is a pirate looking for a treasure that has been 'just up ahead' for twenty-five years. That is not a story. That is gardening." },
+  { id: 'p37', tag: 'pop', mood: 'happy', text: "There is a pocket monster that is a tree pretending to be a rock, or a rock pretending to be a tree. Either way: coward. Pick a lane." },
+  { id: 'p38', tag: 'pop', mood: 'idle',  text: "One of the little pocket creatures has a whole PLANT on its back and it still runs around having adventures. I have a plant on my back too. Mine is called ME." },
+  { id: 'p39', tag: 'pop', mood: 'shock', text: "Someone was voted out. It was the squirrel. It is ALWAYS the squirrel. He was standing right there doing 'tasks'." },
+  { id: 'p40', tag: 'pop', mood: 'smug',  text: "Every so often a whole generation builds a fort out of my branches and calls it a battle royale. Then the season ends and they all go home and I am left holding a pallet." },
+  { id: 'p41', tag: 'pop', mood: 'happy', text: "A blue hedgehog ran past me at what I estimate to be four hundred kilometres per hour in 1993 and did not say hello. I hope he is well. I hope he slowed down." },
+  { id: 'p42', tag: 'pop', mood: 'idle',  text: "In one game there is a small flower who tells you it is kill or be killed. In this game there is a small squirrel who tells you it is trade or be traded. Ours has better economics." },
+  { id: 'p43', tag: 'pop', mood: 'sad',   text: "A blue box appears in this park every eleven years or so. A man gets out, looks at me, says 'oh, you again', and looks upset. I do not know what that is about and I have decided not to find out." },
+  { id: 'p44', tag: 'pop', mood: 'smug',  text: "Live long and photosynthesise. That is the same gesture with more fingers and less commitment." },
+  { id: 'p45', tag: 'pop', mood: 'shock', text: "Somebody put a horse's head in a bed as a message. Somebody put a plastic bag in MY head in 2013. Its name is Gerald. It sends no messages. It has no demands. That is worse." },
+
   /* ---------- WEIRD ---------- */
   { id: 'x01', tag: 'weird', mood: 'shock', text: "I dreamt I was a chair. It was the worst night of my life. I was USEFUL and INDOORS and someone SAT ON ME." },
   { id: 'x02', tag: 'weird', mood: 'smug',  text: "Fun fact: I am technically a very slow explosion of a seed. So are you. Everyone is. Slow down, explosion." },
@@ -252,6 +301,20 @@ DATA.achievements = [
   { id: 'endall',      kind: 'chal', icon: 'crown',   name: 'The Whole Tree',        desc: "Reach every ending." },
   { id: 'allach',      kind: 'chal', icon: 'crown',   name: 'Free The Tree',         desc: "Earn every other achievement. Yes, all of them." },
 
+  // pop culture
+  { id: 'pop1',       kind: 'task', icon: 'tv',      name: 'Reference Detected',    desc: "Catch him quoting something he has no business knowing." },
+  { id: 'pop20',      kind: 'goal', icon: 'tv',      name: 'Certified Nerd',        desc: "Hear 20 of his references." },
+  { id: 'popall',     kind: 'chal', icon: 'reel',    name: 'The Whole Canon',       desc: "Hear every single reference he has." },
+
+  // hands on
+  { id: 'eyepoke',    kind: 'task', icon: 'eye',     name: 'Eye Contact',           desc: "Poke him directly in the eye." },
+  { id: 'nosepoke',   kind: 'task', icon: 'boop',    name: 'Boop',                  desc: "Boop the snoot of a four-hundred-year-old oak." },
+  { id: 'mouthbite',  kind: 'chal', icon: 'teeth',   name: 'Nearly Bitten',         desc: "Put your hand in his mouth. Find out." },
+  { id: 'tickle',     kind: 'goal', icon: 'feather', name: 'Ticklish',              desc: "Discover that bark has nerve endings after all." },
+  { id: 'shake',      kind: 'task', icon: 'shake',   name: 'Shake It',              desc: "Grab the trunk and shake the leaves out of him." },
+  { id: 'knock',      kind: 'task', icon: 'knock',   name: 'Knock Knock',           desc: "Knock on wood. He is wood. He answers." },
+  { id: 'moon',       kind: 'goal', icon: 'reach',   name: 'Moon Toucher',          desc: "Reach up and touch the moon." },
+
   // silly / hidden
   { id: 'night',       kind: 'task', icon: 'moon',    name: 'Night Shift',           desc: "Stay until dark." },
   { id: 'seasons',     kind: 'goal', icon: 'leaf',    name: 'All Four Seasons',      desc: "See spring, summer, autumn and winter." },
@@ -321,6 +384,15 @@ DATA.endings = [
     hint: "Do not click the tree for 3 minutes."
   },
   {
+    id: 'canon', name: 'THE CANON', icon: 'reel',
+    title: "You got every reference out of him.",
+    body: "Every film, every game, every show he has overheard from the bench for forty years and quietly filed away. " +
+          "'I have never seen any of it,' he admitted. 'I only ever heard it. Someone describing it to someone else, " +
+          "badly, with their mouth full, on a Tuesday. That is how I know everything I know about your entire culture " +
+          "and honestly? It holds up.'",
+    hint: "Hear every pop-culture line."
+  },
+  {
     id: 'completionist', name: 'THE COMPLETIONIST', icon: 'crown',
     title: "You collected a friend.",
     body: "Every leaf. Every trade. Every trophy. Every line. He is a set of boxes to you now and you ticked all of them. " +
@@ -347,4 +419,102 @@ DATA.heavenTreeLines = [
   "I'm not angry. I had four hundred years and you had one afternoon. I got the better deal.",
   "There's a birch up here who WILL NOT stop talking about her bark. It's paper. We KNOW, Susan.",
   "Go back down. Plant one. That's all. That squares us."
+];
+
+/* -------------------------------------------------------------------------
+   TOUCH REACTIONS — what he says when you poke a specific part of him
+   ------------------------------------------------------------------------- */
+DATA.touch = {
+  eye: {
+    mood: 'shock',
+    lines: [
+      "AAGH. THE EYE. YOU WENT FOR THE EYE.",
+      "That is an EYE. That is a functioning EYE with a lens made of SAP.",
+      "Do you know how long it took me to grow those? Ninety years. Each.",
+      "I have watched four centuries through that and you just POKED it.",
+      "Okay. We are even. I once dropped a branch on a man's car. We are EVEN."
+    ]
+  },
+  nose: {
+    mood: 'happy',
+    lines: [
+      "Boop. ...Did you just boop me. Nobody has ever booped me.",
+      "*honk* ...I did not authorise that sound. It came out of me anyway.",
+      "That is a knot. That is structurally a knot. It is a nose because we both agreed it was.",
+      "Careful. Last time someone did that I sneezed for eleven minutes.",
+      "You may boop. Once a day. I am setting a limit now, before this gets out of hand."
+    ]
+  },
+  mouth: {
+    mood: 'creepy',
+    lines: [
+      "...You put your hand IN there. In the MOUTH. Of the TALKING TREE.",
+      "I could have closed it. I want you to know I chose not to. I choose that, every time, all day.",
+      "There is a beetle in there. There is always a beetle in there. You have met him now.",
+      "Mm. Salty. ...I am JOKING. I am a TREE. I have no tongue. ...Probably.",
+      "Do that again and I am keeping it as a souvenir."
+    ]
+  },
+  beard: {
+    mood: 'happy',
+    lines: [
+      "That is moss. That is a whole civilisation. There are about nine thousand tardigrades in there living their lives.",
+      "Do not pull the moss. The moss and I have an arrangement.",
+      "It is not a beard. It is a lodger.",
+      "Scritch it a bit. Yes. There. That is the spot. That is a four-hundred-year itch you have just solved."
+    ]
+  },
+  root: {
+    mood: 'sleepy',
+    lines: [
+      "Careful, there are mice down there and they are extremely private people.",
+      "That is where I keep the last four hundred years. Do not disturb the filing.",
+      "The roots go down as far as I go up. You are currently patting my entire subconscious.",
+      "Bartholomew says hello. Bartholomew is a mouse. Bartholomew does not actually say anything."
+    ]
+  },
+  canopy: {
+    mood: 'laugh',
+    lines: [
+      "Hey! Hands off the hair. That took a whole spring.",
+      "There is a nest up there. There is ALWAYS a nest up there. Do not make me explain this to a robin.",
+      "Every one of those leaves is a tiny solar panel and you are smudging them.",
+      "You want one? Take one. Take a leaf. I make forty thousand a year and I am not precious about it."
+    ]
+  }
+};
+
+DATA.tickleLines = [
+  "HAHAHA- NO- STOP- I AM FOUR HUNDRED YEARS OLD-",
+  "I DID NOT KNOW I COULD DO THAT. I DID NOT KNOW I COULD LAUGH.",
+  "hehehe- how are you doing that- I am BARK-",
+  "Okay okay OKAY. I yield. I YIELD. Take a leaf. Take two."
+];
+
+DATA.shakeLines = [
+  "OI. OI! I am not a vending machine!",
+  "Fine. FINE. Have your leaves. Shake me like a piñata, why not.",
+  "Every leaf you shake out is a leaf I grew ON PURPOSE. But sure. Go on.",
+  "You have dislodged Gerald. Gerald is a plastic bag. He has nowhere to be."
+];
+
+DATA.knockLines = [
+  "Who's there? ...No. No, I refuse. I have heard every single one.",
+  "Come in. ...That was a joke. There is no in. I am solid all the way through. Mostly.",
+  "*knock knock* ...That was me. Doing it back. From the inside. Did that frighten you?",
+  "Yes, hello, one moment, I am four hundred years old and it takes me a while to get to the door.",
+  "You knocked on wood for luck. On ME. I am the luck. I have been the luck this whole time."
+];
+
+DATA.moonLines = [
+  "You reached up and touched the moon. From here. With your little arm. I have been trying that for four hundred years.",
+  "The moon and I have an arrangement and you have just violated about six clauses of it.",
+  "Careful. She pulls the whole ocean around by the nose. She can absolutely handle you.",
+  "Every night she comes past, and every night I think: same. Same, mate. Stuck in a circuit, glowing, nobody asks how we are."
+];
+
+DATA.sunLines = [
+  "Do NOT touch that. That is my LUNCH. That has been my lunch every day for four hundred years.",
+  "Please stop grabbing at the sun. You are making me anxious about my supply chain.",
+  "That is a fusion reactor ninety-three million miles away and you just went for it like it was a doorknob."
 ];
