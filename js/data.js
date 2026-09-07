@@ -327,6 +327,19 @@ DATA.achievements = [
   { id: 'pop20',      kind: 'goal', icon: 'tv',      name: 'Certified Nerd',        desc: "Hear 20 of his references." },
   { id: 'popall',     kind: 'chal', icon: 'reel',    name: 'The Whole Canon',       desc: "Hear every single reference he has." },
 
+  // the park
+  { id: 'build1',     kind: 'task', icon: 'spade',   name: 'Groundskeeper',         desc: "Build the first thing in the park." },
+  { id: 'build5',     kind: 'goal', icon: 'spade',   name: 'Landscaper',            desc: "Build five things." },
+  { id: 'build10',    kind: 'chal', icon: 'park',    name: 'An Actual Park',        desc: "Build ten things." },
+  { id: 'buildall',   kind: 'goal', icon: 'park',    name: 'One Of Everything',     desc: "Build one of every kind." },
+  { id: 'expand1',    kind: 'task', icon: 'gate',    name: 'Push The Hedge Back',   desc: "Expand the park once." },
+  { id: 'expand3',    kind: 'chal', icon: 'gate',    name: 'All The Way To The Lane', desc: "Expand the park as far as it goes." },
+  { id: 'income1',    kind: 'goal', icon: 'coin',    name: 'A Leaf A Second',       desc: "Get the park earning a leaf every second." },
+  { id: 'earned500',  kind: 'goal', icon: 'coin',    name: 'Five Hundred Leaves',   desc: "Let the park earn 500 leaves for you." },
+  { id: 'upgrades',   kind: 'chal', icon: 'ledger',  name: 'Fully Equipped',        desc: "Buy every upgrade in the ledger." },
+  { id: 'visitor',    kind: 'task', icon: 'visitor', name: 'Somebody Came',         desc: "Have a visitor sit on your bench." },
+  { id: 'house',      kind: 'task', icon: 'house',   name: 'The Keeper\'s Cottage',  desc: "Knock on the door of the little house." },
+
   // conversation
   { id: 'reply1',     kind: 'task', icon: 'chat',    name: 'You Said Something',    desc: "Answer him back for the first time." },
   { id: 'reply25',    kind: 'goal', icon: 'chat',    name: 'A Proper Conversation', desc: "Answer him back 25 times." },
@@ -621,3 +634,47 @@ DATA.critterLines = {
     "Do not run at him. He will have a heart attack. He is ALWAYS having a heart attack."
   ]
 };
+
+/* -------------------------------------------------------------------------
+   THE PARK — what you can build, and what it does
+   ------------------------------------------------------------------------- */
+DATA.build = [
+  { id: 'sapling',  name: 'Sapling',     cost: 10,  rate: 0.05, desc: "A small tree. It grows. It pays." },
+  { id: 'flowers',  name: 'Flowerbed',   cost: 26,  rate: 0.09, desc: "Brings butterflies. Brings leaves." },
+  { id: 'bench',    name: 'Bench',       cost: 55,  rate: 0.04, desc: "People sit. People tip." },
+  { id: 'bath',     name: 'Bird Bath',   cost: 110, rate: 0.18, desc: "Birds. Endless, ungrateful birds." },
+  { id: 'hive',     name: 'Beehive',     cost: 240, rate: 0.36, desc: "Bees pollinate. He approves." },
+  { id: 'lamp',     name: 'Lamp Post',   cost: 420, rate: 0.22, desc: "The park keeps earning after dark." }
+];
+
+DATA.upgrades = [
+  { id: 'rake',    name: 'A Good Rake',   cost: 80,   desc: "Leaves gather themselves. No more clicking." },
+  { id: 'gate',    name: 'Open The Gate', cost: 200,  desc: "Twice as many visitors find the park." },
+  { id: 'sign',    name: 'A Painted Sign', cost: 500, desc: "Everything in the park earns half again." },
+  { id: 'compost', name: 'Compost Heap',  cost: 1400, desc: "Doubles everything the park makes." }
+];
+
+DATA.expansions = [
+  { cost: 150,  desc: "Push the hedge back. Room for more." },
+  { cost: 600,  desc: "The old wall comes down." },
+  { cost: 2200, desc: "The whole meadow, all the way to the lane." }
+];
+
+DATA.houseLines = [
+  "The keeper's cottage. Nobody has lived in it since 1974 and the kettle is still warm.",
+  "You may go in. You will find one chair, one window and four hundred years of quiet.",
+  "That is where the ledger is kept. Somebody has to write down what the park is worth.",
+  "I watched them build it. Took eleven weeks. I have taken four hundred years and I am still not finished."
+];
+
+DATA.boardLines = [
+  "The noticeboard. Everything this park could be, pinned up in one place.",
+  "Go on. Build something. I have been the only attraction here for four centuries and frankly I am tired.",
+  "A park is just a tree with ambitions."
+];
+
+DATA.visitorTips = [
+  "Someone left a leaf on the bench for you. That is how it works here.",
+  "A visitor said the park was lovely. To ME. Directly. I have not recovered.",
+  "They fed the birds, sat for eleven minutes, and left without dropping litter. A perfect human."
+];

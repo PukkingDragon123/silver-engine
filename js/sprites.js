@@ -1006,6 +1006,332 @@ function drawUndergrowth(c, g) {
   }
 }
 
+/* =========================================================================
+   THE PARK — everything you can build in it
+   ========================================================================= */
+function shade(col, dk) { return mix(col, '#0a1226', dk * 0.75); }
+
+function drawCottage(c, g, x, y) {
+  const dk = darkness(g.timeOfDay);
+  const sh = col => shade(col, dk);
+  const lit = dk > 0.45;
+  // walls
+  px(c, x - 20, y - 22, 40, 22, sh('#e0d2b8'));
+  px(c, x - 20, y - 22, 40, 2, sh('#c9b89a'));
+  for (let i = 0; i < 5; i++) px(c, x - 18 + i * 9, y - 20, 1, 20, sh('#6b4a30'));
+  px(c, x - 20, y - 3, 40, 3, sh('#8a6a4a'));
+  // roof
+  for (let i = 0; i <= 15; i++) {
+    const w = 46 - i * 3;
+    px(c, x - w / 2, y - 22 - i, w, 1, sh(i % 3 === 0 ? '#8a3f2e' : '#a8503a'));
+  }
+  px(c, x - 24, y - 23, 48, 2, sh('#6b2f22'));
+  // chimney with smoke
+  px(c, x + 10, y - 40, 6, 10, sh('#8a6a5a'));
+  px(c, x + 9, y - 41, 8, 2, sh('#6b4a3a'));
+  for (let i = 0; i < 5; i++) {
+    c.globalAlpha = 0.4 * (1 - i / 5);
+    pcircle(c, x + 13 + Math.sin(g.t * 0.9 + i) * (2 + i), y - 44 - i * 5, 2 + i * 0.8, '#cfd6da');
+    c.globalAlpha = 1;
+  }
+  // door
+  px(c, x - 5, y - 14, 10, 14, sh('#7a4a28'));
+  px(c, x - 4, y - 13, 8, 13, sh('#9a6338'));
+  pcircle(c, x + 2, y - 7, 1, sh('#ffd24a'));
+  // windows
+  for (const wx of [-14, 12]) {
+    px(c, x + wx - 3, y - 18, 8, 8, sh('#5a4a3a'));
+    px(c, x + wx - 2, y - 17, 6, 6, lit ? '#ffd98a' : sh('#9fd0e8'));
+    px(c, x + wx, y - 17, 1, 6, sh('#5a4a3a'));
+    px(c, x + wx - 2, y - 14, 6, 1, sh('#5a4a3a'));
+    if (lit) glow(c, x + wx + 1, y - 14, 9, '#ffcf6a', 0.5);
+  }
+  // window boxes
+  for (const wx of [-14, 12]) {
+    px(c, x + wx - 4, y - 10, 10, 3, sh('#7a4a28'));
+    for (let i = 0; i < 4; i++) dot(c, x + wx - 3 + i * 2, y - 11, sh(['#ef5330', '#ffd24a', '#e88ac0'][i % 3]));
+  }
+}
+
+function drawNoticeBoard(c, g, x, y) {
+  const dk = darkness(g.timeOfDay);
+  const sh = col => shade(col, dk);
+  px(c, x - 2, y - 14, 3, 14, sh('#6b4a2a'));
+  px(c, x + 6, y - 14, 3, 14, sh('#6b4a2a'));
+  px(c, x - 9, y - 30, 22, 17, sh('#5a3a1e'));
+  px(c, x - 7, y - 28, 18, 13, sh('#c9a86a'));
+  for (let i = 0; i < 6; i++) {
+    const px_ = x - 6 + (i % 3) * 6, py = y - 27 + Math.floor(i / 3) * 6;
+    px(c, px_, py, 5, 5, sh(['#f6ecd6', '#e8dcc0', '#f2e2b8'][i % 3]));
+    px(c, px_ + 1, py + 1, 3, 1, sh('#8a7a5a'));
+  }
+  for (let i = 0; i <= 12; i++) px(c, x - 10 + i * 2, y - 33 + Math.abs(i - 6) * 0.5, 2, 3, sh('#7a4a28'));
+}
+
+function drawBench(c, g, x, y) {
+  const dk = darkness(g.timeOfDay);
+  const sh = col => shade(col, dk);
+  px(c, x - 11, y - 5, 22, 3, sh('#a0703c'));
+  px(c, x - 11, y - 5, 22, 1, sh('#c08c50'));
+  px(c, x - 11, y - 12, 22, 2, sh('#a0703c'));
+  px(c, x - 11, y - 9, 22, 2, sh('#8a5f30'));
+  px(c, x - 10, y - 2, 2, 5, sh('#5a4028'));
+  px(c, x + 8, y - 2, 2, 5, sh('#5a4028'));
+  px(c, x - 11, y - 13, 2, 9, sh('#5a4028'));
+  px(c, x + 9, y - 13, 2, 9, sh('#5a4028'));
+}
+
+function drawFlowerbed(c, g, x, y) {
+  const dk = darkness(g.timeOfDay);
+  const sh = col => shade(col, dk);
+  const rnd = mulberry(Math.round(x));
+  pellipse(c, x, y - 1, 12, 4, sh('#6b4a2a'));
+  pellipse(c, x, y - 2, 11, 3, sh('#8a6038'));
+  for (let i = 0; i < 12; i++) {
+    const fx = x - 10 + rnd() * 20, fh = 3 + rnd() * 4;
+    px(c, fx, y - 3 - fh, 1, fh, sh('#4a8a30'));
+    const col = ['#ef5330', '#ffd24a', '#e88ac0', '#ffffff', '#b183e8'][Math.floor(rnd() * 5)];
+    pcircle(c, fx + Math.sin(g.t * 1.5 + i) * 0.6, y - 4 - fh, 1.6, sh(col));
+    dot(c, fx, y - 4 - fh, sh('#ffe066'));
+  }
+}
+
+function drawBirdbath(c, g, x, y) {
+  const dk = darkness(g.timeOfDay);
+  const sh = col => shade(col, dk);
+  px(c, x - 5, y - 2, 11, 2, sh('#b6b6b6'));
+  px(c, x - 2, y - 12, 5, 10, sh('#c6c6c6'));
+  px(c, x - 2, y - 12, 2, 10, sh('#e0e0e0'));
+  pellipse(c, x, y - 14, 9, 3, sh('#c6c6c6'));
+  pellipse(c, x, y - 15, 8, 2, sh('#7ec8f2'));
+  px(c, x - 4 + ((g.t * 6) % 8), y - 15, 2, 1, sh('#ffffff'));
+}
+
+function drawHive(c, g, x, y) {
+  const dk = darkness(g.timeOfDay);
+  const sh = col => shade(col, dk);
+  for (let i = 0; i < 5; i++) {
+    const w = 13 - Math.abs(i - 2) * 2;
+    px(c, x - w / 2, y - 4 - i * 3, w, 3, sh(i % 2 ? '#e8b23a' : '#d19a28'));
+    px(c, x - w / 2, y - 4 - i * 3, w, 1, sh('#f4cf6a'));
+  }
+  px(c, x - 2, y - 6, 4, 3, sh('#5a3f10'));
+  for (let i = 0; i < 3; i++) {
+    const a = g.t * 3 + i * 2.1;
+    const bx = x + Math.cos(a) * 11, by = y - 12 + Math.sin(a * 1.3) * 7;
+    px(c, bx, by, 2, 2, sh('#ffd24a'));
+    dot(c, bx, by, sh('#3a2a08'));
+  }
+}
+
+function drawLamp(c, g, x, y) {
+  const dk = darkness(g.timeOfDay);
+  const sh = col => shade(col, dk);
+  px(c, x - 3, y - 2, 7, 2, sh('#3a3a44'));
+  px(c, x - 1, y - 30, 3, 28, sh('#4a4a56'));
+  px(c, x - 1, y - 30, 1, 28, sh('#6a6a78'));
+  px(c, x - 4, y - 36, 9, 6, sh('#3a3a44'));
+  px(c, x - 3, y - 35, 7, 4, dk > 0.4 ? '#ffe9a0' : sh('#9fb0c0'));
+  px(c, x - 5, y - 38, 11, 2, sh('#2a2a34'));
+  if (dk > 0.4) glow(c, x, y - 33, 26, '#ffcf6a', 0.55 * dk);
+}
+
+/* a visitor: comes in, sits a while, leaves a tip */
+function drawVisitor(c, g, v) {
+  const dk = darkness(g.timeOfDay);
+  const sh = col => shade(col, dk);
+  const x = Math.round(v.x), y = Math.round(v.y);
+  const step = v.state === 'walk' ? Math.abs(Math.sin(g.t * 7 + v.ph)) * 2 : 0;
+  const sit = v.state === 'sit' ? 4 : 0;
+  px(c, x - 3, y - 11 + sit, 6, 8, sh(v.col));            // body
+  px(c, x - 3, y - 11 + sit, 2, 8, sh(mix(v.col, '#ffffff', 0.25)));
+  pcircle(c, x, y - 14 + sit, 3, sh('#e8b98a'));           // head
+  px(c, x - 3, y - 17 + sit, 7, 3, sh(v.hair));            // hair
+  dot(c, x - 1, y - 14 + sit, '#2a1a10'); dot(c, x + 1, y - 14 + sit, '#2a1a10');
+  if (v.state === 'sit') {
+    px(c, x - 1, y - 3, 5, 2, sh('#3a3a4a'));
+  } else {
+    px(c, x - 3, y - 3 - step, 2, 3, sh('#3a3a4a'));
+    px(c, x + 1, y - 3 - (2 - step), 2, 3, sh('#3a3a4a'));
+  }
+  if (v.happy > 0) {
+    c.globalAlpha = Math.min(1, v.happy);
+    px(c, x - 1, y - 22 + sit, 4, 3, '#ff6b8a'); px(c, x, y - 23 + sit, 1, 1, '#ff6b8a');
+    px(c, x + 2, y - 23 + sit, 1, 1, '#ff6b8a'); px(c, x + 1, y - 19 + sit, 1, 1, '#ff6b8a');
+    c.globalAlpha = 1;
+  }
+}
+
+/* the boundary of the park, pushed outward every time you expand */
+function drawBoundary(c, g, margin) {
+  const dk = darkness(g.timeOfDay);
+  const s = SEASON[g.season];
+  const sh = col => shade(col, dk);
+  for (const side of [-1, 1]) {
+    const bx = side < 0 ? margin : W - margin;
+    for (let i = 0; i < 16; i++) {
+      const y = GROUND_Y - 4 + i * 3;
+      const near = i / 16;
+      const r = 6 + near * 7;
+      pcircle(c, bx + side * (i % 2) * 2, y, r + 1, sh(s.dark));
+      pcircle(c, bx + side * (i % 2) * 2, y - 1, r, sh(s.t1));
+      pcircle(c, bx + side * (i % 2) * 2 - 2, y - 3, r * 0.55, sh(s.t2));
+    }
+    // a little gate post
+    px(c, bx - side * 3, GROUND_Y - 16, 4, 18, sh('#7a5230'));
+    px(c, bx - side * 4, GROUND_Y - 19, 6, 3, sh('#5a3a1e'));
+  }
+}
+
+/* =========================================================================
+   CARTOON UI — balloons, panels and the postal snail, all in pixels
+   ========================================================================= */
+const F = window.FONT_API;
+
+function roundRect(c, x, y, w, h, r, col) {
+  x = Math.round(x); y = Math.round(y); w = Math.round(w); h = Math.round(h);
+  px(c, x + r, y, w - r * 2, h, col);
+  px(c, x, y + r, w, h - r * 2, col);
+  pcircle(c, x + r, y + r, r, col);
+  pcircle(c, x + w - r - 1, y + r, r, col);
+  pcircle(c, x + r, y + h - r - 1, r, col);
+  pcircle(c, x + w - r - 1, y + h - r - 1, r, col);
+}
+
+const INK = '#1a1008';
+
+/* A proper cartoon speech balloon: fat black outline, white belly, a tail of
+   shrinking bubbles pointing at whoever is talking. */
+function drawBalloon(c, x, y, w, h, tail, opts) {
+  const o = opts || {};
+  const fill = o.fill || '#fdf6e3';
+  const r = o.radius === undefined ? 6 : o.radius;
+  // outline
+  roundRect(c, x - 2, y - 2, w + 4, h + 4, r + 2, INK);
+  if (tail) {
+    const pts = [[0.30, 5.5], [0.62, 3.8], [0.92, 2.2]];
+    for (const [t, rr] of pts) {
+      pcircle(c, x + w / 2 + (tail.x - (x + w / 2)) * t, y + h + (tail.y - (y + h)) * t, rr + 2, INK);
+    }
+  }
+  roundRect(c, x, y, w, h, r, fill);
+  if (tail) {
+    const pts = [[0.30, 5.5], [0.62, 3.8], [0.92, 2.2]];
+    for (const [t, rr] of pts) {
+      pcircle(c, x + w / 2 + (tail.x - (x + w / 2)) * t, y + h + (tail.y - (y + h)) * t, rr, fill);
+    }
+  }
+  // a highlight along the top, the way a cartoon balloon catches the light
+  px(c, x + r, y + 1, w - r * 2, 1, o.hi || '#ffffff');
+  px(c, x + 1, y + r, 1, h - r * 2, o.hi || '#ffffff');
+}
+
+/* the little chevron that says "there is more" */
+function drawMoreArrow(c, x, y, t) {
+  const b = Math.round(Math.sin(t * 6) * 1);
+  for (let i = 0; i < 4; i++) px(c, x - 3 + i, y + b + i, 1, 1, INK);
+  for (let i = 0; i < 4; i++) px(c, x + 3 - i, y + b + i, 1, 1, INK);
+}
+
+/* a wooden panel, for menus that live in the park */
+function drawPanel(c, x, y, w, h, title) {
+  roundRect(c, x - 3, y - 3, w + 6, h + 6, 4, INK);
+  roundRect(c, x, y, w, h, 3, '#8a5f38');
+  roundRect(c, x + 2, y + 2, w - 4, h - 4, 2, '#c39a63');
+  for (let i = 0; i < h - 6; i += 7) px(c, x + 3, y + 4 + i, w - 6, 1, '#b58c56');
+  px(c, x, y, w, 11, '#6b4a2a');
+  px(c, x, y + 11, w, 1, INK);
+  if (title) F.drawTextCentered(c, x + w / 2, y + 3, title, '#ffe9b0', 1, INK);
+  // corner nails
+  for (const [dx, dy] of [[3, 3], [w - 5, 3], [3, h - 5], [w - 5, h - 5]]) {
+    px(c, x + dx, y + dy, 2, 2, '#5a4028');
+  }
+}
+
+/* =========================================================================
+   THE POSTAL SNAIL
+   Achievements are not notifications. They are delivered.
+   ========================================================================= */
+function drawSnail(c, g, s) {
+  const x = Math.round(s.x), y = Math.round(s.y);
+  const bob = Math.sin(g.t * 5) * 0.7;
+  const dir = s.dir;
+
+  // slime trail
+  c.globalAlpha = 0.35;
+  for (let i = 0; i < 26; i++) {
+    px(c, x - dir * (6 + i * 3), y + 5 + Math.sin(i * 0.6) * 0.6, 3, 1, '#bfe8d8');
+  }
+  c.globalAlpha = 1;
+
+  // foot
+  pellipse(c, x, y + 4, 9, 3, '#e8c9a8');
+  pellipse(c, x - dir, y + 3, 7, 2, '#f6e2c8');
+  // shell
+  pcircle(c, x - dir * 3, y - 2 + bob, 7, INK);
+  pcircle(c, x - dir * 3, y - 2 + bob, 6, '#c9762e');
+  pcircle(c, x - dir * 3, y - 2 + bob, 4, '#e8a04a');
+  pcircle(c, x - dir * 2, y - 1 + bob, 2, '#c9762e');
+  for (let a = 0; a < 12; a++) {
+    const A = a / 12 * 6.28;
+    dot(c, x - dir * 3 + Math.cos(A) * 5.5, y - 2 + bob + Math.sin(A) * 5.5, '#8a4a18');
+  }
+  // head and eye stalks
+  pellipse(c, x + dir * 5, y + 1 + bob * 0.4, 4, 3, '#e8c9a8');
+  for (const st of [-1, 1]) {
+    const sx = x + dir * (5 + st * 1.5), sy = y - 3 + bob * 0.4;
+    px(c, sx, sy, 1, 4, '#e8c9a8');
+    pcircle(c, sx, sy - 1, 1.5, '#f6e2c8');
+    dot(c, sx, sy - 1, INK);
+  }
+  // the letter, held up proudly
+  const lx = x + dir * 9, ly = y - 6 + bob;
+  px(c, lx - 4, ly - 3, 9, 7, INK);
+  px(c, lx - 3, ly - 2, 7, 5, '#fdf6e3');
+  for (let i = 0; i < 3; i++) px(c, lx - 2 + i, ly - 1 + i, 1, 1, '#c9762e');
+  for (let i = 0; i < 3; i++) px(c, lx + 2 - i, ly - 1 + i, 1, 1, '#c9762e');
+}
+
+/* the message the snail is carrying, on an unrolled scroll */
+function drawSnailMessage(c, g, s) {
+  const lines = s.lines;
+  const w = s.w, h = 14 + lines.length * 9;
+  // the scroll rides above the snail but never leaves the frame
+  const cx = Math.max(w / 2 + 6, Math.min(W - w / 2 - 6, s.x));
+  const x = Math.round(cx - w / 2), y = Math.round(s.y - h - 16);
+  // string from the scroll down to the shell
+  for (let i = 0; i < 12; i++) dot(c, s.x, y + h + i * ((s.y - 10 - (y + h)) / 12), '#8a6a4a');
+  roundRect(c, x - 2, y - 2, w + 4, h + 4, 3, INK);
+  roundRect(c, x, y, w, h, 2, '#f6e7c4');
+  px(c, x, y, w, 2, '#e0cb9c');
+  px(c, x, y + h - 2, w, 2, '#e0cb9c');
+  // rolled ends
+  pellipse(c, x - 1, y + h / 2, 3, h / 2 + 2, '#c9a86a');
+  pellipse(c, x + w + 1, y + h / 2, 3, h / 2 + 2, '#c9a86a');
+  px(c, x - 3, y + h / 2 - 1, 3, 2, '#8a6a3a');
+  px(c, x + w, y + h / 2 - 1, 3, 2, '#8a6a3a');
+
+  F.drawTextCentered(c, x + w / 2, y + 4, s.head, '#a06a2a', 1);
+  for (let i = 0; i < lines.length; i++) {
+    F.drawTextCentered(c, x + w / 2, y + 13 + i * 9, lines[i], '#3a2410', 1);
+  }
+  // a wax seal
+  pcircle(c, x + 5, y + h - 4, 3, '#a83229');
+  pcircle(c, x + 5, y + h - 4, 2, '#c9453b');
+}
+
+/* the held tool, drawn at the pointer instead of a cursor */
+function drawCursorTool(c, g, x, y, id) {
+  c.globalAlpha = 0.3;
+  pellipse(c, x + 1, y + 9, 5, 2, '#000000');
+  c.globalAlpha = 1;
+  drawItemIcon(c, x, y, id);
+  // a little grabbing hand behind it
+  px(c, x - 2, y + 4, 5, 3, '#e8b98a');
+  px(c, x - 2, y + 4, 5, 1, '#f6d3ae');
+  px(c, x - 1, y + 7, 3, 2, '#d9a878');
+}
+
 /* -------------------------------------------------------------------------
    IN-WORLD HUD — drawn in pixels, because the game has no other interface
    ------------------------------------------------------------------------- */
@@ -1450,6 +1776,39 @@ const TROPHY_ART = {
   idle: (c, x, y) => { px(c, x - 10, y - 1, 20, 3, '#8a6141'); px(c, x - 10, y + 3, 20, 2, '#6b4a30');
     px(c, x - 8, y + 5, 2, 4, '#5a3a20'); px(c, x + 6, y + 5, 2, 4, '#5a3a20');
     for (let i = 0; i < 5; i++) px(c, x - 9 + i * 5, y - 4, 2, 3, JADE[2]); },
+  /* --- the park --- */
+  build1: (c, x, y) => { px(c, x - 1, y - 9, 3, 13, '#8a5f38'); px(c, x - 4, y - 11, 9, 3, '#8a5f38');
+    px(c, x - 5, y + 4, 11, 6, STONE[3]); px(c, x - 5, y + 4, 11, 2, STONE[4]); },
+  build5: (c, x, y) => { px(c, x - 10, y + 7, 20, 3, '#6b4a2a');
+    for (let i = 0; i < 5; i++) { const h = 6 + (i % 3) * 3; px(c, x - 9 + i * 4, y + 7 - h, 1, h, JADE[1]); pcircle(c, x - 9 + i * 4, y + 6 - h, 2.5, JADE[3]); } },
+  build10: (c, x, y) => { px(c, x - 11, y + 6, 22, 4, JADE[1]);
+    for (let i = 0; i < 4; i++) { pcircle(c, x - 8 + i * 5, y - 1, 3.5, JADE[3]); px(c, x - 8 + i * 5, y + 1, 1, 5, '#6b4a2a'); }
+    pcircle(c, x + 8, y - 6, 2, GOLD[3]); },
+  buildall: (c, x, y) => { px(c, x - 11, y + 7, 22, 3, '#6b4a2a');
+    pcircle(c, x - 7, y + 1, 4, JADE[3]); px(c, x - 1, y + 2, 5, 5, '#a0703c'); pcircle(c, x + 8, y, 3, '#7ec8f2');
+    px(c, x - 8, y - 6, 3, 4, GOLD[3]); px(c, x + 3, y - 7, 3, 4, '#ef5330'); },
+  expand1: (c, x, y) => { px(c, x - 10, y - 8, 3, 18, '#7a5230'); px(c, x + 7, y - 8, 3, 18, '#7a5230');
+    for (let i = 0; i < 4; i++) px(c, x - 7, y - 6 + i * 4, 14, 2, '#a0703c');
+    px(c, x - 12, y - 11, 25, 3, '#5a3a1e'); },
+  expand3: (c, x, y) => { px(c, x - 12, y + 8, 25, 3, JADE[1]);
+    px(c, x - 12, y - 6, 3, 14, '#7a5230'); px(c, x + 9, y - 6, 3, 14, '#7a5230');
+    for (let i = 0; i < 3; i++) pcircle(c, x - 6 + i * 6, y, 4, JADE[2]);
+    star(c, x, y - 10, 4, GOLD[3], '#ffffff'); },
+  income1: (c, x, y) => { pcircle(c, x, y, 8, GOLD[1]); pcircle(c, x, y, 7, GOLD[3]);
+    drawLeafSprite(c, x - 4, y - 4, JADE[3], JADE[1]); pcircle(c, x + 6, y + 5, 3, GOLD[2]); },
+  earned500: (c, x, y) => { for (let i = 0; i < 3; i++) { pcircle(c, x - 5 + i * 5, y + 5 - i, 5, GOLD[1]); pcircle(c, x - 5 + i * 5, y + 4 - i, 4, GOLD[3]); }
+    drawLeafSprite(c, x - 2, y - 8, JADE[3], JADE[1]); },
+  upgrades: (c, x, y) => { px(c, x - 8, y - 8, 17, 17, '#8a5f38'); px(c, x - 6, y - 6, 13, 13, '#f6ecd6');
+    for (let i = 0; i < 3; i++) px(c, x - 4, y - 3 + i * 4, 9, 1, '#5a4028');
+    px(c, x + 4, y - 10, 3, 6, GOLD[3]); pcircle(c, x + 5, y - 11, 2, GOLD[4]); },
+  visitor: (c, x, y) => { px(c, x - 3, y - 3, 7, 9, '#4a6a9a'); pcircle(c, x, y - 6, 3.5, '#e8b98a');
+    px(c, x - 4, y - 10, 8, 3, '#3a2a1a'); px(c, x - 9, y + 6, 19, 3, '#a0703c');
+    dot(c, x - 1, y - 6, '#2a1a10'); dot(c, x + 2, y - 6, '#2a1a10'); },
+  house: (c, x, y) => { px(c, x - 8, y - 3, 17, 12, '#e0d2b8');
+    for (let i = 0; i <= 7; i++) px(c, x - 9 + i, y - 4 - i, 19 - i * 2, 1, '#a8503a');
+    px(c, x - 2, y + 2, 5, 7, '#7a4a28'); px(c, x - 7, y - 1, 4, 4, '#ffd98a'); px(c, x + 4, y - 1, 4, 4, '#ffd98a');
+    px(c, x + 5, y - 14, 3, 5, '#8a6a5a'); },
+
   /* --- conversation --- */
   reply1: (c, x, y) => { pellipse(c, x - 2, y - 3, 10, 7, GOLD[4]); px(c, x - 8, y + 3, 5, 5, GOLD[4]);
     for (let i = -4; i <= 4; i += 4) px(c, x - 2 + i, y - 4, 2, 2, GOLD[0]); },
@@ -1992,7 +2351,10 @@ window.SPR = {
   isNight, darkness, trunkHalfWidth, hallSlotPos, hallWidth,
   drawBackdrop, drawBokeh, drawGround, drawForeground, drawFrameFoliage,
   drawTree, drawWatchers, drawSquirrel, drawGroundItems, drawParticles,
-  drawFireOnTree, drawFireGlow, drawPond, drawOverlay, drawHud, drawTools, tinyText, digits, drawCritters, drawUndergrowth, drawAshScene, drawStump, drawItemIcon, drawLeafSprite,
+  drawFireOnTree, drawFireGlow, drawPond, drawOverlay, drawHud, drawTools, tinyText, digits, drawCritters, drawUndergrowth,
+  drawCottage, drawNoticeBoard, drawBench, drawFlowerbed, drawBirdbath, drawHive, drawLamp,
+  drawVisitor, drawBoundary,
+  drawBalloon, drawPanel, drawSnail, drawSnailMessage, drawCursorTool, drawMoreArrow, roundRect, INK, drawAshScene, drawStump, drawItemIcon, drawLeafSprite,
   drawHall, drawTrophy, drawTrophyReflection, trophySprite, drawPlinth, drawHeaven, drawHeavenBackdrop, drawGhostTree, drawSoul,
   drawCloudTunnel, drawLetterbox, drawRays, drawGrowingTree, flame
 };

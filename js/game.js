@@ -15,6 +15,7 @@ const SAVE_KEY = 'wiseoak.save.v3';
    --------------------------------------------------------------------- */
 const defaultSave = () => ({
   ach: {}, endings: {}, heard: {}, muted: false, sessions: 0,
+  park: { props: [], upgrades: {}, expansions: 0, earned: 0 },
   stats: { leavesTotal: 0, sneezes: 0, hugs: 0, waters: 0, plants: 0, trades: 0,
            sqChats: 0, rebirths: 0, flicks: 0, seasons: {}, boughtAll: false }
 });
@@ -26,6 +27,7 @@ try {
     const p = JSON.parse(raw);
     save = Object.assign(defaultSave(), p);
     save.stats = Object.assign(defaultSave().stats, p.stats || {});
+    save.park = Object.assign(defaultSave().park, p.park || {});
   }
 } catch (e) { /* corrupt save: start fresh, no drama */ }
 
@@ -54,6 +56,8 @@ const G = {
               targetX: 190, face: 0, holding: null, spawned: false, clicks: 0, clickT: 0 },
   flags: { hatOn: false, lighterGone: false, confirming: false, newsRead: false },
   inv: { leaves: 0, items: {} }, tools: [], holding: null, holdT: 0, critters: [],
+  parkPending: 0, parkMotes: [], visitors: [], visitorTimer: 6, menu: null,
+  hintText: '', hintShown: false, hintCine: false,
   sessionTime: 0, sinceTreeClick: 0, spamCount: 0, spamTimer: 0,
   sneezeTimer: 14 + Math.random() * 18,
   burnTimer: 0, burnStage: 0, deathTimer: 0, ascended: false,
@@ -114,12 +118,22 @@ const buf = document.createElement('canvas');
 const dc = buf.getContext('2d');
 dc.imageSmoothingEnabled = false;
 
-const elBubble = $('bubble'), elSpeaker = $('speaker'), elText = $('btext');
-const elChoices = $('choices'), elNotes = $('notes'), elActions = $('actions');
 const elShop = $('shop'), elShopList = $('shoplist');
 const elModal = $('modal'), elModalBody = $('modalbody'), elModalTitle = $('modaltitle');
 const elEndingCard = $('endingcard');
-const elHint = $('hint'), elTitle = $('title');
+const elTitle = $('title');
+
+/* the one line of guidance the game ever shows, drawn in pixels */
+const elHint = {
+  set textContent(v) { G.hintText = v; },
+  get textContent() { return G.hintText; },
+  set className(v) { G.hintShown = v !== 'hidden'; G.hintCine = v === 'cine'; },
+  classList: {
+    add: (c) => { if (c === 'hidden') G.hintShown = false; },
+    remove: (c) => { if (c === 'hidden') G.hintShown = true; },
+    toggle: (c, on) => { if (c === 'hidden') G.hintShown = !on; }
+  }
+};
 let started = false;
 
 /* the little oak on the title card, drawn with the real renderer */
@@ -176,6 +190,12 @@ function camRect() {
   };
 }
 
+/* world -> the final frame, where the balloon and the post are drawn */
+function worldToFrame(wx, wy) {
+  const c = camRect();
+  return { x: (wx - c.sx) / c.sw * W(), y: (wy - c.sy) / c.sh * H };
+}
+
 /* where a world point lands on the page */
 function worldToScreen(wx, wy) {
   const r = cv.getBoundingClientRect();
@@ -187,116 +207,130 @@ function worldToScreen(wx, wy) {
 }
 
 /* ---------------------------------------------------------------------
-   DIALOGUE — he speaks in a bubble over his own head, and you answer
+   DIALOGUE — a cartoon balloon drawn in the frame, in the game's own font
    --------------------------------------------------------------------- */
-let typeQueue = null, typeIdx = 0, typeTimer = 0, talkHold = 0;
-let pendingChoices = null, lastTag = null;
+const F = window.FONT_API;
+
+const DLG = {
+  on: false, speaker: '', text: '', cls: '', lines: [], shown: 0,
+  choices: null, hover: -1, rects: [], hold: 0, who: 'tree'
+};
+
+function balloonWidth() { return Math.min(196, W() - 40); }
 
 function say(speaker, text, mood, cls, choices) {
   G.stare = 0; G.watchers = Math.min(G.watchers, 0.2);
-  clearChoices();
-  elBubble.className = cls || '';
-  elBubble.classList.remove('hidden');
-  elSpeaker.textContent = speaker;
-  elText.textContent = '';
-  elText.classList.remove('done');
-  typeQueue = text; typeIdx = 0; typeTimer = 0;
-  pendingChoices = choices || null;
-  G.talking = true; talkHold = 0;
+  DLG.on = true;
+  DLG.speaker = speaker;
+  DLG.text = text;
+  DLG.cls = cls || '';
+  DLG.who = cls === 'squirrel' ? 'squirrel' : cls === 'heaven' ? 'ghost' : 'tree';
+  DLG.lines = F.wrapText(text, balloonWidth() - 14, 1);
+  DLG.shown = 0;
+  DLG.choices = choices || null;
+  DLG.rects = []; DLG.hover = -1; DLG.hold = 0;
+  G.talking = true;
   if (mood) G.mood = mood;
-  positionBubble();
 }
 
-function hideBubble() {
-  elBubble.classList.add('hidden');
-  clearChoices();
-  G.talking = false;
-  typeQueue = null;
+function hideBubble() { DLG.on = false; DLG.choices = null; DLG.rects = []; G.talking = false; }
+
+function dialogueDone() {
+  return DLG.shown >= DLG.text.length;
 }
 
-function clearChoices() {
-  elChoices.innerHTML = '';
-  elChoices.classList.add('hidden');
-}
-
-/* the bubble hangs off whoever is speaking */
-function bubbleAnchor() {
-  if (G.scene === 'heaven') return { x: CX(), y: 46 };
-  if (elBubble.classList.contains('squirrel') && G.squirrel.active) {
-    return { x: G.squirrel.x, y: G.squirrel.y - 20 };
+function updateDialogue(dt) {
+  if (!DLG.on) return;
+  if (!dialogueDone()) {
+    const before = DLG.shown;
+    DLG.shown = Math.min(DLG.text.length, DLG.shown + dt / 0.017);
+    if (Math.floor(DLG.shown / 3) !== Math.floor(before / 3)) SFX.talk(DLG.shown | 0);
+  } else {
+    DLG.hold += dt;
+    if (!DLG.choices && DLG.hold > 5.5) { DLG.on = false; G.talking = false; }
   }
-  return { x: CX(), y: 86 };
-}
-
-function positionBubble() {
-  if (elBubble.classList.contains('hidden')) return;
-  const a = bubbleAnchor();
-  const p = worldToScreen(a.x, a.y);
-  const w = elBubble.offsetWidth || 300;
-  const margin = 12;
-  let side = '';
-  let x = p.x;
-  if (x - w / 2 < margin) { side = 'left'; x = Math.max(margin, p.x - w * 0.14); }
-  else if (x + w / 2 > window.innerWidth - margin) { side = 'right'; x = Math.min(window.innerWidth - margin, p.x + w * 0.14); }
-  elBubble.classList.toggle('left', side === 'left');
-  elBubble.classList.toggle('right', side === 'right');
-  elBubble.style.left = x + 'px';
-  elBubble.style.top = Math.max(elBubble.offsetHeight + 20, p.y) + 'px';
-
-  // replies live along the bottom, where they never cover his face
-  if (!elChoices.classList.contains('hidden')) {
-    elChoices.style.left = (window.innerWidth / 2) + 'px';
-    elChoices.style.bottom = 'max(14px, env(safe-area-inset-bottom))';
-    elChoices.style.top = 'auto';
-  }
-}
-
-function updateType(dt) {
-  if (typeQueue === null) {
-    if (G.talking) {
-      talkHold += dt;
-      if (talkHold > (pendingChoices ? 60 : 4.2) && !pendingChoices) G.talking = false;
-    }
-    return;
-  }
-  typeTimer += dt;
-  const speed = 0.017;
-  while (typeTimer > speed && typeIdx < typeQueue.length) {
-    typeTimer -= speed;
-    const ch = typeQueue[typeIdx++];
-    elText.textContent += ch;
-    if (typeIdx % 3 === 0 && ch !== ' ') SFX.talk(typeIdx);
-  }
-  if (typeIdx >= typeQueue.length) { finishTyping(); }
-}
-
-function finishTyping() {
-  typeQueue = null;
-  elText.classList.add('done');
-  talkHold = 0;
-  if (pendingChoices) { showChoices(pendingChoices); pendingChoices = null; }
-  positionBubble();
 }
 
 function skipType() {
-  if (typeQueue !== null) { elText.textContent = typeQueue; finishTyping(); return true; }
+  if (DLG.on && !dialogueDone()) { DLG.shown = DLG.text.length; return true; }
   return false;
 }
 
-function showChoices(list) {
-  elChoices.innerHTML = '';
-  for (const ch of list) {
-    const b = document.createElement('button');
-    b.textContent = ch.text;
-    b.onclick = (e) => { e.stopPropagation(); SFX.click(); pickReply(ch); };
-    elChoices.appendChild(b);
+/* where the balloon's tail should point, in frame pixels */
+function speakerAnchor() {
+  if (DLG.who === 'squirrel' && G.squirrel.active) return worldToFrame(G.squirrel.x, G.squirrel.y - 18);
+  if (DLG.who === 'ghost') return worldToFrame(CX(), 56);
+  return worldToFrame(CX(), 88);
+}
+
+function balloonBox() {
+  const w = balloonWidth();
+  const nLines = DLG.lines.length;
+  const h = 12 + nLines * 9;
+  if (G.menu) {
+    return { x: Math.round(W() / 2 - w / 2), y: H - h - 8, w, h, tail: null };
   }
-  elChoices.classList.remove('hidden');
-  positionBubble();
+  const a = speakerAnchor();
+  let x = Math.round(a.x - w / 2);
+  x = Math.max(6, Math.min(W() - w - 6, x));
+  let y = Math.round(a.y - h - 16);
+  y = Math.max(6, y);
+  return { x, y, w, h, tail: a };
+}
+
+function drawDialogue(c) {
+  if (!DLG.on) return;
+  const b = balloonBox();
+  const fill = DLG.cls === 'serious' ? '#e4ecf4' : DLG.cls === 'squirrel' ? '#f7e6c8'
+             : DLG.cls === 'heaven' ? '#eaf4ff' : '#fdf6e3';
+  SPR.drawBalloon(c, b.x, b.y, b.w, b.h, b.tail, { fill });
+
+  const nameCol = DLG.cls === 'serious' ? '#4a6a88' : DLG.cls === 'squirrel' ? '#9a5a1a' : '#a06a2a';
+  F.drawText(c, b.x + 6, b.y + 3, DLG.speaker, nameCol, 1);
+
+  let n = Math.floor(DLG.shown);
+  for (let i = 0; i < DLG.lines.length; i++) {
+    const line = DLG.lines[i];
+    const take = Math.max(0, Math.min(line.length, n));
+    if (take > 0) F.drawText(c, b.x + 7, b.y + 12 + i * 9, line.slice(0, take), '#2b1c10', 1);
+    n -= line.length + 1;
+    if (n <= 0) break;
+  }
+  if (dialogueDone() && !DLG.choices) drawMoreHint(c, b);
+  if (dialogueDone() && DLG.choices) drawChoices(c);
+}
+
+function drawMoreHint(c, b) {
+  SPR.drawMoreArrow(c, b.x + b.w - 8, b.y + b.h - 6, G.t);
+}
+
+/* your replies, as little balloons along the bottom of the frame */
+function drawChoices(c) {
+  DLG.rects = [];
+  const list = DLG.choices;
+  const w = Math.min(212, W() - 24);
+  const lh = 11;
+  let y = H - 10 - list.length * (lh + 4);
+  for (let i = 0; i < list.length; i++) {
+    const x = Math.round(W() / 2 - w / 2);
+    const hovered = DLG.hover === i;
+    SPR.drawBalloon(c, x, y, w, lh, null, { fill: hovered ? '#ffe06a' : '#ffffff', radius: 4 });
+    F.drawText(c, x + 5, y + 2, '\u203a', '#a06a2a', 1);
+    F.drawText(c, x + 12, y + 2, list[i].text, '#2b1c10', 1);
+    DLG.rects.push({ x, y, w, h: lh, i });
+    y += lh + 4;
+  }
+}
+
+function choiceAt(x, y) {
+  for (const r of DLG.rects) {
+    if (x >= r.x - 2 && x <= r.x + r.w + 2 && y >= r.y - 2 && y <= r.y + r.h + 2) return r.i;
+  }
+  return -1;
 }
 
 function pickReply(ch) {
-  clearChoices();
+  DLG.choices = null; DLG.rects = [];
   save.stats.replies = (save.stats.replies || 0) + 1;
   save.stats.tones = save.stats.tones || {};
   save.stats.tones[ch.tone] = (save.stats.tones[ch.tone] || 0) + 1;
@@ -311,10 +345,9 @@ function pickReply(ch) {
 
   if (!ch.follow) { talkToTree(); return; }
   const mood = ch.tone === 'rude' ? 'smug' : ch.tone === 'kind' ? 'happy' : ch.tone === 'joke' ? 'laugh' : 'think';
-  say('THE WISE OAK TREE', ch.follow, mood, elBubble.className.includes('serious') ? 'serious' : '');
+  say('THE WISE OAK TREE', ch.follow, mood, DLG.cls === 'serious' ? 'serious' : '');
 }
 
-/* two replies from the pool for this kind of line, plus "tell me another" */
 function repliesFor(tag) {
   const pool = (DATA.replies[tag] || DATA.replies.goofy).slice();
   const out = [];
@@ -353,48 +386,48 @@ function checkMetaAchievements() {
 }
 
 /* ---------------------------------------------------------------------
-   NOTIFICATIONS — the phone-style kind: icon, app line, title, detail.
+   THE POST — a snail carries every announcement across the screen
    --------------------------------------------------------------------- */
-const APP_FOR = { task: 'Achievements', goal: 'Achievements', chal: 'Achievements', ending: 'Endings' };
-let noteBusy = 0;
+let snails = [];
 
 function pushNote(kind, title, desc, icon) {
   toastQueue.push({ kind, name: title, desc, icon });
 }
 
 function updateToasts(dt) {
-  noteBusy -= dt;
-  if (noteBusy > 0 || !toastQueue.length) return;
-  noteBusy = 0.55;
-  const n = toastQueue.shift();
-  SFX.note();
+  if (toastQueue.length && snails.length < 2 && (!snails.length || snails[snails.length - 1].x > 90)) {
+    const n = toastQueue.shift();
+    const head = n.kind === 'ending' ? 'A LETTER FOR YOU' :
+                 n.kind === 'chal' ? 'REGISTERED POST' : 'SPECIAL DELIVERY';
+    const lines = [n.name].concat(F.wrapText(n.desc || '', 104, 1).slice(0, 3));
+    snails.push({
+      x: -26, y: H - 14, dir: 1, speed: 30, head, lines,
+      w: Math.max(88, Math.min(148, Math.max(...lines.map(l => F.textWidth(l, 1)), F.textWidth(head, 1)) + 14)),
+      kind: n.kind, life: 0
+    });
+    SFX.note();
+  }
+  for (let i = snails.length - 1; i >= 0; i--) {
+    const sn = snails[i];
+    sn.life += dt;
+    sn.x += sn.speed * dt;
+    if (sn.x > W() + 50) snails.splice(i, 1);
+  }
+}
 
-  const el = document.createElement('div');
-  el.className = 'note ' + n.kind;
+/* a poke makes him hurry along */
+function snailAt(x, y) {
+  for (const sn of snails) {
+    if (Math.abs(x - sn.x) < 14 && Math.abs(y - sn.y) < 12) return sn;
+  }
+  return null;
+}
 
-  const ic = document.createElement('canvas');
-  ic.width = 16; ic.height = 16; ic.className = 'nicon';
-  drawIcon(ic.getContext('2d'), n.icon, 16);
-
-  const body = document.createElement('div');
-  body.className = 'nbody';
-  const app = n.kind === 'ending' ? 'Endings'
-    : n.kind === 'chal' ? 'Challenge' : n.kind === 'goal' ? 'Goal' : 'Achievement';
-  body.innerHTML =
-    '<div class="nrow"><span class="napp">' + app + '</span><span class="ntime">now</span></div>' +
-    '<div class="ntitle"></div><div class="ndesc"></div>';
-  body.querySelector('.ntitle').textContent = n.name;
-  body.querySelector('.ndesc').textContent = n.desc || '';
-
-  el.appendChild(ic); el.appendChild(body);
-  elNotes.appendChild(el);
-  requestAnimationFrame(() => el.classList.add('in'));
-  setTimeout(() => {
-    el.classList.remove('in'); el.classList.add('out');
-    setTimeout(() => el.remove(), 600);
-  }, 4600);
-  // never let them stack past the top of the screen
-  while (elNotes.children.length > 4) elNotes.firstChild.remove();
+function drawPost(c) {
+  for (const sn of snails) {
+    SPR.drawSnail(c, G, sn);
+    SPR.drawSnailMessage(c, G, sn);
+  }
 }
 
 /* ---------------------------------------------------------------------
@@ -446,6 +479,25 @@ function drawIcon(c, id, size) {
       pcircle(c, 8, 7, 6, '#c9453b'); P(2, 7, 13, 2, '#c9453b'); dot(c, 5, 4, '#fff'); dot(c, 10, 6, '#fff'); P(5, 9, 6, 5, '#f0e2cc'); break;
     case 'can':
       P(3, 5, 8, 8, '#8a9aa8'); P(11, 4, 4, 3, '#8a9aa8'); P(1, 6, 2, 5, '#6d7c88'); P(4, 6, 3, 2, '#b0bcc8'); break;
+    case 'spade':
+      P(7, 1, 2, 9, '#8a5f38'); P(5, 0, 6, 2, '#8a5f38'); P(4, 9, 8, 6, '#b6b6c2'); P(4, 9, 8, 2, '#e0e0e8'); break;
+    case 'park':
+      P(1, 12, 14, 3, '#4a8a30'); pcircle(c, 5, 6, 4, '#6cc73f'); pcircle(c, 11, 8, 3, '#4a9235');
+      P(5, 8, 1, 5, '#6b4a2a'); P(11, 10, 1, 3, '#6b4a2a'); break;
+    case 'gate':
+      P(1, 2, 2, 13, '#7a5230'); P(13, 2, 2, 13, '#7a5230');
+      for (let i = 0; i < 3; i++) P(3, 4 + i * 4, 10, 2, '#a0703c'); P(0, 0, 16, 2, '#5a3a1e'); break;
+    case 'coin':
+      pcircle(c, 8, 8, 7, '#b5811f'); pcircle(c, 8, 8, 6, '#e8b23a'); SPR.drawLeafSprite(c, 5, 5, '#6cc73f', '#2d6b1f'); break;
+    case 'ledger':
+      P(2, 1, 12, 14, '#8a5f38'); P(3, 2, 10, 12, '#f6ecd6');
+      for (let i = 0; i < 4; i++) P(5, 4 + i * 3, 7, 1, '#5a4028'); break;
+    case 'visitor':
+      P(6, 6, 5, 7, '#4a6a9a'); pcircle(c, 8, 4, 3, '#e8b98a'); P(5, 1, 7, 3, '#3a2a1a');
+      P(2, 13, 12, 2, '#a0703c'); break;
+    case 'house':
+      P(3, 7, 11, 8, '#e0d2b8'); for (let i = 0; i <= 5; i++) P(2 + i, 6 - i, 13 - i * 2, 1, '#a8503a');
+      P(7, 10, 3, 5, '#7a4a28'); P(4, 8, 2, 2, '#ffd98a'); P(11, 8, 2, 2, '#ffd98a'); break;
     case 'bird':
       pellipse(c, 7, 9, 5, 4, '#8a4a3a'); pcircle(c, 11, 5, 3, '#8a4a3a');
       P(14, 5, 2, 1, '#e8a33a'); dot(c, 12, 4, '#120a04'); P(1, 8, 4, 2, '#5a2f24');
@@ -523,29 +575,54 @@ function refreshHUD() {
   refreshActions();
 }
 
-function actionBtn(label, cls, fn) {
-  const b = document.createElement('button');
-  b.className = 'act ' + (cls || '');
-  b.textContent = label;
-  b.onclick = (e) => { e.stopPropagation(); SFX.click(); fn(); };
-  elActions.appendChild(b);
+/* Little wooden signs, hammered into the bottom of the frame. The only
+   thing in the game that behaves like a button, and it is still pixels. */
+let signs = [];
+
+function refreshActions() {
+  signs = [];
+  if (G.cine || G.scene === 'burning' || G.scene === 'game') return;
+  const labels = G.scene === 'hall'
+    ? [['BACK', closeHall], ['SORT', sortHall]]
+    : G.scene === 'heaven'
+      ? [['THE HALL', () => openHall('heaven')], ['ENDINGS', openEndings], ['BE BORN AGAIN', reincarnate]]
+      : [];
+  if (!labels.length) return;
+  const pad = 8;
+  const widths = labels.map(([t]) => F.textWidth(t, 1) + 16);
+  const total = widths.reduce((a, b) => a + b, 0) + pad * (labels.length - 1);
+  let x = Math.round(W() / 2 - total / 2);
+  for (let i = 0; i < labels.length; i++) {
+    signs.push({ label: labels[i][0], act: labels[i][1], x, y: H - 22, w: widths[i], h: 15, hover: false });
+    x += widths[i] + pad;
+  }
 }
 
-/* The only buttons in the game are the ones heaven and the hall need. */
-function refreshActions() {
-  elActions.innerHTML = '';
-  if (G.cine || G.scene === 'burning' || G.scene === 'game') return;
-  if (G.scene === 'hall') {
-    actionBtn('\u2190 Back', '', closeHall);
-    actionBtn('Sort', '', sortHall);
-    actionBtn('List view', '', openTrophies);
-    return;
+function drawHint(c) {
+  if (!G.hintShown || !G.hintText) return;
+  const w = F.textWidth(G.hintText, 1);
+  if (G.hintCine) {
+    F.drawText(c, W() - w - 8, 8, G.hintText, '#c8b89a', 1, '#000000');
+  } else {
+    const y = signs.length ? H - 34 : H - 14;
+    SPR.roundRect(c, W() / 2 - w / 2 - 5, y - 3, w + 10, 13, 3, 'rgba(10,8,7,0.65)');
+    F.drawTextCentered(c, W() / 2, y, G.hintText, '#e8dcc0', 1);
   }
-  if (G.scene === 'heaven') {
-    actionBtn('Hall of Trophies', 'good', () => openHall('heaven'));
-    actionBtn('Endings', '', openEndings);
-    actionBtn('Reincarnate \u21bb', 'good', reincarnate);
+}
+
+function drawSigns(c) {
+  for (const s of signs) {
+    SPR.px(c, s.x + s.w / 2 - 1, s.y + s.h, 2, 6, '#5a3a1e');
+    SPR.roundRect(c, s.x - 2, s.y - 2, s.w + 4, s.h + 4, 3, SPR.INK);
+    SPR.roundRect(c, s.x, s.y, s.w, s.h, 2, s.hover ? '#c39a63' : '#a0703c');
+    SPR.px(c, s.x + 2, s.y + 2, s.w - 4, 1, '#c9a06a');
+    F.drawTextCentered(c, s.x + s.w / 2, s.y + 4, s.label, s.hover ? '#2b1c10' : '#ffe9b0', 1);
   }
+}
+
+function signAt(x, y) {
+  for (const s of signs) if (x >= s.x - 2 && x <= s.x + s.w + 2 && y >= s.y - 2 && y <= s.y + s.h + 2) return s;
+  return null;
 }
 
 /* what happens when a tool is let go over something */
@@ -1310,7 +1387,7 @@ function startRebirthCine() {
 function update(dt) {
   G.t += dt; G.dt = dt;
   G.sessionTime += dt;
-  updateType(dt);
+  updateDialogue(dt);
   updateToasts(dt);
   updateParticles(dt);
 
@@ -1403,6 +1480,8 @@ function update(dt) {
     }
 
     updateCritters(dt);
+    updatePark(dt);
+    updateVisitors(dt);
     if (tickle.cool > 0) tickle.cool -= dt;
 
     // a long press on his trunk is a hug
@@ -1459,6 +1538,275 @@ function update(dt) {
       say('THE WISE OAK TREE', b.text, b.mood, 'serious');
     }
     if (G.burn >= 1) startDeathCine();
+  }
+}
+
+/* ---------------------------------------------------------------------
+   THE PARK
+   Leaves are a currency. Things you build make more of them. The park
+   itself grows outward as you can afford it.
+   --------------------------------------------------------------------- */
+const BUILD_BY_ID = {}; DATA.build.forEach(b => BUILD_BY_ID[b.id] = b);
+
+function parkMargin() {
+  const step = [0.16, 0.105, 0.055, 0.015][Math.min(3, save.park.expansions)];
+  return Math.round(W() * step);
+}
+
+function plotCount() { return 4 + save.park.expansions * 3; }
+
+/* evenly spaced building plots along the grass, skipping the tree */
+function plotPos(i) {
+  const n = plotCount();
+  const m = parkMargin() + 16;
+  const span = W() - m * 2;
+  let x = m + (span / (n + 1)) * (i + 1);
+  if (Math.abs(x - CX()) < 46) x += (x < CX() ? -1 : 1) * 46;
+  return { x: Math.round(x), y: GROUND_Y + 14 + (i % 2) * 8 };
+}
+
+function propAtPlot(i) { return save.park.props.find(p => p.plot === i); }
+
+function incomeMultiplier() {
+  let m = 1;
+  if (save.park.upgrades.sign) m *= 1.5;
+  if (save.park.upgrades.compost) m *= 2;
+  return m;
+}
+
+function parkIncome() {
+  let r = 0;
+  for (const p of save.park.props) {
+    const b = BUILD_BY_ID[p.type];
+    if (!b) continue;
+    let rate = b.rate;
+    if (p.type === 'sapling') rate *= 1 + Math.min(2, p.age / 240);   // saplings grow
+    r += rate;
+  }
+  const night = SPR.isNight(G.timeOfDay);
+  const hasLamp = save.park.props.some(p => p.type === 'lamp');
+  return r * incomeMultiplier() * (night && !hasLamp ? 0.4 : 1);
+}
+
+function updatePark(dt) {
+  if (!save.park.props.length) return;
+  for (const p of save.park.props) p.age += dt;
+  G.parkPending += parkIncome() * dt;
+  while (G.parkPending >= 1) {
+    G.parkPending -= 1;
+    save.park.earned++;
+    if (save.park.upgrades.rake) {
+      G.inv.leaves++; save.stats.leavesTotal++;
+      G.parkMotes.push({ x: plotPos(Math.floor(Math.random() * plotCount())).x, y: GROUND_Y + 4, t: 1 });
+    } else if (G.groundLeaves.length < 18) {
+      const src = save.park.props[Math.floor(Math.random() * save.park.props.length)];
+      const pos = plotPos(src.plot);
+      const c = ['#8fd95a', '#5fae3c'];
+      G.groundLeaves.push({ x: insetX(pos.x + (Math.random() - 0.5) * 24), y: GROUND_Y + 6 + Math.random() * 20,
+                            col: c[0], col2: c[1], ph: Math.random() * 6.28, landed: true });
+    }
+  }
+  for (let i = G.parkMotes.length - 1; i >= 0; i--) {
+    const m = G.parkMotes[i];
+    m.t -= dt; m.y -= 22 * dt;
+    if (m.t <= 0) G.parkMotes.splice(i, 1);
+  }
+  checkParkAchievements();
+}
+
+function checkParkAchievements() {
+  const n = save.park.props.length;
+  if (n >= 1) ACH('build1');
+  if (n >= 5) ACH('build5');
+  if (n >= 10) ACH('build10');
+  if (save.park.expansions >= 1) ACH('expand1');
+  if (save.park.expansions >= 3) ACH('expand3');
+  if (parkIncome() >= 1) ACH('income1');
+  if (save.park.earned >= 500) ACH('earned500');
+  if (DATA.upgrades.every(u => save.park.upgrades[u.id])) ACH('upgrades');
+  if (DATA.build.every(b => save.park.props.some(p => p.type === b.id))) ACH('buildall');
+}
+
+/* ---- visitors ---- */
+function updateVisitors(dt) {
+  const benches = save.park.props.filter(p => p.type === 'bench');
+  G.visitorTimer -= dt;
+  const wanted = benches.length ? (save.park.upgrades.gate ? 3 : 2) : 0;
+  if (G.visitorTimer <= 0 && G.visitors.length < wanted) {
+    G.visitorTimer = 14 + Math.random() * 20;
+    const b = benches[Math.floor(Math.random() * benches.length)];
+    const target = plotPos(b.plot);
+    G.visitors.push({
+      x: Math.random() < 0.5 ? -10 : W() + 10, y: GROUND_Y + 26, tx: target.x, ty: GROUND_Y + 26,
+      state: 'walk', t: 0, happy: 0, ph: Math.random() * 6.28,
+      col: ['#4a6a9a', '#8a4a5a', '#4a7a5a', '#8a6a3a'][Math.floor(Math.random() * 4)],
+      hair: ['#3a2a1a', '#6b4a2a', '#2a2a2a', '#a86a3a'][Math.floor(Math.random() * 4)]
+    });
+  }
+  for (let i = G.visitors.length - 1; i >= 0; i--) {
+    const v = G.visitors[i];
+    v.happy = Math.max(0, v.happy - dt * 0.5);
+    if (v.state === 'walk') {
+      const d = v.tx - v.x;
+      v.x += Math.sign(d) * 24 * dt;
+      if (Math.abs(d) < 2) { v.state = 'sit'; v.t = 8 + Math.random() * 12; }
+    } else if (v.state === 'sit') {
+      v.t -= dt;
+      if (v.t <= 0) {
+        v.state = 'leave';
+        v.tx = v.x < CX() ? -20 : W() + 20;
+        v.happy = 2;
+        const tip = 2 + Math.floor(Math.random() * 4 * incomeMultiplier());
+        G.inv.leaves += tip; save.stats.leavesTotal += tip; save.park.earned += tip;
+        ACH('visitor');
+        G.parkMotes.push({ x: v.x, y: GROUND_Y + 10, t: 1.2 });
+        SFX.pickup();
+      }
+    } else {
+      v.x += Math.sign(v.tx - v.x) * 26 * dt;
+      if (v.x < -18 || v.x > W() + 18) G.visitors.splice(i, 1);
+    }
+  }
+}
+
+/* ---- building ---- */
+function canAfford(n) { return G.inv.leaves >= n; }
+
+function buyBuild(id) {
+  const b = BUILD_BY_ID[id];
+  if (!b) return;
+  if (!canAfford(b.cost)) { SFX.deny(); sayTree("Not enough leaves. The park does not run on enthusiasm.", 'smug'); return; }
+  const free = [];
+  for (let i = 0; i < plotCount(); i++) if (!propAtPlot(i)) free.push(i);
+  if (!free.length) { SFX.deny(); sayTree("There is nowhere to put it. Push the hedge back first.", 'think'); return; }
+  G.inv.leaves -= b.cost;
+  const plot = free[0];
+  save.park.props.push({ type: id, plot, age: 0 });
+  persist();
+  SFX.plant();
+  spawnParticles('star', plotPos(plot).x, GROUND_Y + 4, 8);
+  checkParkAchievements();
+  refreshHUD();
+  sayTree("A " + b.name.toLowerCase() + ". Look at us. We are a DESTINATION.", 'happy');
+}
+
+function buyUpgrade(id) {
+  const u = DATA.upgrades.find(x => x.id === id);
+  if (!u || save.park.upgrades[id]) return;
+  if (!canAfford(u.cost)) { SFX.deny(); sayTree("Not yet. Come back with more leaves.", 'smug'); return; }
+  G.inv.leaves -= u.cost;
+  save.park.upgrades[id] = 1;
+  persist(); SFX.ach();
+  checkParkAchievements();
+  refreshHUD();
+  sayTree(u.name + ". Money well spent, and I say that as a tree with no concept of money.", 'happy');
+}
+
+function buyExpansion() {
+  const tier = save.park.expansions;
+  const e = DATA.expansions[tier];
+  if (!e) { sayTree("There is no more park to have. This is all of it. It is enough.", 'happy'); return; }
+  if (!canAfford(e.cost)) { SFX.deny(); sayTree("The hedge stays where it is until you can afford otherwise.", 'smug'); return; }
+  G.inv.leaves -= e.cost;
+  save.park.expansions++;
+  persist(); SFX.ach(); G.flash = 0.7;
+  checkParkAchievements();
+  refreshHUD();
+  sayTree(e.desc + " I can see the lane from here now. I have not seen the lane since the war.", 'shock');
+}
+
+function sayTree(text, mood) { say('THE WISE OAK TREE', text, mood || 'idle', ''); }
+
+/* ---------------------------------------------------------------------
+   MENUS — wooden panels nailed up in the park, not interface
+   --------------------------------------------------------------------- */
+function openBuildMenu() {
+  const rows = DATA.build.map(b => {
+    const owned = save.park.props.filter(p => p.type === b.id).length;
+    return {
+      label: b.name + (owned ? ' x' + owned : ''),
+      sub: b.desc,
+      cost: b.cost,
+      act: () => buyBuild(b.id)
+    };
+  });
+  const tier = save.park.expansions;
+  if (DATA.expansions[tier]) {
+    rows.push({ label: 'Expand The Park', sub: DATA.expansions[tier].desc, cost: DATA.expansions[tier].cost, act: buyExpansion });
+  }
+  G.menu = { kind: 'build', title: 'THE NOTICEBOARD', rows, sel: -1 };
+  SFX.page();
+}
+
+function openLedger() {
+  const rows = DATA.upgrades.map(u => ({
+    label: u.name, sub: u.desc, cost: u.cost,
+    owned: !!save.park.upgrades[u.id],
+    act: () => buyUpgrade(u.id)
+  }));
+  const inc = parkIncome();
+  G.menu = {
+    kind: 'ledger', title: "THE KEEPER'S LEDGER", rows, sel: -1,
+    note: inc.toFixed(2) + ' leaves a second  ·  ' + save.park.earned + ' earned'
+  };
+  SFX.page();
+}
+
+function closeMenu() { G.menu = null; SFX.click(); }
+
+function menuBox() {
+  const m = G.menu;
+  const w = Math.min(300, W() - 16);
+  const h = 26 + m.rows.length * 17 + (m.note ? 10 : 0);
+  return { x: Math.round(W() / 2 - w / 2), y: Math.round(H / 2 - h / 2) - 6, w, h };
+}
+
+function menuRowAt(x, y) {
+  if (!G.menu) return -2;
+  const b = menuBox();
+  if (x > b.x + b.w - 12 && x < b.x + b.w + 2 && y > b.y - 2 && y < b.y + 12) return -1;   // close
+  const top = b.y + 16 + (G.menu.note ? 10 : 0);
+  for (let i = 0; i < G.menu.rows.length; i++) {
+    if (x >= b.x + 3 && x <= b.x + b.w - 3 && y >= top + i * 17 && y < top + i * 17 + 16) return i;
+  }
+  return -2;
+}
+
+/* trim a string until it fits, with an ellipsis */
+function fitText(str, maxW) {
+  if (F.textWidth(str, 1) <= maxW) return str;
+  let t = str;
+  while (t.length > 1 && F.textWidth(t + '...', 1) > maxW) t = t.slice(0, -1);
+  return t + '...';
+}
+
+function drawMenu(c) {
+  const m = G.menu;
+  if (!m) return;
+  const b = menuBox();
+  SPR.drawPanel(c, b.x, b.y, b.w, b.h, m.title);
+  // leaf purse, top right
+  F.drawText(c, b.x + b.w - 34, b.y + 3, String(G.inv.leaves), '#ffe9b0', 1);
+  SPR.drawLeafSprite(c, b.x + b.w - 44, b.y + 3, '#8fd95a', '#3a7a28');
+  // close
+  F.drawText(c, b.x + b.w - 9, b.y + 3, 'x', m.sel === -1 ? '#ffd24a' : '#ffe9b0', 1);
+
+  let top = b.y + 16;
+  if (m.note) { F.drawTextCentered(c, b.x + b.w / 2, top, fitText(m.note, b.w - 10), '#6b4a2a', 1); top += 10; }
+
+  for (let i = 0; i < m.rows.length; i++) {
+    const r = m.rows[i];
+    const y = top + i * 17;
+    const afford = G.inv.leaves >= r.cost && !r.owned;
+    const hot = m.sel === i;
+    if (hot) SPR.roundRect(c, b.x + 3, y, b.w - 6, 16, 2, '#e8c98a');
+    const priceW = F.textWidth(r.owned ? 'HAVE IT' : String(r.cost), 1) + 22;
+    F.drawText(c, b.x + 7, y + 1, fitText(r.label, b.w - 14 - priceW), r.owned ? '#6b8a4a' : '#3a2410', 1);
+    F.drawText(c, b.x + 7, y + 9, fitText(r.sub, b.w - 14), '#7a6248', 1);
+    const price = r.owned ? 'HAVE IT' : String(r.cost);
+    const pw = F.textWidth(price, 1);
+    F.drawText(c, b.x + b.w - 9 - pw, y + 4, price, r.owned ? '#6b8a4a' : afford ? '#2d6b1f' : '#a05a4a', 1);
+    if (!r.owned) SPR.drawLeafSprite(c, b.x + b.w - 17 - pw, y + 4, afford ? '#8fd95a' : '#b0a08a', '#3a7a28');
   }
 }
 
@@ -1606,6 +1954,7 @@ function drawWorld(opts) {
   }
   SPR.drawGround(dc, G);
   SPR.drawPond(dc, G);
+  SPR.drawBoundary(dc, G, parkMargin());
   SPR.drawFireGlow(dc, G);
 
   // everything solid in the foreground shares one dark contour
@@ -1626,12 +1975,39 @@ function drawWorld(opts) {
     SPR.drawTree(L, G);
     SPR.drawWatchers(L, G);
   }
+  // the park you have built
+  if (!o.fall && o.growing === undefined) {
+    SPR.drawCottage(L, G, parkMargin() + 26, GROUND_Y + 12);
+    SPR.drawNoticeBoard(L, G, W() - parkMargin() - 26, GROUND_Y + 14);
+    for (const pr of save.park.props) {
+      const pos = plotPos(pr.plot);
+      if (pr.type === 'sapling') {
+        const h = Math.min(30, 6 + pr.age * 0.25);
+        const sway = Math.sin(G.t * 1.5 + pr.plot) * 1.2;
+        SPR.px(L, pos.x, pos.y - h, 2, h, '#5a7a32');
+        SPR.pcircle(L, pos.x + sway, pos.y - h - 1, 3 + h * 0.28, '#4a9235');
+        SPR.pcircle(L, pos.x + sway - 1, pos.y - h - 3, 2 + h * 0.18, '#6fbc45');
+      }
+      else if (pr.type === 'flowers') SPR.drawFlowerbed(L, G, pos.x, pos.y);
+      else if (pr.type === 'bench') SPR.drawBench(L, G, pos.x, pos.y);
+      else if (pr.type === 'bath') SPR.drawBirdbath(L, G, pos.x, pos.y);
+      else if (pr.type === 'hive') SPR.drawHive(L, G, pos.x, pos.y);
+      else if (pr.type === 'lamp') SPR.drawLamp(L, G, pos.x, pos.y);
+    }
+    for (const v of G.visitors) SPR.drawVisitor(L, G, v);
+  }
   SPR.drawSquirrel(L, G);
   if (!o.fall && o.growing === undefined) { SPR.drawCritters(L, G); SPR.drawTools(L, G); }
   SPR.layerEnd(dc, '#1a0f08');
 
   SPR.drawFireOnTree(dc, G);
   SPR.drawParticles(dc, G);
+  // leaves the rake collected, floating up
+  for (const m of G.parkMotes) {
+    dc.globalAlpha = Math.max(0, m.t);
+    SPR.drawLeafSprite(dc, m.x, m.y, '#8fd95a', '#3a7a28');
+    dc.globalAlpha = 1;
+  }
   SPR.drawUndergrowth(dc, G);
   SPR.drawForeground(dc, G);
   SPR.drawFrameFoliage(dc, G);
@@ -1752,7 +2128,16 @@ function render() {
 
   if (G.flash > 0) { ctx.globalAlpha = Math.min(1, G.flash); SPR.px(ctx, 0, 0, W(), H, '#ffffff'); ctx.globalAlpha = 1; }
   if (!G.cine && G.scene === 'game') SPR.drawHud(ctx, G);
+  if (!G.cine) drawPost(ctx);
+  drawHint(ctx);
+  drawSigns(ctx);
+  if (G.menu) drawMenu(ctx);
+  drawDialogue(ctx);
   SPR.drawLetterbox(ctx, G.letterbox);
+  if (G.holding && G.scene === 'game') {
+    const f = worldToFrame(G.holding.x, G.holding.y);
+    SPR.drawCursorTool(ctx, G, f.x, f.y, G.holding.id);
+  }
 }
 
 /* ---------------------------------------------------------------------
@@ -1801,6 +2186,19 @@ function showHallLabel(i) {
 
 function hitTest(x, y) {
   if (G.scene === 'hall') return { kind: 'hall', i: hallSlotAt(x, y) };
+
+  // the cottage and the noticeboard are solid objects, checked before him
+  if (G.scene === 'game' && !G.dead) {
+    if (Math.abs(x - (parkMargin() + 26)) < 24 && y > GROUND_Y - 34 && y < GROUND_Y + 14)
+      return { kind: 'house', i: -1 };
+    if (Math.abs(x - (W() - parkMargin() - 26)) < 14 && y > GROUND_Y - 22 && y < GROUND_Y + 16)
+      return { kind: 'board', i: -1 };
+    for (const pr of save.park.props) {
+      const pos = plotPos(pr.plot);
+      if (Math.abs(x - pos.x) < 13 && y > pos.y - 30 && y < pos.y + 6)
+        return { kind: 'prop', prop: pr, i: -1 };
+    }
+  }
   if (G.scene === 'heaven') {
     if (x > 92 && x < 164 && y > 40 && y < 130) return { kind: 'ghost', i: -1 };
     return { kind: 'sky', i: -1 };
@@ -1877,8 +2275,15 @@ let tickle = { energy: 0, last: null, cool: 0 };
 
 function onMove(ev) {
   const p = toLogical(ev);
+  const fr = toScreenPixels(ev);
+  if (G.menu) { G.menu.sel = menuRowAt(fr.x, fr.y); cv.style.cursor = G.menu.sel >= -1 ? 'pointer' : 'default'; return; }
+  let onSign = false;
+  for (const sg of signs) { sg.hover = signAt(fr.x, fr.y) === sg; onSign = onSign || sg.hover; }
+  if (onSign) { cv.style.cursor = 'pointer'; return; }
+  DLG.hover = DLG.choices && dialogueDone() ? choiceAt(fr.x, fr.y) : -1;
+  cv.style.cursor = DLG.hover >= 0 ? 'pointer' : (G.holding ? 'none' : cv.style.cursor);
 
-  if (G.holding) { G.holding.x = p.x; G.holding.y = p.y; return; }
+  if (G.holding) { G.holding.x = p.x; G.holding.y = p.y; cv.style.cursor = 'none'; return; }
 
   G.look.x = Math.max(-1.4, Math.min(1.4, (p.x - CX()) / 60));
   G.look.y = Math.max(-1.2, Math.min(1.2, (p.y - 116) / 50));
@@ -1946,6 +2351,7 @@ function onRelease() {
   if (G.holding) {
     const t = G.holding;
     G.holding = null;
+    cv.style.cursor = 'default';
     elHint.className = 'hidden';
     if (!useTool(t.id, t.x, t.y)) { SFX.deny(); }
     // whatever happens, it goes back to the grass
@@ -1988,6 +2394,35 @@ function toolAt(x, y) {
 
 function onPress(ev) {
   SFX.kick();
+  const fr = toScreenPixels(ev);
+
+  // a menu swallows everything while it is open
+  if (G.menu) {
+    const r = menuRowAt(fr.x, fr.y);
+    if (r === -1) { closeMenu(); return; }
+    if (r >= 0) {
+      const row = G.menu.rows[r];
+      const kind = G.menu.kind;
+      row.act();
+      if (kind === 'build') openBuildMenu(); else openLedger();
+      return;
+    }
+    closeMenu();
+    return;
+  }
+
+  const sg = signAt(fr.x, fr.y);
+  if (sg) { SFX.click(); sg.act(); return; }
+
+  // a reply, if one is on offer
+  if (DLG.on && DLG.choices && dialogueDone()) {
+    const ci = choiceAt(fr.x, fr.y);
+    if (ci >= 0) { SFX.click(); pickReply(DLG.choices[ci]); return; }
+  }
+  // hurry the postman along
+  const sn = snailAt(fr.x, fr.y);
+  if (sn) { sn.speed = 150; SFX.squeak(); return; }
+
   if (G.cine) { skipStage(); return; }
   const p = toLogical(ev);
 
@@ -1998,6 +2433,7 @@ function onPress(ev) {
     const t = toolAt(p.x, p.y);
     if (t) {
       G.holding = t; t.x = p.x; t.y = p.y;
+      cv.style.cursor = 'none';
       SFX.pickup();
       elHint.textContent = TOOL_HINTS[t.id] || 'drag it somewhere';
       elHint.className = '';
@@ -2049,6 +2485,27 @@ function onPress(ev) {
     return;
   }
   if (h.kind === 'moon' || h.kind === 'sun') { touchSky(h.kind); return; }
+  if (h.kind === 'house') {
+    ACH('house');
+    openLedger();
+    if (Math.random() < 0.5) return;
+    say('THE WISE OAK TREE', DATA.houseLines[Math.floor(Math.random() * DATA.houseLines.length)], 'idle');
+    return;
+  }
+  if (h.kind === 'prop') {
+    const b = BUILD_BY_ID[h.prop.type];
+    SFX.click();
+    const rate = (b.rate * incomeMultiplier()).toFixed(2);
+    say('THE WISE OAK TREE',
+        b.name + '. ' + b.desc + ' Bringing in about ' + rate + ' leaves a second, which over four hundred years is genuinely enormous.',
+        'happy');
+    return;
+  }
+  if (h.kind === 'board') {
+    openBuildMenu();
+    if (Math.random() < 0.4) say('THE WISE OAK TREE', DATA.boardLines[Math.floor(Math.random() * DATA.boardLines.length)], 'happy');
+    return;
+  }
   if (h.kind === 'tree') {
     grab = { x: p.x, lastX: p.x, moved: 0, t: 0 };
     G.holdT = 0.0001;                       // press and hold to hug him
@@ -2095,7 +2552,7 @@ document.addEventListener('keydown', e => {
     if (e.key === 'Escape') closeHall();
     return;
   }
-  if (e.key === 'Escape') { closeModal(); closeShop(); }
+  if (e.key === 'Escape') { if (G.menu) closeMenu(); closeModal(); closeShop(); }
   if (e.key === ' ') { e.preventDefault(); if (!skipType() && G.scene === 'game') talkToTree(); }
   if (e.key.toLowerCase() === 'm') toggleMute();
   if (e.key.toLowerCase() === 'r' && e.shiftKey) eraseEverything();
@@ -2141,7 +2598,10 @@ elTitle.addEventListener('touchstart', beginGame, { passive: true });
 if (/[?&]debug/.test(location.search)) {
   window.OAK = { G, save, ACH, reachEnding, startBurning, goHeaven, reincarnate,
                  refreshHUD, dropLeaf, triggerSneeze, maybeSpawnSquirrel, persist,
-                 skipAll: () => { if (G.cine) { G.cine.i = G.cine.stages.length - 1; skipStage(); } } };
+                 skipAll: () => { if (G.cine) { G.cine.i = G.cine.stages.length - 1; skipStage(); } },
+                 parkMargin, parkIncome, menuBox, closeMenu, openBuildMenu, openLedger, plotPos, hitTest,
+                 signLabels: () => signs.map(s => s.label), signFor: (l) => signs.find(s => s.label === l),
+                 dlgText: () => DLG.text, DLG };
 }
 
 let last = performance.now();
@@ -2151,14 +2611,13 @@ function loop(now) {
   if (!started) drawTitleLogo(dt);
   update(dt);
   render();
-  if (!elBubble.classList.contains('hidden')) positionBubble();
   requestAnimationFrame(loop);
 }
 requestAnimationFrame(loop);
 
 window.addEventListener('beforeunload', persist);
 
-window.addEventListener('resize', () => { fit(); positionBubble(); });
-window.addEventListener('orientationchange', () => setTimeout(() => { fit(); positionBubble(); }, 200));
+window.addEventListener('resize', () => fit());
+window.addEventListener('orientationchange', () => setTimeout(fit, 200));
 
 })();

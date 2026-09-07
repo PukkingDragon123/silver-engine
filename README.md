@@ -14,14 +14,17 @@ no flag. He just notices.
 **Play it:** open `index.html` in any browser. It fills the window. No build
 step, no dependencies, no server required.
 
-There is no interface. No toolbar, no buttons, no inventory panel. Everything
-is either part of the world or a notification: the leaf tally hangs on a little
-wooden sign, the sound switch is a pixel speaker in the corner, and the things
-you own lie about on the grass waiting to be picked up.
+There is no interface. Not one HTML element you can see. Every word in the
+game — his dialogue, your replies, the menus, the trophy plaques — is drawn on
+the canvas in a 5x7 bitmap font written for it. The leaf tally hangs on a little
+wooden sign, the sound switch is a pixel speaker in the corner, the things you
+own lie about on the grass, and the menus are wooden boards nailed up in the
+park.
 
 ## Talking to him
 
-He speaks in a bubble over his own head, and **you answer**. Every line offers
+He speaks in a **cartoon balloon** over his own head — fat black outline, white
+belly, a tail of shrinking bubbles pointing at him — and **you answer**. Every line offers
 you two replies drawn from a pool that matches what he just said — kind,
 curious, rude, or a bit of a joke — plus "tell me another". He has a different
 comeback for each, and the game quietly keeps score of which kind of person you
@@ -80,11 +83,30 @@ Six of them, all letterboxed and captioned, all skippable with a click.
 - **Reincarnation.** A dive back down through the clouds, a landing, and the
   tree growing from a seedling to full height in one continuous shot at dawn.
 
+## The park
+
+The tree is not the only thing here. Leaves are a currency, and the park is a
+business.
+
+**Build** at the noticeboard: saplings, flowerbeds, benches, a bird bath, a
+beehive, a lamp post. Everything you build produces leaves, forever, at its own
+rate — saplings grow and earn more as they age, and the lamp post is the only
+reason the park keeps earning after dark. Benches bring **visitors**, little
+pixel people who walk in, sit for a while, leave a tip and wander off happy.
+
+**Upgrade** at the keeper's cottage, where the ledger is kept: a rake so the
+leaves gather themselves, an open gate for twice the visitors, a painted sign
+for half again on everything, a compost heap that doubles the lot.
+
+**Expand** the park three times and the hedges get pushed back, the plot count
+grows, and eventually you can see all the way to the lane. He has not seen the
+lane since the war.
+
 ## The Hall of Trophies
 
 **You cannot get in until you die.** Death is not the end of the collection. In heaven there is a marble gallery
 under vaulted arches, with a red carpet running away into the light and a
-plinth for every one of the **66 achievements** — each with its own carved
+plinth for every one of the **77 achievements** — each with its own carved
 trophy on a gold mount: a stone tissue for the sneeze, a leaf vault for the
 hoarder, a lighter sinking into water for the one who threw it away, a film
 reel for the whole canon. Chandeliers burn overhead, a skylight throws shafts
@@ -95,9 +117,10 @@ shrouded under cloth behind a velvet rope.
 Drag the hall left and right to walk it. Lift a trophy off its plinth and drop
 it on another to rearrange the collection; your arrangement is remembered.
 Achievements arrive in Minecraft-style corner popups in three tiers — plain
-achievements, gold goals, and purple challenges. They arrive as **phone-style
-notifications** — frosted glass, app icon, title and detail, sliding down from
-the top of the screen and stacking. There are **9 endings**, each with its own
+achievements, gold goals, and purple challenges. They are **delivered by a
+snail**, who crawls in from the left carrying an unrolled scroll with your news
+on it, leaves a slime trail across the grass, and eventually reaches the other
+side. Poke him and he hurries. There are **9 endings**, each with its own
 card and a hint for the ones you haven't found.
 
 Endings include burning him down, throwing the lighter in the pond, hearing
@@ -114,6 +137,8 @@ to forget you.
 | --- | --- |
 | Click the tree | Talk (click again to skip the typing) |
 | Click a fallen leaf | Pick it up |
+| Click the noticeboard | Build something |
+| Click the cottage | The ledger, and upgrades |
 | Press and hold the trunk | Hug him |
 | Drag an item onto him | Use it |
 | Click the squirrel | Chat and open his shop |
@@ -138,8 +163,9 @@ window changes.
 
 ```
 index.html                page shell
+js/font.js                the 5x7 bitmap font and the text layout
 css/style.css             chunky pixel-adjacent interface
-js/data.js                all the writing: dialogue, achievements, endings, shop
+js/data.js                all the writing: dialogue, achievements, endings, shop, park
 js/sprites.js             the pixel renderer — forest, tree, face, fire, hall, heaven
 js/audio.js               tiny WebAudio chiptune engine
 js/game.js                state, interactions, achievements, endings, cinematics, loop

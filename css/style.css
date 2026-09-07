@@ -43,114 +43,6 @@ html, body {
 
 .hidden { display: none !important; }
 
-/* ---------------- his speech bubble ---------------- */
-#bubble {
-  position: absolute;
-  max-width: min(430px, 74vw);
-  background: var(--paper);
-  color: #2b1c10;
-  border: 3px solid var(--bark-lo);
-  box-shadow: 0 0 0 3px rgba(0,0,0,.20), 5px 6px 0 rgba(0,0,0,.30);
-  padding: 9px 13px 11px;
-  line-height: 1.55;
-  transform: translate(-50%, -100%);
-  pointer-events: none;
-  animation: bubblein .22s cubic-bezier(.2,1.5,.5,1) both;
-}
-@keyframes bubblein { from { transform: translate(-50%, -100%) scale(.82); opacity: 0; } }
-#bubble::after,
-#bubble::before {
-  content: ""; position: absolute; left: 50%; margin-left: -9px; width: 0; height: 0;
-}
-#bubble::before { bottom: -17px; border: 9px solid transparent; border-top-color: var(--bark-lo); border-top-width: 15px; }
-#bubble::after  { bottom: -9px;  border: 6px solid transparent; border-top-color: var(--paper); border-top-width: 12px; margin-left: -6px; }
-#bubble.left  { transform: translate(-14%, -100%); }
-#bubble.left::before, #bubble.left::after { left: 16%; }
-#bubble.right { transform: translate(-86%, -100%); }
-#bubble.right::before, #bubble.right::after { left: 84%; }
-
-#speaker { font-size: 10px; letter-spacing: 2px; color: #8a6a3a; margin-bottom: 4px; }
-#btext { font-size: 13px; }
-#btext::after { content: '▌'; opacity: .45; animation: blink 1s steps(2) infinite; }
-#btext.done::after { content: ''; }
-@keyframes blink { 50% { opacity: 0; } }
-
-#bubble.serious { background: #e6ecf2; }
-#bubble.serious #speaker { color: #4a6a88; }
-#bubble.squirrel { background: #f6e2c4; }
-#bubble.squirrel #speaker { color: #9a5a1a; }
-#bubble.heaven { background: #eaf4ff; }
-#bubble.heaven #speaker { color: #4a7ba8; }
-
-/* ---------------- your replies ---------------- */
-#choices {
-  position: absolute; display: flex; flex-direction: column; gap: 6px;
-  transform: translate(-50%, 0); align-items: stretch;
-  width: min(430px, 88vw); z-index: 24;
-}
-#choices button {
-  font-family: var(--font); font-size: 12px; text-align: left;
-  padding: 8px 12px; cursor: pointer;
-  color: #2b1c10; background: #ffffff;
-  border: 3px solid var(--bark-lo);
-  box-shadow: 4px 4px 0 rgba(0,0,0,.3);
-  animation: choicein .22s ease both;
-}
-#choices button:nth-child(2) { animation-delay: .05s; }
-#choices button:nth-child(3) { animation-delay: .1s; }
-@keyframes choicein { from { opacity: 0; transform: translateY(-6px); } }
-#choices button:hover { background: var(--gold); }
-#choices button:active { transform: translate(2px, 2px); box-shadow: 2px 2px 0 rgba(0,0,0,.3); }
-#choices button::before { content: '▸ '; color: #8a6a3a; }
-
-/* ---------------- notifications ---------------- */
-#notes {
-  position: absolute; top: max(10px, env(safe-area-inset-top)); left: 50%;
-  transform: translateX(-50%);
-  width: min(370px, 92vw);
-  display: flex; flex-direction: column; gap: 8px;
-  pointer-events: none; z-index: 30;
-}
-.note {
-  display: flex; align-items: center; gap: 11px;
-  padding: 10px 13px;
-  border-radius: 19px;
-  background: rgba(28, 26, 24, .72);
-  -webkit-backdrop-filter: blur(22px) saturate(180%);
-  backdrop-filter: blur(22px) saturate(180%);
-  border: 1px solid rgba(255,255,255,.13);
-  box-shadow: 0 8px 26px rgba(0,0,0,.4);
-  color: #fff;
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, system-ui, sans-serif;
-  transform: translateY(-130%) scale(.94);
-  opacity: 0;
-  transition: transform .5s cubic-bezier(.22,1.4,.4,1), opacity .35s ease;
-}
-.note.in { transform: translateY(0) scale(1); opacity: 1; }
-.note.out { transform: translateY(-130%) scale(.94); opacity: 0; }
-.nicon {
-  width: 40px; height: 40px; flex: none;
-  border-radius: 11px;
-  image-rendering: pixelated;
-  background: linear-gradient(160deg, #6d4a28, #3c2716);
-  box-shadow: inset 0 1px 0 rgba(255,255,255,.18);
-}
-.note.goal .nicon { background: linear-gradient(160deg, #c79426, #6d5210); }
-.note.chal .nicon { background: linear-gradient(160deg, #6c47a8, #33205a); }
-.note.ending .nicon { background: linear-gradient(160deg, #2f6f52, #143726); }
-.nbody { min-width: 0; flex: 1; }
-.nrow { display: flex; align-items: baseline; gap: 6px; }
-.napp { font-size: 11px; font-weight: 700; letter-spacing: .3px; text-transform: uppercase; opacity: .72; }
-.ntime { font-size: 11px; opacity: .5; margin-left: auto; }
-.ntitle { font-size: 14px; font-weight: 600; line-height: 1.25; margin-top: 1px; }
-.ndesc { font-size: 13px; line-height: 1.3; opacity: .72;
-  overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
-
-@media (prefers-color-scheme: light) {
-  .note { background: rgba(250,250,252,.78); color: #16130f; border-color: rgba(0,0,0,.07); }
-  .ndesc, .napp, .ntime { opacity: .6; }
-}
-
 /* ---------------- captions and hints ---------------- */
 #caption {
   position: absolute; left: 50%; bottom: 7%; transform: translateX(-50%);
@@ -159,15 +51,6 @@ html, body {
   pointer-events: none; animation: capin .8s ease both; z-index: 20;
 }
 @keyframes capin { from { opacity: 0; transform: translateX(-50%) translateY(6px); } }
-
-#hint {
-  position: absolute; left: 50%; bottom: 12px; transform: translateX(-50%);
-  background: rgba(10,8,7,.62); border: 2px solid rgba(0,0,0,.6);
-  padding: 4px 11px; font-size: 11px; color: var(--ink); line-height: 1.35;
-  pointer-events: none; z-index: 20; text-align: center; max-width: 90vw;
-}
-#hint.cine { bottom: auto; top: 10px; left: auto; right: 12px; transform: none; font-size: 10px; opacity: .7; }
-#hint.raised { bottom: 62px; }
 
 #halllabel {
   position: absolute; left: 50%; top: 12px; transform: translateX(-50%);
@@ -297,11 +180,3 @@ html, body {
   *, *::before, *::after { animation-duration: .01ms !important; transition-duration: .01ms !important; }
 }
 
-/* the only buttons in the game live in heaven and the hall */
-#actions {
-  position: absolute; left: 50%; bottom: max(14px, env(safe-area-inset-bottom));
-  transform: translateX(-50%);
-  display: flex; gap: 8px; flex-wrap: wrap; justify-content: center;
-  z-index: 22; max-width: 94vw;
-}
-#actions:empty { display: none; }
