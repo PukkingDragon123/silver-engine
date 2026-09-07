@@ -52,8 +52,36 @@ const G = {
   sneezeTimer: 14 + Math.random() * 18,
   burnTimer: 0, burnStage: 0, deathTimer: 0, ascended: false,
   heavenTalk: 0, godIdx: 0, ghostIdx: 0,
-  pendingEnding: null
+  pendingEnding: null,
+  // face performance
+  stare: 0, stareTimer: 20 + Math.random() * 40, moodTimer: 0, stillBurning: false,
+  watchers: 0, watcherSeed: 1, watcherTimer: 40 + Math.random() * 60,
+  // camera and cinematics
+  cam: { x: 0, y: 5, z: 1.09, tx: 0, ty: 5, tz: 1.09 },
+  cine: null, letterbox: 0,
+  // the hall of trophies
+  hall: { scroll: 0, target: 0, order: [], unlocked: {}, tier: {},
+          dragIndex: -1, dragX: 0, dragY: 0, grabbed: false, hover: -1, from: 'heaven' }
 };
+
+/* ---------------------------------------------------------------------
+   HALL SETUP — the display order is the player's, and it is remembered
+   --------------------------------------------------------------------- */
+function buildHall() {
+  const known = DATA.achievements.map(a => a.id);
+  const seen = new Set();
+  const order = [];
+  for (const id of (save.hallOrder || [])) {
+    if (known.includes(id) && !seen.has(id)) { order.push(id); seen.add(id); }
+  }
+  for (const id of known) if (!seen.has(id)) order.push(id);
+  G.hall.order = order;
+  G.hall.unlocked = {}; G.hall.tier = {};
+  for (const a of DATA.achievements) {
+    G.hall.unlocked[a.id] = !!save.ach[a.id];
+    G.hall.tier[a.id] = a.kind;
+  }
+}
 
 /* dialogue bag: never the same line twice until the bag is empty */
 let bag = [];
@@ -74,6 +102,14 @@ const cv = $('game'), ctx = cv.getContext('2d');
 cv.width = W; cv.height = H;
 ctx.imageSmoothingEnabled = false;
 
+/* The scene is drawn 1:1 into this buffer and then blitted through the
+   camera. Scaling the context directly leaves seams between the 1px rows
+   every sprite is built from; blitting a finished frame does not. */
+const buf = document.createElement('canvas');
+buf.width = W; buf.height = H;
+const dc = buf.getContext('2d');
+dc.imageSmoothingEnabled = false;
+
 const elDialog = $('dialogue'), elSpeaker = $('speaker'), elText = $('dtext');
 const elLeaves = $('leafcount'), elItems = $('items'), elActions = $('actions');
 const elToasts = $('toasts'), elShop = $('shop'), elShopList = $('shoplist');
@@ -87,6 +123,7 @@ const elSeason = $('seasonpill');
    --------------------------------------------------------------------- */
 let typeQueue = null, typeIdx = 0, typeTimer = 0, talkHold = 0;
 function say(speaker, text, mood, cls) {
+  G.stare = 0; G.watchers = Math.min(G.watchers, 0.2);
   elDialog.classList.remove('hidden');
   elDialog.className = 'dialogue ' + (cls || '');
   elSpeaker.textContent = speaker;
@@ -125,6 +162,7 @@ function ACH(id) {
   if (save.ach[id]) return false;
   if (!ACH_BY_ID[id]) return false;
   save.ach[id] = Date.now();
+  G.hall.unlocked[id] = true;
   toastQueue.push(ACH_BY_ID[id]);
   persist();
   checkMetaAchievements();
@@ -248,7 +286,18 @@ function actionBtn(label, cls, fn) {
 
 function refreshActions() {
   elActions.innerHTML = '';
-  if (G.scene === 'heaven') { actionBtn('Reincarnate \u21bb', 'good', reincarnate); return; }
+  if (G.scene === 'cine') return;
+  if (G.scene === 'hall') {
+    actionBtn('\u2190 Back', '', closeHall);
+    actionBtn('Sort by unlocked', '', sortHall);
+    actionBtn('List view', '', openTrophies);
+    return;
+  }
+  if (G.scene === 'heaven') {
+    actionBtn('Hall of Trophies', 'good', () => openHall('heaven'));
+    actionBtn('Reincarnate \u21bb', 'good', reincarnate);
+    return;
+  }
   if (G.scene !== 'game') return;
   if (G.dead) return;
   actionBtn('Hug', 'good', doHug);
@@ -681,34 +730,50 @@ function showEndingCard(e) {
    --------------------------------------------------------------------- */
 function goHeaven() {
   G.scene = 'heaven';
-  G.flash = 1.6;
-  SFX.ascend();
   ACH('heaven');
   elDialog.classList.add('hidden');
   refreshActions();
   setTimeout(() => {
-    say('THE WISE OAK TREE (DECEASED)', DATA.heavenTreeLines[0], null, 'heaven');
-  }, 2200);
-  elHint.textContent = 'click the ghost tree · click the clouds · then reincarnate';
+    if (G.scene === 'heaven') say('THE WISE OAK TREE (DECEASED)', DATA.heavenTreeLines[0], null, 'heaven');
+  }, 1400);
+  elHint.textContent = 'click the ghost tree · click the clouds · visit the hall · then reincarnate';
   elHint.classList.remove('hidden');
 }
 
-function reincarnate() {
-  save.stats.rebirths++; persist();
-  ACH('reborn');
-  if (save.stats.rebirths >= 5) ACH('reborn5');
-  // reset the world, keep everything earned
-  G.scene = 'game'; G.burn = 0; G.dead = false; G.burnStage = 0; G.deathTimer = 0;
+function openHall(from) {
+  buildHall();
+  G.hall.from = from || 'heaven';
+  G.hall.scroll = 0; G.hall.target = 0; G.hall.dragIndex = -1;
+  G.scene = 'hall';
+  elDialog.classList.add('hidden');
+  const got = DATA.achievements.filter(a => save.ach[a.id]).length;
+  elHint.textContent = got + ' / ' + DATA.achievements.length + ' \u00b7 drag to scroll \u00b7 lift a trophy onto another plinth to rearrange';
+  elHint.classList.remove('hidden');
+  refreshActions();
+  SFX.ach();
+}
+
+function closeHall() {
+  elHallLabel.classList.add('hidden');
+  G.scene = G.hall.from === 'game' ? 'game' : 'heaven';
+  elHint.classList.toggle('hidden', G.scene === 'game');
+  if (G.scene === 'heaven') elHint.textContent = 'click the ghost tree \u00b7 click the clouds \u00b7 visit the hall \u00b7 then reincarnate';
+  refreshActions();
+}
+
+function resetWorld() {
+  G.burn = 0; G.dead = false; G.burnStage = 0; G.deathTimer = 0; G.ascended = false;
   G.particles = []; G.groundLeaves = []; G.saplings = [];
   G.inv = { leaves: 0, items: {} };
   G.flags = { hatOn: false, lighterGone: false, confirming: false, newsRead: false };
   G.squirrel = { active: false, x: -20, y: GROUND_Y + 6, dir: 1, moving: false, targetX: 190, face: 0, holding: null, spawned: false, clicks: 0, clickT: 0 };
   G.sneezeTimer = 12 + Math.random() * 15;
-  G.mood = 'idle'; G.flash = 1.2; G.sinceTreeClick = 0;
+  G.mood = 'chill'; G.stare = 0; G.sinceTreeClick = 0;
   elHint.classList.add('hidden');
   refreshHUD();
-  say('THE WISE OAK TREE', "...Oh. It is you. I do not remember anything and yet I am inexplicably fond of you. Weird. Anyway: I am a tree.", 'happy');
 }
+
+function reincarnate() { startRebirthCine(); }
 
 /* ---------------------------------------------------------------------
    PARTICLES
@@ -767,6 +832,120 @@ function updateSeasonPill() {
 }
 
 /* ---------------------------------------------------------------------
+   CINEMATICS
+   A stage list with durations. Each stage may set the camera target and a
+   caption; render() reads G.cine to decide what to draw.
+   --------------------------------------------------------------------- */
+const elCaption = $('caption');
+const elHallLabel = $('halllabel');
+
+function playCine(name, stages, onDone) {
+  G.cine = { name, stages, i: 0, t: 0, done: onDone || null };
+  G.scene = 'cine';
+  elDialog.classList.add('hidden');
+  elShop.classList.add('hidden');
+  refreshActions();
+  enterStage();
+}
+
+function enterStage() {
+  const st = G.cine.stages[G.cine.i];
+  if (!st) return;
+  elHint.textContent = 'click to skip ahead';
+  elHint.className = 'cine';
+  if (st.cam) { G.cam.tx = st.cam[0]; G.cam.ty = st.cam[1]; G.cam.tz = st.cam[2]; }
+  if (st.snap) { G.cam.x = G.cam.tx; G.cam.y = G.cam.ty; G.cam.z = G.cam.tz; }
+  setCaption(st.caption || '');
+  if (st.enter) st.enter();
+}
+
+function setCaption(text) {
+  if (!text) { elCaption.classList.add('hidden'); elCaption.textContent = ''; return; }
+  elCaption.textContent = text;
+  elCaption.classList.remove('hidden');
+}
+
+function updateCine(dt) {
+  const cn = G.cine;
+  if (!cn) return;
+  cn.t += dt;
+  const st = cn.stages[cn.i];
+  if (st && st.tick) st.tick(Math.min(1, cn.t / st.dur), dt);
+  if (st && cn.t >= st.dur) {
+    cn.i++; cn.t = 0;
+    if (cn.i >= cn.stages.length) {
+      const done = cn.done;
+      G.cine = null; setCaption('');
+      elHint.className = 'hidden';
+      G.cam.tx = 0; G.cam.ty = 5; G.cam.tz = 1.09;
+      if (done) done();
+      return;
+    }
+    enterStage();
+  }
+}
+
+/* click during a cinematic to jump to the next beat */
+function skipStage() {
+  const cn = G.cine;
+  if (!cn) return;
+  const st = cn.stages[cn.i];
+  if (st) cn.t = st.dur;
+}
+
+function cineProgress() {
+  const cn = G.cine;
+  if (!cn) return 0;
+  const st = cn.stages[cn.i];
+  return st ? Math.min(1, cn.t / st.dur) : 0;
+}
+function cineStage() { return G.cine ? (G.cine.stages[G.cine.i] || {}).id : null; }
+
+/* ---- death: the tree burns down, and something leaves it ---- */
+function startDeathCine() {
+  // he is still alive, and still looking at you, right up until the trunk goes
+  G.dead = false;
+  G.mood = 'sob';
+  SFX.boom();
+  playCine('death', [
+    { id: 'collapse', dur: 3.4, cam: [0, 18, 1.85], caption: '',
+      enter: () => { G.shake = 6; G.stillBurning = true; G.mood = 'sob'; SFX.fire(); },
+      tick: (p) => {
+        G.shake = Math.max(G.shake, 3 * (1 - p));
+        G.mood = p > 0.82 ? 'sleepy' : 'sob';
+        if (p > 0.85) G.flash = Math.max(G.flash, (p - 0.85) * 8);
+      } },
+    { id: 'fall', dur: 2.6, cam: [0, 4, 1.2], caption: 'Four hundred and eleven years.',
+      enter: () => { G.dead = true; G.flash = 1.4; SFX.boom(); G.shake = 5; } },
+    { id: 'ash', dur: 4.4, cam: [0, 5, 1.05], caption: 'The wise oak tree died.',
+      enter: () => { G.stillBurning = false; spawnParticles('ash', 128, 100, 60); } },
+    { id: 'soul', dur: 4.2, cam: [0, -10, 1.3], caption: 'Something is leaving.',
+      enter: () => { SFX.ascend(); } },
+    { id: 'tunnel', dur: 2.8, cam: [0, 0, 1.0], snap: true, caption: '' },
+    { id: 'arrive', dur: 3.4, cam: [0, 0, 1.0], caption: 'Somewhere very bright.' }
+  ], () => { goHeaven(); reachEnding('arson'); });
+}
+
+/* ---- reincarnation: dive out of heaven and grow back ---- */
+function startRebirthCine() {
+  save.stats.rebirths++; persist();
+  ACH('reborn');
+  if (save.stats.rebirths >= 5) ACH('reborn5');
+  playCine('rebirth', [
+    { id: 'leave', dur: 2.6, cam: [0, -10, 1.3], caption: 'Go on, then.', enter: () => SFX.ascend() },
+    { id: 'dive', dur: 3.2, cam: [0, 0, 1.0], snap: true, caption: '' },
+    { id: 'land', dur: 1.8, cam: [0, 0, 1.6], caption: '',
+      enter: () => { G.flash = 1.5; SFX.plant(); G.shake = 4; } },
+    { id: 'grow', dur: 5.0, cam: [0, 5, 1.09], caption: 'The second best time is now.',
+      enter: () => { resetWorld(); SFX.hug(); } }
+  ], () => {
+    G.scene = 'game';
+    refreshHUD(); refreshActions();
+    say('THE WISE OAK TREE', "...Oh. It is you. I do not remember anything and yet I am inexplicably fond of you. Weird. Anyway: I am a tree.", 'happy');
+  });
+}
+
+/* ---------------------------------------------------------------------
    UPDATE
    --------------------------------------------------------------------- */
 function update(dt) {
@@ -778,7 +957,18 @@ function update(dt) {
 
   saveTimer += dt; if (saveTimer > 5) { saveTimer = 0; persist(); }
   if (G.sessionTime > 600) ACH('idle');
+  updateCam(dt);
 
+  if (G.cine) {
+    G.letterbox = Math.min(1, G.letterbox + dt * 2.5);
+    G.flash = Math.max(0, G.flash - dt * 1.2);
+    G.shake = Math.max(0, G.shake - dt * 6);
+    updateCine(dt);
+    return;
+  }
+  G.letterbox = Math.max(0, G.letterbox - dt * 3);
+
+  if (G.scene === 'hall') { updateHall(dt); return; }
   if (G.scene === 'heaven') { G.flash = Math.max(0, G.flash - dt * 0.7); return; }
 
   // clock + seasons
@@ -819,6 +1009,41 @@ function update(dt) {
   for (const sp of G.saplings) sp.age += dt;
 
   if (G.scene === 'game' && !G.dead) {
+    // he does not hold one expression for long
+    G.moodTimer -= dt;
+    if (G.moodTimer <= 0 && !G.talking && G.stare <= 0) {
+      G.moodTimer = 5 + Math.random() * 9;
+      const night = SPR.isNight(G.timeOfDay);
+      const pool = night ? ['chill', 'chill', 'sleepy', 'think', 'sly'] : ['chill', 'chill', 'chill', 'think', 'sly', 'smug'];
+      G.mood = pool[Math.floor(Math.random() * pool.length)];
+    }
+
+    // ...and every so often he stops performing and just looks at you
+    G.stareTimer -= dt;
+    if (G.stareTimer <= 0 && !G.talking) {
+      G.stare = 1; G.stareHold = 2.4; G.mood = 'creepy';
+      G.stareTimer = 50 + Math.random() * 70;
+      SFX.deny();
+    }
+    if (G.stare > 0) {
+      G.stareHold -= dt;
+      if (G.stareHold <= 0) {
+        G.stare = Math.max(0, G.stare - dt * 0.9);
+        if (G.stare <= 0) { G.mood = 'chill'; G.moodTimer = 4; }
+      }
+    }
+
+    // something else blinks awake in the branches
+    G.watcherTimer -= dt;
+    if (G.watcherTimer <= 0) {
+      G.watchers = 1; G.watcherHold = 1.8; G.watcherSeed = Math.floor(Math.random() * 9999);
+      G.watcherTimer = 55 + Math.random() * 90;
+    }
+    if (G.watchers > 0) {
+      G.watcherHold -= dt;
+      if (G.watcherHold <= 0) G.watchers = Math.max(0, G.watchers - dt * 1.2);
+    }
+
     // stillness ending
     G.sinceTreeClick += dt;
     if (save.ach.hello && G.sinceTreeClick > 180) { ACH('silence'); reachEnding('stillness'); G.sinceTreeClick = -1e9; }
@@ -865,69 +1090,172 @@ function update(dt) {
       const b = BURN_LINES[G.burnStage++];
       say('THE WISE OAK TREE', b.text, b.mood, 'serious');
     }
-    if (G.burn >= 1) {
-      G.dead = true; G.scene = 'ash'; G.deathTimer = 0;
-      SFX.boom(); G.shake = 6;
-      elDialog.classList.add('hidden');
-      refreshActions();
-    }
+    if (G.burn >= 1) startDeathCine();
   }
+}
 
-  if (G.scene === 'ash') {
-    G.deathTimer += dt;
-    if (G.deathTimer > 4 && !G.pendingEnding && !save.endings.arson) {
-      G.pendingEnding = goHeaven;
-      reachEnding('arson');
-    } else if (G.deathTimer > 4 && save.endings.arson && !G.ascended) {
-      G.ascended = true; goHeaven();
-    }
+/* camera easing — cinematics move it, everything else leaves it alone */
+function updateCam(dt) {
+  if (!G.cine) {
+    const rest = (G.scene === 'hall' || G.scene === 'heaven') ? [0, 0, 1] : [0, 5, 1.09];
+    G.cam.tx = rest[0]; G.cam.ty = rest[1]; G.cam.tz = rest[2];
   }
+  const k = Math.min(1, dt * 2.4);
+  G.cam.x += (G.cam.tx - G.cam.x) * k;
+  G.cam.y += (G.cam.ty - G.cam.y) * k;
+  G.cam.z += (G.cam.tz - G.cam.z) * k;
+}
+
+function updateHall(dt) {
+  const h = G.hall;
+  const maxScroll = Math.max(0, SPR.hallWidth(h.order.length) - W);
+  h.target = Math.max(0, Math.min(maxScroll, h.target));
+  h.scroll += (h.target - h.scroll) * Math.min(1, dt * 8);
+}
+
+function sortHall() {
+  SFX.click();
+  const rank = { chal: 0, goal: 1, task: 2 };
+  G.hall.order.sort((a, b) => {
+    const ua = G.hall.unlocked[a] ? 0 : 1, ub = G.hall.unlocked[b] ? 0 : 1;
+    if (ua !== ub) return ua - ub;
+    const ra = rank[G.hall.tier[a]], rb = rank[G.hall.tier[b]];
+    if (ra !== rb) return ra - rb;
+    return a.localeCompare(b);
+  });
+  save.hallOrder = G.hall.order.slice(); persist();
 }
 
 /* ---------------------------------------------------------------------
    RENDER
    --------------------------------------------------------------------- */
-function drawPond(c) {
-  const night = SPR.isNight(G.timeOfDay);
-  const base = night ? '#20406a' : '#3f8fd0';
-  const hi = night ? '#2c5488' : '#6fb6e8';
-  for (let y = -6; y <= 6; y++) {
-    const hw = Math.round(Math.sqrt(Math.max(0, 1 - (y / 6) ** 2)) * 20);
-    px(c, 28 - hw, GROUND_Y + 14 + y, hw * 2, 1, base);
+function drawWorld(opts) {
+  const o = opts || {};
+  SPR.drawBackdrop(dc, G);
+  if (G.burn > 0 && !o.growing) {
+    // firelight swallows the daylight
+    dc.globalAlpha = Math.min(0.40, G.burn * 0.45);
+    SPR.px(dc, 0, 0, W, H, '#5a1f0c');
+    dc.globalAlpha = 1;
   }
-  for (let i = 0; i < 5; i++) {
-    const w = 4 + ((Math.sin(G.t * 1.4 + i) * 0.5 + 0.5) * 8 | 0);
-    px(c, 20 + i * 4 - w / 2, GROUND_Y + 10 + i * 2, w, 1, hi);
+  SPR.drawGround(dc, G);
+  SPR.drawPond(dc, G);
+  SPR.drawGroundItems(dc, G);
+  SPR.drawFireGlow(dc, G);
+
+  if (o.fall) {
+    SPR.drawStump(dc, G);
+    // the trunk goes over, hinged where it snapped
+    dc.save();
+    dc.translate(128, GROUND_Y + 4);
+    dc.rotate(o.fall * 1.15);
+    dc.translate(-128, -(GROUND_Y + 4));
+    SPR.drawTree(dc, G);
+    dc.restore();
+  } else if (o.growing !== undefined) {
+    SPR.drawGrowingTree(dc, G, o.growing);
+  } else {
+    SPR.drawTree(dc, G);
+    SPR.drawWatchers(dc, G);
   }
-  if (G.flags.lighterGone) px(c, 27, GROUND_Y + 15, 3, 2, '#7a2a2a');
+
+  SPR.drawFireOnTree(dc, G);
+  SPR.drawSquirrel(dc, G);
+  SPR.drawParticles(dc, G);
+  SPR.drawForeground(dc, G);
+  SPR.drawFrameFoliage(dc, G);
+  SPR.drawBokeh(dc, G);
+  SPR.drawOverlay(dc, G);
+
+  if (!o.fall && hover.kind === 'leaf') {
+    const l = G.groundLeaves[hover.i];
+    if (l) {
+      dc.globalAlpha = 0.45 + Math.sin(G.t * 8) * 0.2;
+      SPR.pcircle(ctx, l.x + 3, l.y + 2, 7, '#ffffff');
+      dc.globalAlpha = 1;
+      SPR.drawLeafSprite(ctx, l.x, l.y, l.col, l.col2);
+    }
+  }
+}
+
+function drawCineFrame() {
+  const st = cineStage(), p = cineProgress();
+  if (G.cine.name === 'death') {
+    if (st === 'collapse') { drawWorld(); }
+    else if (st === 'fall') { drawWorld({ fall: Math.pow(p, 1.6) }); }
+    else if (st === 'ash') { SPR.drawAshScene(dc, G); SPR.drawParticles(dc, G); SPR.drawFrameFoliage(dc, G); }
+    else if (st === 'soul') {
+      SPR.drawAshScene(dc, G);
+      const y = GROUND_Y - 14 - p * 150;
+      SPR.drawRays(dc, G, Math.min(1, p * 1.4) * 0.7, 128, y);
+      SPR.drawSoul(dc, G, 128, y, 1 + p);
+      SPR.drawParticles(dc, G);
+      if (p > 0.8) { dc.globalAlpha = (p - 0.8) * 5; SPR.px(dc, 0, 0, W, H, '#ffffff'); dc.globalAlpha = 1; }
+    } else if (st === 'tunnel') {
+      SPR.px(dc, 0, 0, W, H, '#dceeff');
+      SPR.drawCloudTunnel(dc, G, p, 1);
+      SPR.drawSoul(dc, G, 128, 110 - p * 30, 1.6);
+      SPR.drawRays(dc, G, 0.5, 128, 96);
+      dc.globalAlpha = Math.max(0, p - 0.7) * 3.3; SPR.px(dc, 0, 0, W, H, '#ffffff'); dc.globalAlpha = 1;
+    } else if (st === 'arrive') {
+      SPR.drawHeavenBackdrop(dc, G);
+      const drop = (1 - Math.pow(1 - p, 3));
+      SPR.drawGhostTree(dc, G, 128, -60 + drop * 164 + Math.sin(G.t * 1.1) * 3, Math.min(1, p * 2));
+      SPR.drawRays(dc, G, 0.8 * (1 - p * 0.6), 128, 70);
+      dc.globalAlpha = Math.max(0, 1 - p * 2.2); SPR.px(dc, 0, 0, W, H, '#ffffff'); dc.globalAlpha = 1;
+    }
+  } else {
+    if (st === 'leave') {
+      SPR.drawHeaven(dc, G);
+      SPR.drawSoul(dc, G, 128, 120 + p * 60, 1.2);
+      dc.globalAlpha = Math.max(0, p - 0.75) * 4; SPR.px(dc, 0, 0, W, H, '#ffffff'); dc.globalAlpha = 1;
+    } else if (st === 'dive') {
+      SPR.px(dc, 0, 0, W, H, '#e2f0ff');
+      SPR.drawCloudTunnel(dc, G, p, -1);
+      const y = 40 + p * 70;
+      SPR.drawSoul(dc, G, 128, y, 1.4);
+      for (let i = 0; i < 10; i++) {
+        dc.globalAlpha = 0.5 * (1 - i / 10);
+        SPR.pcircle(ctx, 128 + Math.sin(G.t * 4 + i) * 3, y - i * 6, 3 - i * 0.25, '#ffffff');
+        dc.globalAlpha = 1;
+      }
+    } else if (st === 'land') {
+      SPR.drawBackdrop(dc, G);
+      SPR.drawGround(dc, G);
+      SPR.drawForeground(dc, G);
+      const y = -20 + p * (GROUND_Y + 10);
+      SPR.drawSoul(dc, G, 128, y, 1.4 * (1 - p * 0.4));
+      SPR.drawFrameFoliage(dc, G);
+      if (p > 0.9) { dc.globalAlpha = (p - 0.9) * 10; SPR.px(dc, 0, 0, W, H, '#ffffff'); dc.globalAlpha = 1; }
+    } else if (st === 'grow') {
+      G.timeOfDay = 0.02 + p * 0.16;
+      drawWorld({ growing: Math.pow(p, 0.9) });
+    }
+  }
 }
 
 function render() {
+  dc.setTransform(1, 0, 0, 1, 0, 0);
+  dc.clearRect(0, 0, W, H);
+
+  if (G.cine) drawCineFrame();
+  else if (G.scene === 'hall') SPR.drawHall(dc, G);
+  else if (G.scene === 'heaven') SPR.drawHeaven(dc, G);
+  else drawWorld();
+
+  // blit through the camera
+  const cam = G.cam;
+  const sh = G.cine && G.shake > 0 ? G.shake : 0;
+  const sw = W / cam.z, sHt = H / cam.z;
+  const sx = (W - sw) / 2 + cam.x + (Math.random() * 2 - 1) * sh;
+  const sy = (H - sHt) / 2 + cam.y + (Math.random() * 2 - 1) * sh;
+  ctx.setTransform(1, 0, 0, 1, 0, 0);
+  ctx.imageSmoothingEnabled = false;
   ctx.clearRect(0, 0, W, H);
-  if (G.scene === 'heaven') {
-    SPR.drawHeaven(ctx, G);
-  } else if (G.scene === 'ash') {
-    SPR.drawAshScene(ctx, G);
-    SPR.drawParticles(ctx, G);
-  } else {
-    SPR.drawSky(ctx, G);
-    SPR.drawClouds(ctx, G);
-    SPR.drawHills(ctx, G);
-    SPR.drawGround(ctx, G);
-    drawPond(ctx);
-    SPR.drawGroundItems(ctx, G);
-    SPR.drawTree(ctx, G);
-    SPR.drawFireOnTree(ctx, G);
-    SPR.drawSquirrel(ctx, G);
-    SPR.drawParticles(ctx, G);
-    SPR.drawOverlay(ctx, G);
-    // highlight whatever the cursor is over
-    if (hover.kind === 'leaf') {
-      const l = G.groundLeaves[hover.i];
-      if (l) { ctx.globalAlpha = 0.5 + Math.sin(G.t * 8) * 0.2; px(ctx, l.x - 1, l.y - 1, 9, 8, '#ffffff'); ctx.globalAlpha = 1; SPR.drawLeafSprite(ctx, l.x, l.y, l.col, l.col2); }
-    }
-  }
-  if (G.flash > 0) { ctx.globalAlpha = Math.min(1, G.flash); px(ctx, 0, 0, W, H, '#ffffff'); ctx.globalAlpha = 1; }
+  ctx.drawImage(buf, sx, sy, sw, sHt, 0, 0, W, H);
+
+  if (G.flash > 0) { ctx.globalAlpha = Math.min(1, G.flash); SPR.px(ctx, 0, 0, W, H, '#ffffff'); ctx.globalAlpha = 1; }
+  SPR.drawLetterbox(ctx, G.letterbox);
 }
 
 /* ---------------------------------------------------------------------
@@ -942,7 +1270,30 @@ function toLogical(ev) {
   return { x: cx / r.width * W, y: cy / r.height * H };
 }
 
+/* which plinth is under this point, if any */
+function hallSlotAt(x, y) {
+  const h = G.hall;
+  for (let i = 0; i < h.order.length; i++) {
+    const p = SPR.hallSlotPos(i);
+    const sx = p.x - h.scroll;
+    if (Math.abs(x - sx) < 17 * p.scale && y > p.y - 46 * p.scale && y < p.y + 6) return i;
+  }
+  return -1;
+}
+
+function showHallLabel(i) {
+  const h = G.hall;
+  if (i < 0) { elHallLabel.classList.add('hidden'); return; }
+  const id = h.order[i];
+  const a = DATA.achievements.find(x => x.id === id);
+  if (!a) { elHallLabel.classList.add('hidden'); return; }
+  const got = h.unlocked[id];
+  elHallLabel.className = got ? '' : 'locked';
+  elHallLabel.innerHTML = '<b>' + (got ? a.name : '??? \u2014 not yet earned') + '</b><span>' + a.desc + '</span>';
+}
+
 function hitTest(x, y) {
+  if (G.scene === 'hall') return { kind: 'hall', i: hallSlotAt(x, y) };
   if (G.scene === 'heaven') {
     if (x > 92 && x < 164 && y > 40 && y < 130) return { kind: 'ghost', i: -1 };
     return { kind: 'sky', i: -1 };
@@ -964,17 +1315,76 @@ function hitTest(x, y) {
   return { kind: null, i: -1 };
 }
 
-cv.addEventListener('mousemove', ev => {
+let pan = null;      // { startX, startScroll }
+
+function onMove(ev) {
   const p = toLogical(ev);
   G.look.x = Math.max(-1.4, Math.min(1.4, (p.x - 128) / 60));
   G.look.y = Math.max(-1.2, Math.min(1.2, (p.y - 116) / 50));
+
+  if (G.scene === 'hall') {
+    const h = G.hall;
+    if (h.dragIndex >= 0) {
+      h.dragX = p.x; h.dragY = p.y;
+      h.hover = hallSlotAt(p.x, p.y);
+      cv.style.cursor = 'grabbing';
+      return;
+    }
+    if (pan) { h.target = pan.startScroll + (pan.startX - p.x); cv.style.cursor = 'grabbing'; return; }
+    const i = hallSlotAt(p.x, p.y);
+    showHallLabel(i);
+    cv.style.cursor = i >= 0 && h.unlocked[h.order[i]] ? 'grab' : 'default';
+    return;
+  }
+
   hover = hitTest(p.x, p.y);
   cv.style.cursor = hover.kind && hover.kind !== 'sky' ? 'pointer' : 'default';
-});
+}
+cv.addEventListener('mousemove', onMove);
+cv.addEventListener('touchmove', ev => { ev.preventDefault(); onMove(ev); }, { passive: false });
+
+function onRelease() {
+  const h = G.hall;
+  if (G.scene === 'hall' && h.dragIndex >= 0) {
+    const target = h.hover;
+    if (target >= 0 && target !== h.dragIndex) {
+      const a = h.order[h.dragIndex];
+      h.order[h.dragIndex] = h.order[target];
+      h.order[target] = a;
+      SFX.trade();
+    } else SFX.click();
+    h.dragIndex = -1; h.hover = -1;
+    save.hallOrder = h.order.slice(); persist();
+  }
+  pan = null;
+  cv.style.cursor = 'default';
+}
+window.addEventListener('mouseup', onRelease);
+window.addEventListener('touchend', onRelease);
+
+cv.addEventListener('wheel', ev => {
+  if (G.scene !== 'hall') return;
+  ev.preventDefault();
+  G.hall.target += (ev.deltaY + ev.deltaX) * 0.6;
+}, { passive: false });
 
 function onPress(ev) {
   SFX.kick();
+  if (G.cine) { skipStage(); return; }
   const p = toLogical(ev);
+
+  if (G.scene === 'hall') {
+    const hl = G.hall;
+    const i = hallSlotAt(p.x, p.y);
+    if (i >= 0 && hl.unlocked[hl.order[i]]) {
+      hl.dragIndex = i; hl.dragX = p.x; hl.dragY = p.y; hl.hover = i;
+      SFX.pickup();
+    } else {
+      pan = { startX: p.x, startScroll: hl.target };
+    }
+    return;
+  }
+
   const h = hitTest(p.x, p.y);
   if (G.scene === 'heaven') {
     if (h.kind === 'ghost') {
@@ -998,7 +1408,12 @@ cv.addEventListener('touchstart', ev => { ev.preventDefault(); onPress(ev); }, {
 /* ---------------------------------------------------------------------
    CHROME BUTTONS
    --------------------------------------------------------------------- */
-$('btnTrophies').onclick = () => { SFX.click(); openTrophies(); };
+$('btnTrophies').onclick = () => {
+  SFX.click();
+  if (G.cine || G.scene === 'burning') return;
+  if (G.scene === 'hall') { closeHall(); return; }
+  openHall(G.scene === 'heaven' ? 'heaven' : 'game');
+};
 $('btnEndings').onclick = () => { SFX.click(); openEndings(); };
 $('btnShop').onclick = () => {
   SFX.click();
@@ -1022,6 +1437,12 @@ $('shopclose').onclick = (e) => { e.stopPropagation(); SFX.click(); closeShop();
 elModal.addEventListener('mousedown', e => { if (e.target === elModal && !G.flags.confirming) closeModal(); });
 
 document.addEventListener('keydown', e => {
+  if (G.scene === 'hall') {
+    if (e.key === 'ArrowRight') G.hall.target += 60;
+    if (e.key === 'ArrowLeft') G.hall.target -= 60;
+    if (e.key === 'Escape') closeHall();
+    return;
+  }
   if (e.key === 'Escape') { closeModal(); closeShop(); }
   if (e.key === ' ') { e.preventDefault(); if (!skipType() && G.scene === 'game') talkToTree(); }
   if (e.key.toLowerCase() === 't') openTrophies();
@@ -1036,6 +1457,7 @@ $('btnMute').textContent = save.muted ? 'Sound: off' : 'Sound: on';
 if (hadSave) ACH('refresh');
 checkMetaAchievements();
 checkCompletionist();
+buildHall();
 refreshHUD();
 updateSeasonPill();
 persist();

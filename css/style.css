@@ -246,3 +246,29 @@ button.danger { color: #ffb3b3; }
   .panel { width: calc(100% - 16px); }
   #hint { white-space: normal; width: 90%; text-align: center; }
 }
+
+/* ---------------- cinematic caption ---------------- */
+#caption {
+  position: absolute; left: 50%; bottom: 34px; transform: translateX(-50%);
+  color: #f6ecd6; font-size: 13px; letter-spacing: 2px; text-align: center;
+  text-shadow: 0 2px 0 #000, 0 0 12px rgba(0,0,0,.9);
+  white-space: nowrap; pointer-events: none;
+  animation: capin .8s ease both;
+}
+@keyframes capin { from { opacity: 0; transform: translateX(-50%) translateY(6px); } }
+
+/* ---------------- hall of trophies ---------------- */
+#halllabel {
+  position: absolute; left: 50%; top: 10px; transform: translateX(-50%);
+  background: rgba(10,8,7,.8); border: 2px solid var(--edge);
+  padding: 5px 12px; text-align: center; line-height: 1.35; max-width: 90%;
+  pointer-events: none;
+}
+#halllabel b { color: var(--gold); font-size: 12px; display: block; letter-spacing: 1px; }
+#halllabel span { color: var(--ink-dim); font-size: 10px; }
+#halllabel.locked b { color: #9aa8b8; }
+
+#hint.cine {
+  bottom: auto; top: 8px; left: auto; right: 8px; transform: none;
+  font-size: 10px; color: var(--ink-dim); opacity: .75;
+}
