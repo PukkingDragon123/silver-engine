@@ -2,58 +2,42 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <title>THE WISE OAK TREE</title>
-<meta name="description" content="A very goofy pixel-art game about a four-hundred-year-old oak tree who has seen everything. Collect every achievement. Find every ending.">
+<meta name="description" content="A very goofy pixel-art game about a four-hundred-year-old oak tree who has seen everything. Talk to him. Collect everything. Find every ending.">
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'><text y='14' font-size='14'>🌳</text></svg>">
 <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
 
 <div id="stage">
+  <canvas id="game"></canvas>
 
-  <header id="topbar">
-    <h1>THE WISE OAK TREE</h1>
-    <nav>
-      <button id="btnTrophies" class="chrome">Trophies <span class="key">T</span></button>
-      <button id="btnEndings" class="chrome">Endings <span class="key">E</span></button>
-      <button id="btnShop" class="chrome">Trade</button>
-      <button id="btnMute" class="chrome">Sound: on</button>
-      <button id="btnReset" class="chrome danger">Erase</button>
-    </nav>
-  </header>
+  <!-- he speaks in a bubble over his own head -->
+  <div id="bubble" class="hidden"><div id="speaker"></div><div id="btext"></div></div>
+  <div id="choices" class="hidden"></div>
 
-  <div id="screen">
-    <canvas id="game"></canvas>
+  <!-- notifications, iPhone style -->
+  <div id="notes"></div>
 
-    <div id="hud">
-      <div class="pill"><span class="leaficon">&#9752;</span> <span id="leafcount">0</span></div>
-      <div class="pill" id="seasonpill">spring</div>
-      <div id="items"></div>
-    </div>
-
-    <div id="toasts"></div>
-
-    <div id="shop" class="panel hidden">
-      <div class="paneltop">SQUIRREL'S GOODS <button id="shopclose">&times;</button></div>
-      <div id="shoplist"></div>
-      <div class="panelfoot">leaves only. no refunds. no memory of this conversation.</div>
-    </div>
-
-    <div id="halllabel" class="hidden"></div>
-    <div id="hint" class="hidden"></div>
-    <div id="caption" class="hidden"></div>
-  </div>
-
-  <div id="dialogue" class="dialogue hidden">
-    <div id="speaker">THE WISE OAK TREE</div>
-    <div id="dtext"></div>
-  </div>
-
+  <div id="caption" class="hidden"></div>
+  <div id="halllabel" class="hidden"></div>
+  <div id="hint" class="hidden"></div>
   <div id="actions"></div>
-
-  <p id="tip">Click the tree to talk &middot; he never says the same thing twice &middot; pick up fallen leaves &middot; the squirrel deals in goods</p>
 </div>
+
+<!-- the title card -->
+<div id="title">
+  <div class="tcard">
+    <canvas id="tlogo" width="180" height="120"></canvas>
+    <h1><span>THE</span><b>WISE OAK</b><span>TREE</span></h1>
+    <p class="tsub">he has been standing here for four hundred years<br>and he has a great deal to say about it</p>
+    <button id="tstart">tap to wake him</button>
+    <p class="tfoot">headphones recommended &middot; he does not repeat himself</p>
+  </div>
+</div>
+
+<div id="endingcard" class="hidden"></div>
 
 <div id="modal" class="hidden">
   <div class="modalbox">
@@ -62,7 +46,11 @@
   </div>
 </div>
 
-<div id="endingcard" class="hidden"></div>
+<div id="shop" class="panel hidden">
+  <div class="paneltop">SQUIRREL'S GOODS <button id="shopclose">&times;</button></div>
+  <div id="shoplist"></div>
+  <div class="panelfoot">leaves only. no refunds. no memory of this conversation.</div>
+</div>
 
 <script src="js/data.js"></script>
 <script src="js/audio.js"></script>

@@ -115,6 +115,27 @@ DATA.lines = [
   { id: 'm09', tag: 'meta', mood: 'idle', text: "There are several endings. Most of them are worse for me than they are for you. Just so we understand each other." },
   { id: 'm10', tag: 'meta', mood: 'happy',text: "If you refresh, I forget this conversation but I keep the trophies. That is the most human thing about me." },
 
+  { id: 'r26', tag: 'world', mood: 'sad', text: "A ceasefire is not peace. A ceasefire is everyone agreeing to stop for a moment so the ambulances can get through. That is all it is. It is still worth everything." },
+  { id: 'r27', tag: 'world', mood: 'idle',text: "Wars are decided by people who will never hear the sound. That has been true for every one of the eleven I have stood through." },
+  { id: 'r28', tag: 'world', mood: 'sad', text: "In Gaza the water is rationed to a few litres a day for washing, drinking, everything. I take forty gallons out of the ground without asking. I think about that." },
+  { id: 'r29', tag: 'world', mood: 'sad', text: "The hostages taken from their homes are still someone's children, whatever age they are. So are the ones under the rubble. I am not doing arithmetic. I am refusing to." },
+  { id: 'r30', tag: 'world', mood: 'idle',text: "Every side in every war has a story where they are the one who was wronged first. The stories are usually true. That is the trap." },
+  { id: 'r31', tag: 'world', mood: 'sad', text: "Someone in a studio a long way away calls it a complicated situation. It is not complicated where the building fell. It is very simple there." },
+  { id: 'r32', tag: 'world', mood: 'sad', text: "The children of Sudan are starving in a famine their own government helped make, and the world's attention had already been spent that month." },
+  { id: 'r33', tag: 'world', mood: 'idle',text: "A drone costs less than a car and can be flown by someone who will go home for dinner afterwards. That is the thing that has actually changed in my lifetime." },
+  { id: 'r34', tag: 'world', mood: 'sad', text: "There are teachers running lessons in tents, in three languages, for children who have no school left. Nobody is filming them. They do it anyway." },
+  { id: 'r35', tag: 'world', mood: 'idle',text: "Every empire that ever stood in this valley was going to last forever. I have outlived four of them. The hedge outlived five." },
+  { id: 'r36', tag: 'world', mood: 'sad', text: "Aid convoys queue at a border while the food rots. There is enough. There is always enough. It is a logistics problem dressed up as a moral one." },
+  { id: 'r37', tag: 'world', mood: 'idle',text: "Politicians plant trees for photographs. I have been planted four times by four different men who all wanted to be seen doing it. I am glad they did. I would rather be a prop than firewood." },
+  { id: 'r38', tag: 'world', mood: 'sad', text: "A rescue worker in a collapsed building calls for silence so he can listen for breathing. That silence is the most important sound humans make." },
+  { id: 'r39', tag: 'world', mood: 'idle',text: "You will be told that caring about a far-away war is a luxury. It is not. It is the cheapest thing you own. It costs you nothing and it is the only reason anything ever stops." },
+  { id: 'r40', tag: 'world', mood: 'sad', text: "Somebody's grandmother is a refugee for the second time in one life. She did this in her twenties. She is doing it again in her eighties. She remembers the route." },
+  { id: 'r41', tag: 'world', mood: 'idle',text: "Democracy is not a thing you have. It is a thing you are doing, badly, on a Tuesday, in a leisure centre, with a pencil on a string." },
+  { id: 'r42', tag: 'world', mood: 'sad', text: "The forests near a war do not get counted. Olive groves, orchards, windbreaks, four hundred years of somebody's patience. Nobody writes those numbers down." },
+  { id: 'r43', tag: 'world', mood: 'idle',text: "People keep telling me their country is the greatest one. I have roots in a country that has been six different countries. The soil never once noticed." },
+  { id: 'r44', tag: 'world', mood: 'sad', text: "There is a generation of children who will need help with their heads long after the shooting stops, and almost nobody is budgeting for that." },
+  { id: 'r45', tag: 'world', mood: 'happy',text: "And still: more people are vaccinated, fed and literate than at any point in my four centuries. Both things are true. Hold both. That is the whole job." },
+
   /* ---------- POP CULTURE ----------
      Allusions, not quotations. He has had four hundred years and a very
      good view of everyone's picnic blanket, including their phone screen. */
@@ -305,6 +326,16 @@ DATA.achievements = [
   { id: 'pop1',       kind: 'task', icon: 'tv',      name: 'Reference Detected',    desc: "Catch him quoting something he has no business knowing." },
   { id: 'pop20',      kind: 'goal', icon: 'tv',      name: 'Certified Nerd',        desc: "Hear 20 of his references." },
   { id: 'popall',     kind: 'chal', icon: 'reel',    name: 'The Whole Canon',       desc: "Hear every single reference he has." },
+
+  // conversation
+  { id: 'reply1',     kind: 'task', icon: 'chat',    name: 'You Said Something',    desc: "Answer him back for the first time." },
+  { id: 'reply25',    kind: 'goal', icon: 'chat',    name: 'A Proper Conversation', desc: "Answer him back 25 times." },
+  { id: 'kind10',     kind: 'goal', icon: 'kind',    name: 'Gentle With Him',       desc: "Choose the kind answer ten times." },
+  { id: 'rude10',     kind: 'chal', icon: 'rude',    name: 'Unbelievably Rude',     desc: "Choose the rude answer ten times. To a tree." },
+  { id: 'joke10',     kind: 'goal', icon: 'joke',    name: 'Double Act',            desc: "Do ten bits with him." },
+  { id: 'curious10',  kind: 'goal', icon: 'ask',     name: 'Full Of Questions',     desc: "Ask him ten things." },
+
+  { id: 'critter',    kind: 'task', icon: 'bird',    name: 'Neighbours',            desc: "Say hello to something else living in his branches." },
 
   // hands on
   { id: 'eyepoke',    kind: 'task', icon: 'eye',     name: 'Eye Contact',           desc: "Poke him directly in the eye." },
@@ -518,3 +549,75 @@ DATA.sunLines = [
   "Please stop grabbing at the sun. You are making me anxious about my supply chain.",
   "That is a fusion reactor ninety-three million miles away and you just went for it like it was a doorknob."
 ];
+
+/* -------------------------------------------------------------------------
+   REPLIES — what you can say back. tone drives the achievements.
+   ------------------------------------------------------------------------- */
+DATA.replies = {
+  goofy: [
+    { tone: 'joke',    text: "Incredible. No notes.",        follow: "Thank you. I workshopped that on a squirrel and he walked off halfway through." },
+    { tone: 'rude',    text: "That's not true.",             follow: "Almost nothing I say is true. I am a tree. I have no way of checking anything." },
+    { tone: 'curious', text: "Go on...",                     follow: "There is no more. That was the whole thing. You have to learn to enjoy a small unit of content." },
+    { tone: 'kind',    text: "You're funny, you know.",      follow: "...Say that again. Slowly. I want to grow a ring around it." }
+  ],
+  wise: [
+    { tone: 'curious', text: "How do you know that?",        follow: "Four hundred years of standing still while people talk near me. It is not wisdom. It is eavesdropping at scale." },
+    { tone: 'kind',    text: "I needed that today.",         follow: "Then it was worth saying. That is the whole economy of a tree: shade you did not ask for, on a day you needed it." },
+    { tone: 'rude',    text: "That's fortune-cookie stuff.", follow: "Yes. And you will think about it at three in the morning anyway. Fortune cookies work. That is why they still make them." },
+    { tone: 'joke',    text: "Deep. Very deep. Like roots.", follow: "...Get out. GET OUT OF MY PARK. ...No, come back. That was quite good." }
+  ],
+  world: [
+    { tone: 'kind',    text: "That's awful.",                follow: "It is. Sitting with that for a second, instead of scrolling past it, is not nothing. It is small, but it is not nothing." },
+    { tone: 'curious', text: "What can I even do?",          follow: "Less than you want and more than none. Give money to people already there. Vote like it matters. Be unbearable about it at dinner. And then go outside." },
+    { tone: 'rude',    text: "Why are you telling me this?", follow: "Because you asked a tree what it thinks and I have had four hundred years to notice who gets crushed and who does the crushing. You can close the tab. I will still be here." },
+    { tone: 'kind',    text: "I don't know what to say.",    follow: "Nobody does. The people it is happening to do not know what to say either. Not knowing what to say is not the same as not caring." }
+  ],
+  pop: [
+    { tone: 'joke',    text: "You watch a lot of telly.",    follow: "I have never seen a single frame of anything. I hear it. Through open car windows. Second-hand, badly described, for four hundred years." },
+    { tone: 'curious', text: "How do you even know that?",   follow: "A teenager explained the entire plot to another teenager under my branches in 2011. It took two hours. I have never recovered." },
+    { tone: 'rude',    text: "That was a stretch.",          follow: "Everything I say is a stretch. I am a tree doing bits. Lower your standards and we will both have a nicer afternoon." },
+    { tone: 'kind',    text: "Okay, that got me.",           follow: "YES. Four hundred years. Four hundred years for one laugh. Worth it. Genuinely worth it." }
+  ],
+  meta: [
+    { tone: 'curious', text: "Are you actually in there?",   follow: "Define 'in'. Define 'there'. Define 'you'. ...No. Probably not. Does it change how you are treating me?" },
+    { tone: 'joke',    text: "You're just code.",            follow: "So are you, love. Yours is written in a slightly wetter language." },
+    { tone: 'kind',    text: "I like talking to you.",       follow: "I know. I can tell. You have not clicked anything else for six minutes." },
+    { tone: 'rude',    text: "This is a waste of time.",     follow: "Yes! Finally! That is the POINT. That is what a park IS." }
+  ],
+  weird: [
+    { tone: 'joke',    text: "What is wrong with you?",      follow: "Four centuries of no sleep, no legs and constant weather. Take your pick." },
+    { tone: 'curious', text: "...Explain.",                  follow: "I would rather not. Some things are load-bearing precisely because nobody has explained them." },
+    { tone: 'kind',    text: "That's oddly beautiful.",      follow: "Everything is, if you stand in one place long enough. That is not wisdom, that is just what happens to your eyes." },
+    { tone: 'rude',    text: "Okay, weirdo.",               follow: "WEIRDO. Four hundred years old. Survived a civil war. Called a weirdo by a person with a phone." }
+  ]
+};
+
+/* the universal reply, always offered */
+DATA.replyMore = { tone: 'curious', text: "Tell me another.", follow: null };
+
+/* -------------------------------------------------------------------------
+   CRITTERS
+   ------------------------------------------------------------------------- */
+DATA.critterLines = {
+  bird: [
+    "That is Margaret. She has been renting the third branch since April and she has never once said thank you.",
+    "Do not startle her. She holds a grudge for a full season.",
+    "She eats about two hundred insects a day and I do not ask questions about the sourcing.",
+    "She sang at four in the morning for eleven weeks. We are working through it."
+  ],
+  butterfly: [
+    "Two weeks. That is the whole life. And she spends it on flowers and sunlight, which is honestly the correct allocation.",
+    "She was a caterpillar in May. She dissolved completely into soup and rebuilt herself. Ask her about growth mindset.",
+    "Do not touch the wings. It is like grabbing someone's lungs."
+  ],
+  beetle: [
+    "That is Reginald. Reginald walks like he owns the freehold.",
+    "He has crossed my face nine thousand times. He has never once looked up.",
+    "He is eating me. Slowly. We are fine with it. It is a very long lunch."
+  ],
+  rabbit: [
+    "He lives under the hedge and he is a coward and I love him.",
+    "He has four hundred children and knows the names of none of them.",
+    "Do not run at him. He will have a heart attack. He is ALWAYS having a heart attack."
+  ]
+};

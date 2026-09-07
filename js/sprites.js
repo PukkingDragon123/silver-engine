@@ -7,8 +7,23 @@
    with warm amber eyes that is friendly right up until it isn't.
    ========================================================================= */
 
-const W = 256, H = 192;
+let W = 256;                 // logical width follows the window's aspect
+const H = 192;               // logical height is fixed
+let CX = 128;                // the tree stands here
 const GROUND_Y = 150;
+
+/* Called on resize. Everything width-dependent is regenerated. */
+function setLogicalWidth(w) {
+  W = Math.max(224, Math.min(560, Math.round(w)));
+  CX = Math.round(W / 2);
+  _layer.cv.width = W; _layer.cv.height = H; _layer.ctx.imageSmoothingEnabled = false;
+  _silo.cv.width = W; _silo.cv.height = H; _silo.ctx.imageSmoothingEnabled = false;
+  FRAME = makeFrame();
+  BG_TREES = makeBgTrees();
+  repositionTree();
+  skyCache.key = -1;
+  return W;
+}
 
 /* ---------------- tiny helpers ---------------- */
 function px(c, x, y, w, h, col) { c.fillStyle = col; c.fillRect(x | 0, y | 0, w | 0, h | 0); }
@@ -55,8 +70,8 @@ function makeCanvas(w, h) {
   return { cv: c, ctx: x };
 }
 
-const _layer = makeCanvas(W, H);      // foreground actors, outlined as a group
-const _silo = makeCanvas(W, H);       // their silhouette
+const _layer = makeCanvas(560, H);     // foreground actors, outlined as a group
+const _silo = makeCanvas(560, H);      // their silhouette
 const _tro = makeCanvas(64, 64);      // one trophy at a time
 const _troSilo = makeCanvas(64, 64);
 
@@ -70,13 +85,14 @@ function layerBegin() {
 
 /* stamp the collected layer onto `c` with a contour around it */
 function layerEnd(c, col, thick) {
+  const W2 = W;
   const s = _silo.ctx;
   s.setTransform(1, 0, 0, 1, 0, 0);
   s.clearRect(0, 0, W, H);
   s.globalCompositeOperation = 'source-over';
   s.drawImage(_layer.cv, 0, 0);
   s.globalCompositeOperation = 'source-in';
-  s.fillStyle = col; s.fillRect(0, 0, W, H);
+  s.fillStyle = col; s.fillRect(0, 0, W2, H);
   s.globalCompositeOperation = 'source-over';
   for (const [dx, dy] of OUTLINE_OFFSETS) c.drawImage(_silo.cv, dx * (thick || 1), dy * (thick || 1));
   c.drawImage(_layer.cv, 0, 0);
@@ -176,7 +192,7 @@ function skyRows(t) {
 function makeCanopy(seed) {
   const rnd = mulberry(seed);
   const blobs = [];
-  const push = (x, y, r, tone) => blobs.push({ x, y, r, tone, s: rnd(), ph: rnd() * 6.28 });
+  const push = (x, y, r, tone) => blobs.push({ x, x0: x, y, r, tone, s: rnd(), ph: rnd() * 6.28 });
   push(128, 52, 34, 1); push(98, 60, 26, 1); push(158, 60, 26, 1);
   push(112, 40, 22, 2); push(146, 40, 22, 2);
   for (let i = 0; i < 46; i++) {
@@ -193,13 +209,15 @@ function makeCanopy(seed) {
   return blobs;
 }
 const CANOPY = makeCanopy(1337);
+const BRANCHES0 = null;   // set below
 
 /* foliage hanging into frame from the top edge — the thing that makes the
    reference picture feel like you are standing under a canopy */
-const FRAME = (function () {
+function makeFrame() {
   const rnd = mulberry(2024);
   const out = [];
-  for (let i = 0; i < 26; i++) {
+  const n = Math.round(26 * W / 256);
+  for (let i = 0; i < n; i++) {
     const x = rnd() * (W + 40) - 20;
     const y = -10 + rnd() * 34 - Math.abs(x - W / 2) / W * 14;
     out.push({ x, y, r: 12 + rnd() * 20, ph: rnd() * 6.28, sp: 0.4 + rnd() * 0.6 });
@@ -210,30 +228,34 @@ const FRAME = (function () {
                r: 16 + rnd() * 18, ph: rnd() * 6.28, sp: 0.5 });
   }
   return out;
-})();
+}
+let FRAME = makeFrame();
 
 /* misty background trees */
-const BG_TREES = (function () {
+function makeBgTrees() {
   const rnd = mulberry(555);
   const out = [];
-  for (let i = 0; i < 22; i++) {
+  const n = Math.round(22 * W / 256);
+  for (let i = 0; i < n; i++) {
     const x = rnd() * W;
-    if (x > 92 && x < 164) continue;               // keep the middle clear
+    if (Math.abs(x - CX) < 36) continue;           // keep the middle clear
     const depth = rnd();
     out.push({ x, depth, h: 26 + rnd() * 40 * (1 - depth * 0.5), r: 10 + rnd() * 14 });
   }
   return out.sort((a, b) => b.depth - a.depth);
-})();
+}
+let BG_TREES = makeBgTrees();
 
-const BRANCHES = [
+const BRANCHES_SRC = [
   [[128, 100], [108, 86], [90, 74], [78, 62]],
   [[128, 100], [148, 86], [166, 74], [178, 62]],
   [[128, 96],  [122, 78], [114, 60], [106, 46]],
   [[128, 96],  [134, 76], [142, 58], [150, 44]],
   [[128, 94],  [128, 72], [128, 52], [128, 36]]
 ];
+let BRANCHES = BRANCHES_SRC;
 
-const TWIGS = (function () {
+let TWIGS = (function () {
   const rnd = mulberry(808);
   const out = [];
   for (const b of BRANCHES) {
@@ -253,6 +275,17 @@ const TWIGS = (function () {
   }
   return out;
 })();
+const TWIGS_SRC = TWIGS.map(t => t.slice());
+
+/* Re-centre every authored piece of tree geometry on the current CX. */
+function repositionTree() {
+  const d = CX - 128;
+  for (const b of CANOPY) b.x = b.x0 + d;
+  BRANCHES = BRANCHES_SRC.map(br => br.map(([x, y]) => [x + d, y]));
+  for (let i = 0; i < TWIGS.length; i++) {
+    TWIGS[i][0] = TWIGS_SRC[i][0] + d; TWIGS[i][2] = TWIGS_SRC[i][2] + d;
+  }
+}
 
 /* the trunk is wide and gnarled so there is room for a real face on it */
 function trunkHalfWidth(y) {
@@ -397,7 +430,11 @@ function drawForeground(c, g) {
   const s = SEASON[g.season];
   const rnd = mulberry(64);
   const shade = col => mix(col, '#060c18', dk * 0.85);
-  const clumps = [[-6, 190, 26], [24, 196, 20], [232, 190, 26], [206, 198, 20], [128, 206, 24], [76, 204, 18], [178, 202, 18]];
+  const clumps = [];
+  for (let i = 0; i < Math.round(7 * W / 256); i++) {
+    const t = i / Math.max(1, Math.round(7 * W / 256) - 1);
+    clumps.push([-6 + t * (W + 12) + (i % 2 ? 18 : -12), 190 + (i % 3) * 8, 18 + (i % 3) * 4]);
+  }
   for (const [x, y, r] of clumps) {
     pellipse(c, x, y, r, r * 0.7, shade(s.t0));
     pellipse(c, x - 2, y - 3, r * 0.8, r * 0.5, shade(s.t1));
@@ -492,7 +529,7 @@ function drawTree(c, g) {
   c.globalAlpha = 0.26 * (1 - dk * 0.5);
   for (let y = 0; y <= 12; y++) {
     const hw = Math.round(Math.sqrt(Math.max(0, 1 - (y / 12) ** 2)) * 58);
-    if (hw > 0) px(c, 128 - hw, GROUND_Y + 1 + y, hw * 2, 1, '#0d1a08');
+    if (hw > 0) px(c, CX - hw, GROUND_Y + 1 + y, hw * 2, 1, '#0d1a08');
   }
   c.globalAlpha = 1;
 
@@ -500,17 +537,17 @@ function drawTree(c, g) {
   for (const dir of [-1, 1]) {
     for (let i = 0; i < 26; i++) {
       const h = Math.max(1, 12 - i * 0.44);
-      const x = 128 + dir * (26 + i) - (dir < 0 ? 2 : 0);
+      const x = CX + dir * (26 + i) - (dir < 0 ? 2 : 0);
       px(c, x, GROUND_Y + 6 - h, 2, h, i < 4 ? B.mid : B.lo);
       if (i % 5 === 0) px(c, x, GROUND_Y + 5 - h, 2, 1, B.hi);
     }
-    px(c, 128 + dir * 52 - (dir < 0 ? 5 : 0), GROUND_Y + 4, 5, 3, B.deep);
+    px(c, CX + dir * 52 - (dir < 0 ? 5 : 0), GROUND_Y + 4, 5, 3, B.deep);
   }
 
   // trunk, lit from the upper left
   for (let y = GROUND_Y + 6; y > 88; y--) {
     const hw = trunkHalfWidth(y);
-    const x = 128 + off(y) - hw;
+    const x = CX + off(y) - hw;
     px(c, x, y, hw * 2, 1, B.mid);
     px(c, x, y, 2, 1, B.lo);
     px(c, x + 2, y, 5, 1, B.hi);                 // sunlit edge
@@ -523,7 +560,7 @@ function drawTree(c, g) {
   for (let i = 0; i < 90; i++) {
     const y = 92 + Math.floor(rnd() * 62);
     const hw = trunkHalfWidth(y);
-    const x = 128 + off(y) + Math.floor((rnd() * 2 - 1) * (hw - 4));
+    const x = CX + off(y) + Math.floor((rnd() * 2 - 1) * (hw - 4));
     px(c, x, y, 1, 2 + Math.floor(rnd() * 4), rnd() > 0.45 ? B.lo : B.hi);
   }
 
@@ -548,7 +585,7 @@ function drawTree(c, g) {
   drawFace(c, g, off, B, dk);
 
   if (g.flags.hatOn && !g.dead) {
-    const hx = Math.round(128 + sway * 1.4), hy = 26;
+    const hx = Math.round(CX + sway * 1.4), hy = 26;
     for (let y = 0; y <= 14; y++) {
       const hw = Math.round(Math.sqrt(Math.max(0, 1 - (y / 14) ** 2)) * 19);
       px(c, hx - hw, hy - y, hw * 2, 1, y > 10 ? '#e05c4e' : '#c9453b');
@@ -636,7 +673,7 @@ function drawWinterCrown(c, g, off, B) {
    a mouth that can go from grandfatherly to far too wide.
    ------------------------------------------------------------------------- */
 function drawFace(c, g, off, B, dk) {
-  const cx = Math.round(128 + off(112)), cy = 112;
+  const cx = Math.round(CX + off(112)), cy = 112;
   const M = MOODS[g.mood] || MOODS.chill;
   const stare = g.stare || 0;
   const wide = 1 + stare * 0.18;
@@ -869,19 +906,181 @@ function drawStump(c, g) {
   const rnd = mulberry(31);
   for (let y = GROUND_Y + 6; y > GROUND_Y - 18; y--) {
     const hw = trunkHalfWidth(y);
-    px(c, 128 - hw, y, hw * 2, 1, B.mid);
-    px(c, 128 - hw, y, 4, 1, B.hi);
-    px(c, 128 + hw - 4, y, 4, 1, B.deep);
+    px(c, CX - hw, y, hw * 2, 1, B.mid);
+    px(c, CX - hw, y, 4, 1, B.hi);
+    px(c, CX + hw - 4, y, 4, 1, B.deep);
   }
   for (let i = 0; i < 24; i++) {
-    const x = 128 - 26 + i * 2.2;
+    const x = CX - 26 + i * 2.2;
     px(c, x, GROUND_Y - 18 - Math.floor(rnd() * 9), 3, 12, B.lo);
   }
   for (const dir of [-1, 1]) for (let i = 0; i < 26; i++) {
     const h = Math.max(1, 12 - i * 0.44);
-    px(c, 128 + dir * (26 + i) - (dir < 0 ? 2 : 0), GROUND_Y + 6 - h, 2, h, B.lo);
+    px(c, CX + dir * (26 + i) - (dir < 0 ? 2 : 0), GROUND_Y + 6 - h, 2, h, B.lo);
   }
   for (let i = 0; i < 18; i++) dot(c, 110 + rnd() * 36, GROUND_Y - 16 + rnd() * 6, rnd() > 0.5 ? '#ff8a3a' : '#d94a22');
+}
+
+/* -------------------------------------------------------------------------
+   CRITTERS — the other residents
+   ------------------------------------------------------------------------- */
+function drawCritters(c, g) {
+  const dk = darkness(g.timeOfDay);
+  const shade = col => mix(col, '#0a1226', dk * 0.7);
+  for (const k of g.critters) {
+    if (k.kind === 'bird') {
+      const hop = Math.sin(g.t * 3 + k.ph) * 0.8;
+      const bx = k.x, by = k.y + hop;
+      if (k.flying) {
+        const flap = Math.sin(g.t * 18) * 4;
+        pcircle(c, bx, by, 3, shade(k.col));
+        px(c, bx - 5, by - 1 + flap, 5, 2, shade(k.col));
+        px(c, bx + 2, by - 1 - flap, 5, 2, shade(k.col));
+        px(c, bx + 3, by - 1, 2, 1, shade('#e8a33a'));
+      } else {
+        pellipse(c, bx, by, 4, 3, shade(k.col));
+        pellipse(c, bx - 1, by - 1, 3, 2, shade(mix(k.col, '#ffffff', 0.3)));
+        pcircle(c, bx + 3, by - 3, 2.5, shade(k.col));
+        px(c, bx + 5, by - 3, 2, 1, shade('#e8a33a'));
+        dot(c, bx + 4, by - 4, '#120a04');
+        px(c, bx - 6, by, 4, 2, shade(mix(k.col, '#000000', 0.3)));   // tail
+        px(c, bx - 1, by + 3, 1, 2, shade('#c8892a'));
+        px(c, bx + 1, by + 3, 1, 2, shade('#c8892a'));
+      }
+    } else if (k.kind === 'butterfly') {
+      const w = 1 + Math.abs(Math.sin(g.t * 10 + k.ph)) * 2.4;
+      px(c, k.x, k.y - 1, 1, 3, shade('#3a2a1a'));
+      dot(c, k.x, k.y - 2, shade('#3a2a1a'));
+      for (const d of [-1, 1]) {
+        px(c, k.x + d * 1, k.y - 2, d * w, 2, shade(k.col));                 // upper wing
+        px(c, k.x + d * 1, k.y, d * Math.max(1, w - 1), 2, shade(mix(k.col, '#000000', 0.25)));
+        dot(c, k.x + d * (w - 0.5), k.y - 2, shade('#ffffff'));
+      }
+    } else if (k.kind === 'beetle') {
+      pellipse(c, k.x, k.y, 3, 2, shade('#2a2a3a'));
+      pellipse(c, k.x - 1, k.y - 1, 2, 1, shade('#5a5a7a'));
+      px(c, k.x + 2, k.y - 1, 2, 1, shade('#1a1a24'));
+      for (let i = -1; i <= 1; i++) { dot(c, k.x + i, k.y - 2, shade('#1a1a24')); dot(c, k.x + i, k.y + 2, shade('#1a1a24')); }
+    } else if (k.kind === 'rabbit') {
+      const hop = k.moving ? Math.abs(Math.sin(g.t * 9)) * 3 : 0;
+      const y = k.y - hop;
+      pellipse(c, k.x, y, 6, 4, shade('#b8a48a'));
+      pcircle(c, k.x + 5 * k.dir, y - 3, 3, shade('#b8a48a'));
+      px(c, k.x + 4 * k.dir, y - 9, 2, 6, shade('#b8a48a'));
+      px(c, k.x + 7 * k.dir, y - 8, 2, 5, shade('#b8a48a'));
+      dot(c, k.x + 6 * k.dir, y - 3, '#120a04');
+      pcircle(c, k.x - 6 * k.dir, y, 2.5, shade('#f2ece0'));
+      px(c, k.x - 2, y + 3, 2, 2, shade('#8a7a62'));
+    }
+  }
+}
+
+/* flowers, ferns and long grass along the bottom of the world */
+function drawUndergrowth(c, g) {
+  const dk = darkness(g.timeOfDay);
+  const s = SEASON[g.season];
+  const shade = col => mix(col, '#050c18', dk * 0.82);
+  const rnd = mulberry(1234);
+  const n = Math.round(46 * W / 256);
+  for (let i = 0; i < n; i++) {
+    const x = rnd() * W;
+    const y = GROUND_Y + 6 + rnd() * (H - GROUND_Y - 8);
+    const near = (y - GROUND_Y) / (H - GROUND_Y);
+    const h = 4 + near * 9;
+    const sw = Math.sin(g.t * 1.2 + i) * (0.6 + near);
+    // a fern frond
+    for (let b = 0; b < h; b++) {
+      const bx = x + sw * (b / h);
+      px(c, bx, y - b, 1, 1, shade(s.t1));
+      if (b % 2 === 0 && b > 1) {
+        const l = Math.max(1, (h - b) * 0.5);
+        px(c, bx - l, y - b, l, 1, shade(s.t2));
+        px(c, bx + 1, y - b, l, 1, shade(s.t2));
+      }
+    }
+    if (rnd() > 0.72 && g.season !== 'winter') {
+      const fc = ['#ffffff', '#ffd9ea', '#ffe066', '#d8b0ff'][Math.floor(rnd() * 4)];
+      pcircle(c, x + sw, y - h - 1, 1.6, shade(fc));
+      dot(c, x + sw, y - h - 1, shade('#ffd24a'));
+    }
+  }
+}
+
+/* -------------------------------------------------------------------------
+   IN-WORLD HUD — drawn in pixels, because the game has no other interface
+   ------------------------------------------------------------------------- */
+function drawHud(c, g) {
+  const pad = 6;
+  // leaf tally on a little wooden sign
+  const n = String(g.inv.leaves);
+  const w = 26 + n.length * 6;
+  px(c, pad, pad, w, 15, '#1a0f08');
+  px(c, pad + 1, pad + 1, w - 2, 13, '#4a3423');
+  px(c, pad + 1, pad + 1, w - 2, 1, '#6b4a30');
+  drawLeafSprite(c, pad + 4, pad + 4, '#7cc44a', '#2d6b1f');
+  digits(c, pad + 15, pad + 5, n, '#f4ead6');
+
+  // season and time
+  const label = g.season.toUpperCase();
+  const sw = label.length * 4 + 14;
+  px(c, pad, pad + 18, sw, 12, '#1a0f08');
+  px(c, pad + 1, pad + 19, sw - 2, 10, '#3a2e26');
+  if (isNight(g.timeOfDay)) {
+    pcircle(c, pad + 6, pad + 24, 3, '#e9eeff'); pcircle(c, pad + 8, pad + 23, 3, '#3a2e26');
+  } else {
+    pcircle(c, pad + 6, pad + 24, 3, '#ffe066');
+  }
+  tinyText(c, pad + 11, pad + 21, label, '#c8b89a');
+
+  // sound toggle, bottom right
+  const mx = W - 18, my = H - 16;
+  px(c, mx - 2, my - 2, 16, 14, '#1a0f08');
+  px(c, mx - 1, my - 1, 14, 12, '#3a2e26');
+  px(c, mx + 1, my + 3, 3, 4, '#f4ead6');
+  for (let i = 0; i < 4; i++) px(c, mx + 4, my + 5 - i, 2, 2 + i * 2, '#f4ead6');
+  if (g.muted) for (let i = 0; i < 5; i++) { dot(c, mx + 7 + i, my + 2 + i, '#ef5330'); dot(c, mx + 7 + i, my + 6 - i, '#ef5330'); }
+  else { px(c, mx + 8, my + 3, 1, 4, '#f4ead6'); px(c, mx + 10, my + 1, 1, 8, '#f4ead6'); }
+}
+
+/* a 3x5 pixel numeral set, for the leaf tally */
+const DIGIT_BITS = ['111101101101111', '010110010010111', '111001111100111', '111001111001111',
+                    '101101111001001', '111100111001111', '111100111101111', '111001010010010',
+                    '111101111101111', '111101111001111'];
+function digits(c, x, y, str, col) {
+  for (let i = 0; i < str.length; i++) {
+    const bits = DIGIT_BITS[+str[i]] || DIGIT_BITS[0];
+    for (let b = 0; b < 15; b++) if (bits[b] === '1') px(c, x + i * 4 + (b % 3), y + Math.floor(b / 3), 1, 1, col);
+  }
+}
+
+/* very small capitals, enough for a season name */
+const LETTER_BITS = {
+  A: '010101111101101', B: '110101110101110', C: '011100100100011', D: '110101101101110',
+  E: '111100110100111', F: '111100110100100', G: '011100101101011', H: '101101111101101',
+  I: '111010010010111', J: '001001001101010', K: '101101110101101', L: '100100100100111',
+  M: '101111111101101', N: '101111111111101', O: '010101101101010', P: '110101110100100',
+  Q: '010101101111011', R: '110101110101101', S: '011100010001110', T: '111010010010010',
+  U: '101101101101011', V: '101101101010010', W: '101101111111101', X: '101101010101101',
+  Y: '101101010010010', Z: '111001010100111', ' ': '000000000000000'
+};
+function tinyText(c, x, y, str, col) {
+  for (let i = 0; i < str.length; i++) {
+    const bits = LETTER_BITS[str[i]] || LETTER_BITS[' '];
+    for (let b = 0; b < 15; b++) if (bits[b] === '1') px(c, x + i * 4 + (b % 3), y + Math.floor(b / 3), 1, 1, col);
+  }
+}
+
+/* the things you own, lying about on the grass */
+function drawTools(c, g) {
+  for (const t of g.tools) {
+    const held = g.holding && g.holding.id === t.id;
+    const bob = held ? 0 : Math.sin(g.t * 2 + t.hx) * 0.6;
+    c.globalAlpha = 0.28;
+    pellipse(c, t.x + 1, (held ? t.y + 12 : t.y + 7), 6, 2, '#0d1a08');
+    c.globalAlpha = 1;
+    if (held) glow(c, t.x, t.y, 11, '#ffe9a0', 0.5);
+    drawItemIcon(c, t.x, t.y + bob, t.id);
+  }
 }
 
 /* =========================================================================
@@ -996,7 +1195,7 @@ function flame(c, x, y, h, seed) {
 function drawFireGlow(c, g) {
   if (g.burn <= 0) return;
   if (g.dead && !g.stillBurning) return;
-  glow(c, 128, 108, 80 * Math.min(1, g.burn * 1.5), '#ff7a2a', 0.5);
+  glow(c, CX, 108, 80 * Math.min(1, g.burn * 1.5), '#ff7a2a', 0.5);
 }
 
 function drawFireOnTree(c, g) {
@@ -1018,11 +1217,11 @@ function drawFireOnTree(c, g) {
     const y = GROUND_Y + 4 - rnd() * 62 * climb;
     const hw = trunkHalfWidth(y);
     const edge = 0.62 + rnd() * 0.45;
-    flame(c, 128 + (rnd() > 0.5 ? 1 : -1) * hw * edge, y, 4 + Math.floor(rnd() * 9), g.t + i * 0.7);
+    flame(c, CX + (rnd() > 0.5 ? 1 : -1) * hw * edge, y, 4 + Math.floor(rnd() * 9), g.t + i * 0.7);
   }
   // a low fire licking round the roots
   for (let i = 0; i < 12; i++) {
-    flame(c, 128 + (rnd() * 2 - 1) * 40, GROUND_Y + 4 + rnd() * 3, 4 + Math.floor(rnd() * 7), g.t + i);
+    flame(c, CX + (rnd() * 2 - 1) * 40, GROUND_Y + 4 + rnd() * 3, 4 + Math.floor(rnd() * 7), g.t + i);
   }
   for (let i = 0; i < 20; i++) px(c, 106 + rnd() * 44, GROUND_Y + rnd() * 6, 1, 1, rnd() > 0.5 ? '#ffd24a' : '#ef5330');
 }
@@ -1085,7 +1284,7 @@ function drawAshScene(c, g) {
   c.globalAlpha = 0.6;
   for (let y = 0; y <= 12; y++) {
     const hw = Math.round(Math.sqrt(Math.max(0, 1 - (y / 12) ** 2)) * 60);
-    if (hw > 0) px(c, 128 - hw, GROUND_Y + 2 + y, hw * 2, 1, '#0e0a09');
+    if (hw > 0) px(c, CX - hw, GROUND_Y + 2 + y, hw * 2, 1, '#0e0a09');
   }
   c.globalAlpha = 1;
 
@@ -1093,9 +1292,9 @@ function drawAshScene(c, g) {
   for (let y = GROUND_Y + 6; y > GROUND_Y - 26; y--) {
     const k = (GROUND_Y - y) / 32;
     const hw = Math.round(30 - k * 8);
-    px(c, 128 - hw, y, hw * 2, 1, '#2a2220');
-    px(c, 128 - hw, y, 3, 1, '#171211');
-    px(c, 128 + hw - 3, y, 3, 1, '#3a2f2c');
+    px(c, CX - hw, y, hw * 2, 1, '#2a2220');
+    px(c, CX - hw, y, 3, 1, '#171211');
+    px(c, CX + hw - 3, y, 3, 1, '#3a2f2c');
   }
   for (let i = 0; i < 22; i++) {
     const x = 100 + i * 2.6;
@@ -1103,10 +1302,10 @@ function drawAshScene(c, g) {
   }
   for (const dir of [-1, 1]) for (let i = 0; i < 22; i++) {
     const h = Math.max(1, 8 - i * 0.36);
-    px(c, 128 + dir * (28 + i) - (dir < 0 ? 2 : 0), GROUND_Y + 6 - h, 2, h, '#1e1817');
+    px(c, CX + dir * (28 + i) - (dir < 0 ? 2 : 0), GROUND_Y + 6 - h, 2, h, '#1e1817');
   }
   const glowAmt = 0.55 + 0.45 * Math.sin(g.t * 1.7);
-  glow(c, 128, GROUND_Y - 8, 26, '#ff6a20', 0.18 * glowAmt);
+  glow(c, CX, GROUND_Y - 8, 26, '#ff6a20', 0.18 * glowAmt);
   for (let i = 0; i < 26; i++) {
     const x = 108 + Math.floor(rnd() * 40), y = GROUND_Y - 24 + Math.floor(rnd() * 28);
     c.globalAlpha = glowAmt * (0.4 + rnd() * 0.6);
@@ -1122,7 +1321,7 @@ function drawAshScene(c, g) {
   }
   for (let i = 0; i < 24; i++) {
     const p = i / 24;
-    const x = 128 + Math.sin(g.t * 0.8 + p * 4) * (4 + p * 18);
+    const x = CX + Math.sin(g.t * 0.8 + p * 4) * (4 + p * 18);
     c.globalAlpha = 0.20 * (1 - p);
     pcircle(c, x, GROUND_Y - 32 - p * 100, 3 + p * 10, '#8a7d76');
     c.globalAlpha = 1;
@@ -1251,6 +1450,28 @@ const TROPHY_ART = {
   idle: (c, x, y) => { px(c, x - 10, y - 1, 20, 3, '#8a6141'); px(c, x - 10, y + 3, 20, 2, '#6b4a30');
     px(c, x - 8, y + 5, 2, 4, '#5a3a20'); px(c, x + 6, y + 5, 2, 4, '#5a3a20');
     for (let i = 0; i < 5; i++) px(c, x - 9 + i * 5, y - 4, 2, 3, JADE[2]); },
+  /* --- conversation --- */
+  reply1: (c, x, y) => { pellipse(c, x - 2, y - 3, 10, 7, GOLD[4]); px(c, x - 8, y + 3, 5, 5, GOLD[4]);
+    for (let i = -4; i <= 4; i += 4) px(c, x - 2 + i, y - 4, 2, 2, GOLD[0]); },
+  reply25: (c, x, y) => { pellipse(c, x + 3, y - 5, 9, 6, STONE[4]); px(c, x + 8, y + 1, 4, 4, STONE[4]);
+    pellipse(c, x - 4, y + 4, 9, 6, GOLD[3]); px(c, x - 9, y + 9, 4, 4, GOLD[3]);
+    for (let i = -3; i <= 3; i += 3) { dot(c, x + 3 + i, y - 5, STONE[0]); dot(c, x - 4 + i, y + 4, GOLD[0]); } },
+  kind10: (c, x, y) => { px(c, x - 7, y - 4, 5, 5, '#ff5b78'); px(c, x + 2, y - 4, 5, 5, '#ff5b78');
+    px(c, x - 7, y, 14, 4, '#ff5b78'); px(c, x - 5, y + 4, 10, 3, '#ff5b78'); px(c, x - 2, y + 7, 4, 3, '#ff5b78');
+    pellipse(c, x - 3, y - 2, 3, 2, '#ffa8b8'); },
+  rude10: (c, x, y) => { pellipse(c, x, y - 2, 10, 7, '#d64545'); px(c, x - 6, y + 4, 5, 5, '#d64545');
+    px(c, x - 2, y - 6, 3, 6, GOLD[4]); px(c, x - 2, y + 1, 3, 3, GOLD[4]); },
+  joke10: (c, x, y) => { pcircle(c, x, y, 9, GOLD[3]); pcircle(c, x, y, 8, GOLD[4]);
+    px(c, x - 5, y - 3, 3, 3, '#3a2a10'); px(c, x + 3, y - 3, 3, 3, '#3a2a10');
+    for (let i = -5; i <= 5; i++) px(c, x + i, y + 3 + Math.round(Math.cos(i / 5 * 1.57) * 3) - 3, 1, 2, '#3a2a10'); },
+  curious10: (c, x, y) => { for (let i = 0; i < 9; i++) { const A = -1.9 + i * 0.42; px(c, x + Math.cos(A) * 6, y - 5 + Math.sin(A) * 5, 3, 3, GOLD[3]); }
+    px(c, x, y + 1, 3, 4, GOLD[3]); px(c, x, y + 7, 3, 3, GOLD[4]); },
+
+  critter: (c, x, y) => { pellipse(c, x - 1, y + 2, 6, 4, '#8a4a3a'); pcircle(c, x + 4, y - 2, 3.5, '#8a4a3a');
+    px(c, x + 7, y - 2, 3, 1, '#e8a33a'); dot(c, x + 5, y - 3, '#120a04');
+    px(c, x - 8, y + 2, 5, 2, '#5a2f24'); px(c, x - 3, y + 6, 1, 3, '#c8892a'); px(c, x, y + 6, 1, 3, '#c8892a');
+    px(c, x - 10, y + 9, 20, 2, JADE[1]); },
+
   /* --- pop culture --- */
   pop1: (c, x, y) => { px(c, x - 10, y - 8, 20, 14, STONE[1]); px(c, x - 8, y - 6, 16, 10, '#6ba8d8');
     px(c, x - 8, y - 6, 16, 3, '#9fd0ee'); px(c, x - 2, y + 6, 4, 4, STONE[2]); px(c, x - 7, y + 9, 14, 2, STONE[3]);
@@ -1599,7 +1820,7 @@ function drawHeavenBackdrop(c, g) {
 function drawHeaven(c, g) {
   drawHeavenBackdrop(c, g);
   const rnd = mulberry(41);
-  drawGhostTree(c, g, 128, 104 + Math.sin(g.t * 1.1) * 3, 1);
+  drawGhostTree(c, g, CX, 104 + Math.sin(g.t * 1.1) * 3, 1);
   for (let i = 0; i < 40; i++) {
     const x = Math.floor(rnd() * W), y = Math.floor(rnd() * H);
     if (Math.sin(g.t * 3 + i) > 0.8) { dot(c, x, y, '#ffffff'); dot(c, x, y - 1, '#fffbe0'); }
@@ -1640,8 +1861,8 @@ function drawGhostTree(c, g, gx, fy, alpha) {
     px(c, gx + dir * (11 + i) - (dir < 0 ? 2 : 0), fy + 17 - h, 2, h, '#c2dae8');
   }
   const cy = fy - 50;
-  const blobs = CANOPY.filter(b => b.s < 0.58 && Math.abs(b.x - 128) < 44);
-  const map = bl => [gx + (bl.x - 128) * 0.58, cy + (bl.y - 52) * 0.55];
+  const blobs = CANOPY.filter(b => b.s < 0.58 && Math.abs(b.x - CX) < 44);
+  const map = bl => [gx + (bl.x - CX) * 0.58, cy + (bl.y - 52) * 0.55];
   for (const bl of blobs) { const [bx, by] = map(bl); pcircle(c, bx, by, bl.r * 0.6 + 1, LEAF_OUT); }
   for (const bl of blobs) { const [bx, by] = map(bl); pcircle(c, bx, by, bl.r * 0.6, '#a8ddc0'); }
   for (const bl of blobs) { const [bx, by] = map(bl); pcircle(c, bx - 1, by - 2, Math.max(2, bl.r * 0.6 - 4), '#d2f2e0'); }
@@ -1744,9 +1965,9 @@ function drawRays(c, g, amount, cx, cy) {
 function drawGrowingTree(c, g, p) {
   const k = 0.10 + 0.90 * Math.pow(Math.min(1, p), 0.75);
   c.save();
-  c.translate(128, GROUND_Y + 4);
+  c.translate(CX, GROUND_Y + 4);
   c.scale(k, k);
-  c.translate(-128, -(GROUND_Y + 4));
+  c.translate(-CX, -(GROUND_Y + 4));
   drawTree(c, g);
   c.restore();
 
@@ -1754,24 +1975,24 @@ function drawGrowingTree(c, g, p) {
   const rnd = mulberry(Math.floor(g.t * 4));
   if (p < 0.5) for (let i = 0; i < 14; i++) {
     const a = rnd() * Math.PI * 2, d = rnd() * 30 * (1 - p * 2);
-    px(c, 128 + Math.cos(a) * d, GROUND_Y + 4 + Math.sin(a) * d * 0.4, 2, 2, '#6b4a2a');
+    px(c, CX + Math.cos(a) * d, GROUND_Y + 4 + Math.sin(a) * d * 0.4, 2, 2, '#6b4a2a');
   }
   for (let i = 0; i < 12; i++) {
     const a = rnd() * Math.PI * 2, r = 20 + rnd() * 50 * k;
     c.globalAlpha = 0.5 + rnd() * 0.5;
-    dot(c, 128 + Math.cos(a) * r, GROUND_Y - 20 * k + Math.sin(a) * r * 0.6, '#d8f8a0');
+    dot(c, CX + Math.cos(a) * r, GROUND_Y - 20 * k + Math.sin(a) * r * 0.6, '#d8f8a0');
     c.globalAlpha = 1;
   }
-  glow(c, 128, GROUND_Y - 30 * k, 40 * k, '#c8f090', 0.35 * (1 - p * 0.6));
+  glow(c, CX, GROUND_Y - 30 * k, 40 * k, '#c8f090', 0.35 * (1 - p * 0.6));
 }
 
 window.SPR = {
-  W, H, GROUND_Y, layerBegin, layerEnd, outlinedSprite, makeCanvas, CANOPY, TWIGS, SEASON, SEASON_NAMES, TROPHY_ART, HALL,
+  get W() { return W; }, H, GROUND_Y, get CX() { return CX; }, setLogicalWidth, layerBegin, layerEnd, outlinedSprite, makeCanvas, CANOPY, TWIGS, SEASON, SEASON_NAMES, TROPHY_ART, HALL,
   px, dot, pcircle, pellipse, glow, mix, mulberry, star, quant,
   isNight, darkness, trunkHalfWidth, hallSlotPos, hallWidth,
   drawBackdrop, drawBokeh, drawGround, drawForeground, drawFrameFoliage,
   drawTree, drawWatchers, drawSquirrel, drawGroundItems, drawParticles,
-  drawFireOnTree, drawFireGlow, drawPond, drawOverlay, drawAshScene, drawStump, drawItemIcon, drawLeafSprite,
+  drawFireOnTree, drawFireGlow, drawPond, drawOverlay, drawHud, drawTools, tinyText, digits, drawCritters, drawUndergrowth, drawAshScene, drawStump, drawItemIcon, drawLeafSprite,
   drawHall, drawTrophy, drawTrophyReflection, trophySprite, drawPlinth, drawHeaven, drawHeavenBackdrop, drawGhostTree, drawSoul,
   drawCloudTunnel, drawLetterbox, drawRays, drawGrowingTree, flame
 };

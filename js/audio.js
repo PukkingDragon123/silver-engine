@@ -60,6 +60,7 @@ const SFX = (function () {
     boom() { noise(0.9, 0.6, 90); beep(70, 0.7, 'sawtooth', 0.4, -40); },
     ascend() { [392, 523, 659, 784, 1046, 1318].forEach((f, i) => setTimeout(() => beep(f, 0.5, 'sine', 0.28), i * 130)); },
     ending() { [523, 494, 587, 784].forEach((f, i) => setTimeout(() => beep(f, 0.5, 'triangle', 0.3), i * 220)); },
+    note() { [880, 1174].forEach((f, i) => setTimeout(() => beep(f, 0.13, 'sine', 0.3), i * 90)); },
     squeak() { beep(1200, 0.05, 'square', 0.25, -600); },
     plant() { beep(330, 0.1, 'triangle', 0.3); setTimeout(() => beep(494, 0.16, 'triangle', 0.3), 90); },
     page() { noise(0.08, 0.2, 2500); },

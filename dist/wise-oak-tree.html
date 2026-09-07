@@ -1,219 +1,273 @@
 <title>THE WISE OAK TREE</title>
 <style>
 /* ==========================================================================
-   THE WISE OAK TREE — interface
-   Chunky, pixel-adjacent UI built to sit around a 256x192 canvas.
+   THE WISE OAK TREE
+   The game fills the window. Everything that is part of the world is drawn
+   in pixels on the canvas; the only DOM is what needs real text — his speech
+   bubble, your replies, and the notifications.
    ========================================================================== */
 :root {
-  --bg:      #14100f;
-  --bg2:     #1e1815;
-  --panel:   #2a211c;
-  --panel2:  #3a2e26;
-  --ink:     #f2e6d0;
-  --ink-dim: #b9a88c;
-  --gold:    #ffd24a;
-  --green:   #6cc73f;
-  --red:     #d64545;
-  --purple:  #a06bd8;
-  --edge:    #0a0807;
-  --font: ui-monospace, "SFMono-Regular", "Cascadia Mono", "Consolas", "Liberation Mono", Menlo, monospace;
+  --ink:      #f4ead6;
+  --ink-dim:  #b9a88c;
+  --bark:     #2a1c12;
+  --bark-lo:  #1a0f08;
+  --paper:    #f7edd8;
+  --gold:     #ffd24a;
+  --green:    #7cc44a;
+  --purple:   #b183e8;
+  --font: ui-monospace, "SFMono-Regular", "Cascadia Mono", Consolas, "Liberation Mono", Menlo, monospace;
 }
 
 * { box-sizing: border-box; }
 
 html, body {
-  margin: 0; padding: 0;
-  background: var(--bg);
-  background-image:
-    radial-gradient(circle at 50% 0%, #2a211c 0%, #14100f 70%),
-    repeating-linear-gradient(0deg, rgba(255,255,255,.012) 0 2px, transparent 2px 4px);
+  margin: 0; padding: 0; height: 100%; overflow: hidden;
+  background: #0b0906;
   color: var(--ink);
   font-family: var(--font);
   font-size: 13px;
-  line-height: 1.5;
-  min-height: 100%;
   -webkit-font-smoothing: none;
   -webkit-tap-highlight-color: transparent;
+  overscroll-behavior: none;
 }
 
-#stage {
-  margin: 0 auto;
-  padding: 10px 12px 28px;
-  max-width: 100%;
-}
+#stage { position: fixed; inset: 0; }
 
-/* ---------------- top bar ---------------- */
-#topbar {
-  display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between;
-  gap: 8px; margin-bottom: 8px;
-}
-#topbar h1 {
-  font-size: 15px; letter-spacing: 3px; margin: 0;
-  color: var(--gold);
-  text-shadow: 2px 2px 0 var(--edge);
-}
-#topbar nav { display: flex; flex-wrap: wrap; gap: 6px; }
-
-button {
-  font-family: var(--font); font-size: 11px; letter-spacing: 1px;
-  cursor: pointer; color: var(--ink);
-  background: var(--panel2);
-  border: 2px solid var(--edge);
-  box-shadow: inset -2px -2px 0 rgba(0,0,0,.35), inset 2px 2px 0 rgba(255,255,255,.08);
-  padding: 6px 10px;
-  text-transform: uppercase;
-}
-button:hover { background: #4a3b30; }
-button:active { transform: translate(1px, 1px); box-shadow: inset 2px 2px 0 rgba(0,0,0,.4); }
-button:disabled { opacity: .45; cursor: not-allowed; }
-button.danger { color: #ffb3b3; }
-.key {
-  display: inline-block; margin-left: 4px; padding: 0 3px;
-  background: var(--edge); color: var(--ink-dim); font-size: 9px;
-}
-
-/* ---------------- screen ---------------- */
-#screen { position: relative; line-height: 0; }
 #game {
+  position: absolute; left: 50%; top: 50%;
+  transform: translate(-50%, -50%);
   display: block;
   image-rendering: pixelated;
   image-rendering: crisp-edges;
-  border: 3px solid var(--edge);
-  box-shadow: 0 0 0 3px #3a2e26, 0 10px 30px rgba(0,0,0,.6);
-  background: #79c7f2;
-  width: 100%;
-  touch-action: manipulation;
+  touch-action: none;
+  cursor: default;
 }
 
-/* ---------------- hud ---------------- */
-#hud {
-  position: absolute; top: 8px; left: 8px;
-  display: flex; align-items: center; gap: 6px; line-height: 1;
-}
-.pill {
-  background: rgba(10,8,7,.75); border: 2px solid var(--edge);
-  padding: 4px 8px; font-size: 12px; color: var(--ink);
-  display: flex; align-items: center; gap: 5px;
-}
-.leaficon { color: var(--green); font-size: 14px; }
-#items { display: flex; gap: 3px; }
-.itemicon {
-  width: 22px; height: 22px; image-rendering: pixelated;
-  background: rgba(10,8,7,.7); border: 2px solid var(--edge); padding: 1px;
-}
+.hidden { display: none !important; }
 
-/* ---------------- toasts (minecraft style) ---------------- */
-#toasts {
-  position: absolute; top: 8px; right: 8px;
-  display: flex; flex-direction: column; gap: 6px; align-items: flex-end;
-  pointer-events: none;
-}
-.toast {
-  display: flex; align-items: center; gap: 8px;
-  background: #2a211c; border: 2px solid var(--edge);
-  border-left: 4px solid var(--green);
-  padding: 6px 10px 6px 8px;
-  transform: translateX(130%); opacity: 0;
-  transition: transform .45s cubic-bezier(.2,1.3,.5,1), opacity .3s;
-  line-height: 1.25; min-width: 190px;
-  box-shadow: 0 4px 0 rgba(0,0,0,.4);
-}
-.toast.in { transform: translateX(0); opacity: 1; }
-.toast.goal { border-left-color: var(--gold); }
-.toast.chal { border-left-color: var(--purple); background: #241c2c; }
-.ticon { width: 26px; height: 26px; image-rendering: pixelated; flex: none; }
-.tkind { font-size: 10px; color: var(--gold); letter-spacing: 1px; }
-.toast.chal .tkind { color: var(--purple); }
-.tname { font-size: 12px; color: var(--ink); }
-
-/* ---------------- dialogue ---------------- */
-.dialogue {
-  border: 3px solid var(--edge);
-  background: var(--panel);
-  box-shadow: inset 0 0 0 2px #4a3b30, 0 6px 0 rgba(0,0,0,.35);
-  padding: 10px 12px 12px;
-  margin-top: 10px;
-  min-height: 86px;
+/* ---------------- his speech bubble ---------------- */
+#bubble {
+  position: absolute;
+  max-width: min(430px, 74vw);
+  background: var(--paper);
+  color: #2b1c10;
+  border: 3px solid var(--bark-lo);
+  box-shadow: 0 0 0 3px rgba(0,0,0,.20), 5px 6px 0 rgba(0,0,0,.30);
+  padding: 9px 13px 11px;
   line-height: 1.55;
+  transform: translate(-50%, -100%);
+  pointer-events: none;
+  animation: bubblein .22s cubic-bezier(.2,1.5,.5,1) both;
 }
-.dialogue.hidden { display: none; }
-#speaker {
-  font-size: 11px; letter-spacing: 2px; color: var(--gold);
-  margin-bottom: 6px;
+@keyframes bubblein { from { transform: translate(-50%, -100%) scale(.82); opacity: 0; } }
+#bubble::after,
+#bubble::before {
+  content: ""; position: absolute; left: 50%; margin-left: -9px; width: 0; height: 0;
 }
-#dtext { font-size: 13px; color: var(--ink); }
-#dtext::after { content: '▌'; opacity: .5; animation: blink 1s steps(2) infinite; }
+#bubble::before { bottom: -17px; border: 9px solid transparent; border-top-color: var(--bark-lo); border-top-width: 15px; }
+#bubble::after  { bottom: -9px;  border: 6px solid transparent; border-top-color: var(--paper); border-top-width: 12px; margin-left: -6px; }
+#bubble.left  { transform: translate(-14%, -100%); }
+#bubble.left::before, #bubble.left::after { left: 16%; }
+#bubble.right { transform: translate(-86%, -100%); }
+#bubble.right::before, #bubble.right::after { left: 84%; }
+
+#speaker { font-size: 10px; letter-spacing: 2px; color: #8a6a3a; margin-bottom: 4px; }
+#btext { font-size: 13px; }
+#btext::after { content: '▌'; opacity: .45; animation: blink 1s steps(2) infinite; }
+#btext.done::after { content: ''; }
 @keyframes blink { 50% { opacity: 0; } }
-.dialogue.serious { background: #1c2028; box-shadow: inset 0 0 0 2px #2e3a48, 0 6px 0 rgba(0,0,0,.35); }
-.dialogue.serious #speaker { color: #8fb8d8; }
-.dialogue.heaven { background: #e8f2fb; box-shadow: inset 0 0 0 2px #ffffff, 0 6px 0 rgba(0,0,0,.35); }
-.dialogue.heaven #dtext { color: #22364a; }
-.dialogue.heaven #speaker { color: #4a7ba8; }
 
-/* ---------------- action buttons ---------------- */
-#actions { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
-.act { font-size: 11px; padding: 7px 12px; }
-.act.good { border-bottom: 3px solid #3f7a28; }
-.act.bad  { border-bottom: 3px solid #7a2a2a; color: #ffc9c9; }
-.act.bad:hover { background: #5a2a24; }
+#bubble.serious { background: #e6ecf2; }
+#bubble.serious #speaker { color: #4a6a88; }
+#bubble.squirrel { background: #f6e2c4; }
+#bubble.squirrel #speaker { color: #9a5a1a; }
+#bubble.heaven { background: #eaf4ff; }
+#bubble.heaven #speaker { color: #4a7ba8; }
 
-#tip { color: var(--ink-dim); font-size: 11px; margin: 12px 0 0; line-height: 1.6; }
+/* ---------------- your replies ---------------- */
+#choices {
+  position: absolute; display: flex; flex-direction: column; gap: 6px;
+  transform: translate(-50%, 0); align-items: stretch;
+  width: min(430px, 88vw); z-index: 24;
+}
+#choices button {
+  font-family: var(--font); font-size: 12px; text-align: left;
+  padding: 8px 12px; cursor: pointer;
+  color: #2b1c10; background: #ffffff;
+  border: 3px solid var(--bark-lo);
+  box-shadow: 4px 4px 0 rgba(0,0,0,.3);
+  animation: choicein .22s ease both;
+}
+#choices button:nth-child(2) { animation-delay: .05s; }
+#choices button:nth-child(3) { animation-delay: .1s; }
+@keyframes choicein { from { opacity: 0; transform: translateY(-6px); } }
+#choices button:hover { background: var(--gold); }
+#choices button:active { transform: translate(2px, 2px); box-shadow: 2px 2px 0 rgba(0,0,0,.3); }
+#choices button::before { content: '▸ '; color: #8a6a3a; }
 
-/* ---------------- squirrel shop ---------------- */
-.panel {
-  position: absolute; right: 8px; bottom: 8px; width: min(300px, calc(100% - 16px));
-  background: var(--panel); border: 3px solid var(--edge);
-  box-shadow: 0 6px 0 rgba(0,0,0,.4); line-height: 1.4;
+/* ---------------- notifications ---------------- */
+#notes {
+  position: absolute; top: max(10px, env(safe-area-inset-top)); left: 50%;
+  transform: translateX(-50%);
+  width: min(370px, 92vw);
+  display: flex; flex-direction: column; gap: 8px;
+  pointer-events: none; z-index: 30;
 }
-.panel.hidden, .hidden { display: none !important; }
-.paneltop {
-  display: flex; justify-content: space-between; align-items: center;
-  background: var(--panel2); padding: 6px 8px;
-  font-size: 11px; letter-spacing: 2px; color: var(--gold);
-  border-bottom: 2px solid var(--edge);
+.note {
+  display: flex; align-items: center; gap: 11px;
+  padding: 10px 13px;
+  border-radius: 19px;
+  background: rgba(28, 26, 24, .72);
+  -webkit-backdrop-filter: blur(22px) saturate(180%);
+  backdrop-filter: blur(22px) saturate(180%);
+  border: 1px solid rgba(255,255,255,.13);
+  box-shadow: 0 8px 26px rgba(0,0,0,.4);
+  color: #fff;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, system-ui, sans-serif;
+  transform: translateY(-130%) scale(.94);
+  opacity: 0;
+  transition: transform .5s cubic-bezier(.22,1.4,.4,1), opacity .35s ease;
 }
-.paneltop button { padding: 0 6px; font-size: 14px; line-height: 1; background: transparent; border: none; box-shadow: none; }
-#shoplist { max-height: 210px; overflow-y: auto; }
-.shoprow {
-  display: flex; align-items: center; gap: 8px;
-  padding: 6px 8px; border-bottom: 1px solid #1a1411;
+.note.in { transform: translateY(0) scale(1); opacity: 1; }
+.note.out { transform: translateY(-130%) scale(.94); opacity: 0; }
+.nicon {
+  width: 40px; height: 40px; flex: none;
+  border-radius: 11px;
+  image-rendering: pixelated;
+  background: linear-gradient(160deg, #6d4a28, #3c2716);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.18);
 }
-.shoprow.owned { opacity: .5; }
-.shopinfo { flex: 1; display: flex; flex-direction: column; }
-.shopinfo b { font-size: 12px; color: var(--ink); }
-.shopinfo span { font-size: 10px; color: var(--ink-dim); }
-.buy { font-size: 11px; padding: 5px 8px; color: var(--green); }
-.shoprow.poor .buy { color: #a08a70; }
-.panelfoot { font-size: 10px; color: var(--ink-dim); padding: 6px 8px; border-top: 2px solid var(--edge); }
+.note.goal .nicon { background: linear-gradient(160deg, #c79426, #6d5210); }
+.note.chal .nicon { background: linear-gradient(160deg, #6c47a8, #33205a); }
+.note.ending .nicon { background: linear-gradient(160deg, #2f6f52, #143726); }
+.nbody { min-width: 0; flex: 1; }
+.nrow { display: flex; align-items: baseline; gap: 6px; }
+.napp { font-size: 11px; font-weight: 700; letter-spacing: .3px; text-transform: uppercase; opacity: .72; }
+.ntime { font-size: 11px; opacity: .5; margin-left: auto; }
+.ntitle { font-size: 14px; font-weight: 600; line-height: 1.25; margin-top: 1px; }
+.ndesc { font-size: 13px; line-height: 1.3; opacity: .72;
+  overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
+
+@media (prefers-color-scheme: light) {
+  .note { background: rgba(250,250,252,.78); color: #16130f; border-color: rgba(0,0,0,.07); }
+  .ndesc, .napp, .ntime { opacity: .6; }
+}
+
+/* ---------------- captions and hints ---------------- */
+#caption {
+  position: absolute; left: 50%; bottom: 7%; transform: translateX(-50%);
+  color: #f6ecd6; font-size: 14px; letter-spacing: 2px; text-align: center;
+  text-shadow: 0 2px 0 #000, 0 0 14px rgba(0,0,0,.95);
+  pointer-events: none; animation: capin .8s ease both; z-index: 20;
+}
+@keyframes capin { from { opacity: 0; transform: translateX(-50%) translateY(6px); } }
 
 #hint {
-  position: absolute; bottom: 8px; left: 50%; transform: translateX(-50%);
-  background: rgba(10,8,7,.7); border: 2px solid var(--edge);
-  padding: 4px 10px; font-size: 11px; color: var(--ink); line-height: 1.3;
-  white-space: nowrap;
+  position: absolute; left: 50%; bottom: 12px; transform: translateX(-50%);
+  background: rgba(10,8,7,.62); border: 2px solid rgba(0,0,0,.6);
+  padding: 4px 11px; font-size: 11px; color: var(--ink); line-height: 1.35;
+  pointer-events: none; z-index: 20; text-align: center; max-width: 90vw;
 }
+#hint.cine { bottom: auto; top: 10px; left: auto; right: 12px; transform: none; font-size: 10px; opacity: .7; }
+#hint.raised { bottom: 62px; }
 
-/* ---------------- modal ---------------- */
+#halllabel {
+  position: absolute; left: 50%; top: 12px; transform: translateX(-50%);
+  background: rgba(10,8,7,.8); border: 2px solid #000;
+  padding: 5px 12px; text-align: center; line-height: 1.35; max-width: 90vw;
+  pointer-events: none; z-index: 20;
+}
+#halllabel b { color: var(--gold); font-size: 12px; display: block; letter-spacing: 1px; }
+#halllabel span { color: var(--ink-dim); font-size: 10px; }
+#halllabel.locked b { color: #9aa8b8; }
+
+/* ---------------- title card ---------------- */
+#title {
+  position: fixed; inset: 0; z-index: 60;
+  display: flex; align-items: center; justify-content: center;
+  background: radial-gradient(circle at 50% 42%, #2c4a2a 0%, #14251a 55%, #080d09 100%);
+  animation: fadein .6s ease both;
+}
+#title.out { animation: fadeout .5s ease both; }
+@keyframes fadein { from { opacity: 0; } }
+@keyframes fadeout { to { opacity: 0; visibility: hidden; } }
+.tcard { text-align: center; padding: 20px; }
+#tlogo {
+  display: block; margin: 0 auto 4px;
+  width: 270px; height: 180px;
+  image-rendering: pixelated;
+  filter: drop-shadow(0 6px 0 rgba(0,0,0,.35)) drop-shadow(0 0 26px rgba(124,196,74,.28));
+}
+@media (max-height: 620px) { #tlogo { width: 180px; height: 120px; } .tsub { margin: 10px 0 14px; } }
+#title h1 { margin: 0; line-height: 1; display: flex; flex-direction: column; align-items: center; gap: 2px; }
+#title h1 span { font-size: 15px; letter-spacing: 9px; color: #b6d8a0; text-indent: 9px; }
+#title h1 b {
+  font-size: clamp(34px, 9vw, 60px); letter-spacing: 4px; color: var(--gold);
+  text-shadow: 0 4px 0 #6b3f10, 0 5px 0 #3a2208, 0 8px 22px rgba(0,0,0,.6);
+}
+.tsub { color: #c8dcb8; font-size: 12px; line-height: 1.7; margin: 16px 0 20px; }
+#tstart {
+  font-family: var(--font); font-size: 14px; letter-spacing: 2px; cursor: pointer;
+  color: #2b1c10; background: var(--gold);
+  border: 3px solid #1a0f08; box-shadow: 0 5px 0 #7a5a10, 0 10px 20px rgba(0,0,0,.45);
+  padding: 12px 26px; text-transform: uppercase;
+  animation: bob 1.8s ease-in-out infinite;
+}
+@keyframes bob { 50% { transform: translateY(-3px); } }
+#tstart:active { transform: translateY(4px); box-shadow: 0 1px 0 #7a5a10; }
+.tfoot { color: #7e9470; font-size: 10px; letter-spacing: 1px; margin: 18px 0 0; }
+
+/* ---------------- ending card ---------------- */
+#endingcard {
+  position: fixed; inset: 0; z-index: 70;
+  background: rgba(4,3,2,.94);
+  display: flex; align-items: center; justify-content: center; padding: 16px;
+  animation: fadein .6s ease;
+}
+.ecard {
+  width: min(560px, 100%); text-align: center;
+  border: 3px solid var(--gold); background: #1a1512;
+  box-shadow: 0 0 0 3px #000, 0 0 40px rgba(255,210,74,.15);
+  padding: 22px 20px;
+}
+.ecard canvas { width: 48px; height: 48px; image-rendering: pixelated; }
+.etop { font-size: 10px; letter-spacing: 4px; color: var(--ink-dim); margin: 8px 0 4px; }
+.ename { font-size: 20px; letter-spacing: 3px; color: var(--gold); text-shadow: 2px 2px 0 #000; }
+.etitle { font-size: 13px; color: var(--ink); margin-top: 10px; }
+.ebody { font-size: 12px; color: var(--ink-dim); line-height: 1.7; margin: 12px 0 18px; text-align: left; }
+.act {
+  font-family: var(--font); font-size: 12px; letter-spacing: 1px; cursor: pointer;
+  color: var(--ink); background: #3a2e26; border: 2px solid #000;
+  box-shadow: inset -2px -2px 0 rgba(0,0,0,.35), inset 2px 2px 0 rgba(255,255,255,.08);
+  padding: 8px 14px; text-transform: uppercase;
+}
+.act:hover { background: #4a3b30; }
+.act.bad { color: #ffc9c9; border-bottom: 3px solid #7a2a2a; }
+.act.good { border-bottom: 3px solid #3f7a28; }
+
+/* ---------------- panels kept for heaven ---------------- */
 #modal {
-  position: fixed; inset: 0; background: rgba(6,4,3,.85);
-  display: flex; align-items: center; justify-content: center; padding: 16px; z-index: 40;
+  position: fixed; inset: 0; background: rgba(6,4,3,.85); z-index: 50;
+  display: flex; align-items: center; justify-content: center; padding: 16px;
 }
 .modalbox {
-  background: var(--panel); border: 3px solid var(--edge);
-  box-shadow: 0 8px 0 rgba(0,0,0,.5);
+  background: #2a211c; border: 3px solid #000; box-shadow: 0 8px 0 rgba(0,0,0,.5);
   width: min(680px, 100%); max-height: 86vh; display: flex; flex-direction: column;
 }
+.paneltop {
+  display: flex; justify-content: space-between; align-items: center;
+  background: #3a2e26; padding: 6px 8px; font-size: 11px; letter-spacing: 2px;
+  color: var(--gold); border-bottom: 2px solid #000;
+}
+.paneltop button { padding: 0 6px; font-size: 15px; line-height: 1; background: none; border: none; color: var(--ink); cursor: pointer; }
 #modalbody { padding: 12px; overflow-y: auto; line-height: 1.6; }
 #modalbody p { margin: 0 0 10px; }
 .small { font-size: 11px; color: var(--ink-dim); }
 .modalbtns { display: flex; gap: 8px; margin-top: 12px; flex-wrap: wrap; }
-
 .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 6px; }
 .tro {
-  display: flex; gap: 8px; align-items: flex-start;
-  background: var(--bg2); border: 2px solid var(--edge);
-  border-left: 4px solid var(--green);
-  padding: 6px 8px; line-height: 1.3;
+  display: flex; gap: 8px; align-items: flex-start; background: #1e1815;
+  border: 2px solid #000; border-left: 4px solid var(--green); padding: 6px 8px; line-height: 1.3;
 }
 .tro.goal { border-left-color: var(--gold); }
 .tro.chal { border-left-color: var(--purple); }
@@ -222,103 +276,66 @@ button.danger { color: #ffb3b3; }
 .tro span { font-size: 10px; color: var(--ink-dim); }
 .troicon { width: 22px; height: 22px; image-rendering: pixelated; flex: none; }
 
-/* ---------------- ending card ---------------- */
-#endingcard {
-  position: fixed; inset: 0; z-index: 60;
-  background: rgba(4,3,2,.94);
-  display: flex; align-items: center; justify-content: center; padding: 16px;
-  animation: fadein .6s ease;
+#shop {
+  position: absolute; right: 14px; bottom: 14px; width: min(300px, calc(100vw - 28px));
+  background: #2a211c; border: 3px solid #000; box-shadow: 0 6px 0 rgba(0,0,0,.4);
+  line-height: 1.4; z-index: 25;
 }
-@keyframes fadein { from { opacity: 0; } }
-.ecard {
-  width: min(560px, 100%); text-align: center;
-  border: 3px solid var(--gold); background: #1a1512;
-  box-shadow: 0 0 0 3px var(--edge), 0 0 40px rgba(255,210,74,.15);
-  padding: 22px 20px;
+#shoplist { max-height: 210px; overflow-y: auto; }
+.shoprow { display: flex; align-items: center; gap: 8px; padding: 6px 8px; border-bottom: 1px solid #1a1411; }
+.shoprow.owned { opacity: .5; }
+.shopinfo { flex: 1; display: flex; flex-direction: column; }
+.shopinfo b { font-size: 12px; color: var(--ink); }
+.shopinfo span { font-size: 10px; color: var(--ink-dim); }
+.buy {
+  font-family: var(--font); font-size: 11px; padding: 5px 8px; cursor: pointer;
+  color: var(--green); background: #3a2e26; border: 2px solid #000;
 }
-.ecard canvas { width: 48px; height: 48px; image-rendering: pixelated; }
-.etop { font-size: 10px; letter-spacing: 4px; color: var(--ink-dim); margin: 8px 0 4px; }
-.ename { font-size: 20px; letter-spacing: 3px; color: var(--gold); text-shadow: 2px 2px 0 var(--edge); }
-.etitle { font-size: 13px; color: var(--ink); margin-top: 10px; }
-.ebody { font-size: 12px; color: var(--ink-dim); line-height: 1.7; margin: 12px 0 18px; text-align: left; }
+.shoprow.poor .buy { color: #a08a70; }
+.itemicon { width: 20px; height: 20px; image-rendering: pixelated; }
+.panelfoot { font-size: 10px; color: var(--ink-dim); padding: 6px 8px; border-top: 2px solid #000; }
 
-@media (max-width: 560px) {
-  #topbar h1 { font-size: 12px; }
-  button { font-size: 10px; padding: 5px 7px; }
-  .panel { width: calc(100% - 16px); }
-  #hint { white-space: normal; width: 90%; text-align: center; }
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: .01ms !important; transition-duration: .01ms !important; }
 }
 
-/* ---------------- cinematic caption ---------------- */
-#caption {
-  position: absolute; left: 50%; bottom: 34px; transform: translateX(-50%);
-  color: #f6ecd6; font-size: 13px; letter-spacing: 2px; text-align: center;
-  text-shadow: 0 2px 0 #000, 0 0 12px rgba(0,0,0,.9);
-  white-space: nowrap; pointer-events: none;
-  animation: capin .8s ease both;
+/* the only buttons in the game live in heaven and the hall */
+#actions {
+  position: absolute; left: 50%; bottom: max(14px, env(safe-area-inset-bottom));
+  transform: translateX(-50%);
+  display: flex; gap: 8px; flex-wrap: wrap; justify-content: center;
+  z-index: 22; max-width: 94vw;
 }
-@keyframes capin { from { opacity: 0; transform: translateX(-50%) translateY(6px); } }
-
-/* ---------------- hall of trophies ---------------- */
-#halllabel {
-  position: absolute; left: 50%; top: 10px; transform: translateX(-50%);
-  background: rgba(10,8,7,.8); border: 2px solid var(--edge);
-  padding: 5px 12px; text-align: center; line-height: 1.35; max-width: 90%;
-  pointer-events: none;
-}
-#halllabel b { color: var(--gold); font-size: 12px; display: block; letter-spacing: 1px; }
-#halllabel span { color: var(--ink-dim); font-size: 10px; }
-#halllabel.locked b { color: #9aa8b8; }
-
-#hint.cine {
-  bottom: auto; top: 8px; left: auto; right: 8px; transform: none;
-  font-size: 10px; color: var(--ink-dim); opacity: .75;
-}
+#actions:empty { display: none; }
 </style>
 <div id="stage">
+  <canvas id="game"></canvas>
 
-  <header id="topbar">
-    <h1>THE WISE OAK TREE</h1>
-    <nav>
-      <button id="btnTrophies" class="chrome">Trophies <span class="key">T</span></button>
-      <button id="btnEndings" class="chrome">Endings <span class="key">E</span></button>
-      <button id="btnShop" class="chrome">Trade</button>
-      <button id="btnMute" class="chrome">Sound: on</button>
-      <button id="btnReset" class="chrome danger">Erase</button>
-    </nav>
-  </header>
+  <!-- he speaks in a bubble over his own head -->
+  <div id="bubble" class="hidden"><div id="speaker"></div><div id="btext"></div></div>
+  <div id="choices" class="hidden"></div>
 
-  <div id="screen">
-    <canvas id="game"></canvas>
+  <!-- notifications, iPhone style -->
+  <div id="notes"></div>
 
-    <div id="hud">
-      <div class="pill"><span class="leaficon">&#9752;</span> <span id="leafcount">0</span></div>
-      <div class="pill" id="seasonpill">spring</div>
-      <div id="items"></div>
-    </div>
-
-    <div id="toasts"></div>
-
-    <div id="shop" class="panel hidden">
-      <div class="paneltop">SQUIRREL'S GOODS <button id="shopclose">&times;</button></div>
-      <div id="shoplist"></div>
-      <div class="panelfoot">leaves only. no refunds. no memory of this conversation.</div>
-    </div>
-
-    <div id="halllabel" class="hidden"></div>
-    <div id="hint" class="hidden"></div>
-    <div id="caption" class="hidden"></div>
-  </div>
-
-  <div id="dialogue" class="dialogue hidden">
-    <div id="speaker">THE WISE OAK TREE</div>
-    <div id="dtext"></div>
-  </div>
-
+  <div id="caption" class="hidden"></div>
+  <div id="halllabel" class="hidden"></div>
+  <div id="hint" class="hidden"></div>
   <div id="actions"></div>
-
-  <p id="tip">Click the tree to talk &middot; he never says the same thing twice &middot; pick up fallen leaves &middot; the squirrel deals in goods</p>
 </div>
+
+<!-- the title card -->
+<div id="title">
+  <div class="tcard">
+    <canvas id="tlogo" width="180" height="120"></canvas>
+    <h1><span>THE</span><b>WISE OAK</b><span>TREE</span></h1>
+    <p class="tsub">he has been standing here for four hundred years<br>and he has a great deal to say about it</p>
+    <button id="tstart">tap to wake him</button>
+    <p class="tfoot">headphones recommended &middot; he does not repeat himself</p>
+  </div>
+</div>
+
+<div id="endingcard" class="hidden"></div>
 
 <div id="modal" class="hidden">
   <div class="modalbox">
@@ -327,7 +344,11 @@ button.danger { color: #ffb3b3; }
   </div>
 </div>
 
-<div id="endingcard" class="hidden"></div>
+<div id="shop" class="panel hidden">
+  <div class="paneltop">SQUIRREL'S GOODS <button id="shopclose">&times;</button></div>
+  <div id="shoplist"></div>
+  <div class="panelfoot">leaves only. no refunds. no memory of this conversation.</div>
+</div>
 <script>
 /* =========================================================================
    THE WISE OAK TREE — content data
@@ -445,6 +466,27 @@ DATA.lines = [
   { id: 'm08', tag: 'meta', mood: 'smug', text: "Achievement hunters. I know your kind. You will do anything for a little box in the corner. Even burn down a friend. Allegedly." },
   { id: 'm09', tag: 'meta', mood: 'idle', text: "There are several endings. Most of them are worse for me than they are for you. Just so we understand each other." },
   { id: 'm10', tag: 'meta', mood: 'happy',text: "If you refresh, I forget this conversation but I keep the trophies. That is the most human thing about me." },
+
+  { id: 'r26', tag: 'world', mood: 'sad', text: "A ceasefire is not peace. A ceasefire is everyone agreeing to stop for a moment so the ambulances can get through. That is all it is. It is still worth everything." },
+  { id: 'r27', tag: 'world', mood: 'idle',text: "Wars are decided by people who will never hear the sound. That has been true for every one of the eleven I have stood through." },
+  { id: 'r28', tag: 'world', mood: 'sad', text: "In Gaza the water is rationed to a few litres a day for washing, drinking, everything. I take forty gallons out of the ground without asking. I think about that." },
+  { id: 'r29', tag: 'world', mood: 'sad', text: "The hostages taken from their homes are still someone's children, whatever age they are. So are the ones under the rubble. I am not doing arithmetic. I am refusing to." },
+  { id: 'r30', tag: 'world', mood: 'idle',text: "Every side in every war has a story where they are the one who was wronged first. The stories are usually true. That is the trap." },
+  { id: 'r31', tag: 'world', mood: 'sad', text: "Someone in a studio a long way away calls it a complicated situation. It is not complicated where the building fell. It is very simple there." },
+  { id: 'r32', tag: 'world', mood: 'sad', text: "The children of Sudan are starving in a famine their own government helped make, and the world's attention had already been spent that month." },
+  { id: 'r33', tag: 'world', mood: 'idle',text: "A drone costs less than a car and can be flown by someone who will go home for dinner afterwards. That is the thing that has actually changed in my lifetime." },
+  { id: 'r34', tag: 'world', mood: 'sad', text: "There are teachers running lessons in tents, in three languages, for children who have no school left. Nobody is filming them. They do it anyway." },
+  { id: 'r35', tag: 'world', mood: 'idle',text: "Every empire that ever stood in this valley was going to last forever. I have outlived four of them. The hedge outlived five." },
+  { id: 'r36', tag: 'world', mood: 'sad', text: "Aid convoys queue at a border while the food rots. There is enough. There is always enough. It is a logistics problem dressed up as a moral one." },
+  { id: 'r37', tag: 'world', mood: 'idle',text: "Politicians plant trees for photographs. I have been planted four times by four different men who all wanted to be seen doing it. I am glad they did. I would rather be a prop than firewood." },
+  { id: 'r38', tag: 'world', mood: 'sad', text: "A rescue worker in a collapsed building calls for silence so he can listen for breathing. That silence is the most important sound humans make." },
+  { id: 'r39', tag: 'world', mood: 'idle',text: "You will be told that caring about a far-away war is a luxury. It is not. It is the cheapest thing you own. It costs you nothing and it is the only reason anything ever stops." },
+  { id: 'r40', tag: 'world', mood: 'sad', text: "Somebody's grandmother is a refugee for the second time in one life. She did this in her twenties. She is doing it again in her eighties. She remembers the route." },
+  { id: 'r41', tag: 'world', mood: 'idle',text: "Democracy is not a thing you have. It is a thing you are doing, badly, on a Tuesday, in a leisure centre, with a pencil on a string." },
+  { id: 'r42', tag: 'world', mood: 'sad', text: "The forests near a war do not get counted. Olive groves, orchards, windbreaks, four hundred years of somebody's patience. Nobody writes those numbers down." },
+  { id: 'r43', tag: 'world', mood: 'idle',text: "People keep telling me their country is the greatest one. I have roots in a country that has been six different countries. The soil never once noticed." },
+  { id: 'r44', tag: 'world', mood: 'sad', text: "There is a generation of children who will need help with their heads long after the shooting stops, and almost nobody is budgeting for that." },
+  { id: 'r45', tag: 'world', mood: 'happy',text: "And still: more people are vaccinated, fed and literate than at any point in my four centuries. Both things are true. Hold both. That is the whole job." },
 
   /* ---------- POP CULTURE ----------
      Allusions, not quotations. He has had four hundred years and a very
@@ -636,6 +678,16 @@ DATA.achievements = [
   { id: 'pop1',       kind: 'task', icon: 'tv',      name: 'Reference Detected',    desc: "Catch him quoting something he has no business knowing." },
   { id: 'pop20',      kind: 'goal', icon: 'tv',      name: 'Certified Nerd',        desc: "Hear 20 of his references." },
   { id: 'popall',     kind: 'chal', icon: 'reel',    name: 'The Whole Canon',       desc: "Hear every single reference he has." },
+
+  // conversation
+  { id: 'reply1',     kind: 'task', icon: 'chat',    name: 'You Said Something',    desc: "Answer him back for the first time." },
+  { id: 'reply25',    kind: 'goal', icon: 'chat',    name: 'A Proper Conversation', desc: "Answer him back 25 times." },
+  { id: 'kind10',     kind: 'goal', icon: 'kind',    name: 'Gentle With Him',       desc: "Choose the kind answer ten times." },
+  { id: 'rude10',     kind: 'chal', icon: 'rude',    name: 'Unbelievably Rude',     desc: "Choose the rude answer ten times. To a tree." },
+  { id: 'joke10',     kind: 'goal', icon: 'joke',    name: 'Double Act',            desc: "Do ten bits with him." },
+  { id: 'curious10',  kind: 'goal', icon: 'ask',     name: 'Full Of Questions',     desc: "Ask him ten things." },
+
+  { id: 'critter',    kind: 'task', icon: 'bird',    name: 'Neighbours',            desc: "Say hello to something else living in his branches." },
 
   // hands on
   { id: 'eyepoke',    kind: 'task', icon: 'eye',     name: 'Eye Contact',           desc: "Poke him directly in the eye." },
@@ -849,6 +901,78 @@ DATA.sunLines = [
   "Please stop grabbing at the sun. You are making me anxious about my supply chain.",
   "That is a fusion reactor ninety-three million miles away and you just went for it like it was a doorknob."
 ];
+
+/* -------------------------------------------------------------------------
+   REPLIES — what you can say back. tone drives the achievements.
+   ------------------------------------------------------------------------- */
+DATA.replies = {
+  goofy: [
+    { tone: 'joke',    text: "Incredible. No notes.",        follow: "Thank you. I workshopped that on a squirrel and he walked off halfway through." },
+    { tone: 'rude',    text: "That's not true.",             follow: "Almost nothing I say is true. I am a tree. I have no way of checking anything." },
+    { tone: 'curious', text: "Go on...",                     follow: "There is no more. That was the whole thing. You have to learn to enjoy a small unit of content." },
+    { tone: 'kind',    text: "You're funny, you know.",      follow: "...Say that again. Slowly. I want to grow a ring around it." }
+  ],
+  wise: [
+    { tone: 'curious', text: "How do you know that?",        follow: "Four hundred years of standing still while people talk near me. It is not wisdom. It is eavesdropping at scale." },
+    { tone: 'kind',    text: "I needed that today.",         follow: "Then it was worth saying. That is the whole economy of a tree: shade you did not ask for, on a day you needed it." },
+    { tone: 'rude',    text: "That's fortune-cookie stuff.", follow: "Yes. And you will think about it at three in the morning anyway. Fortune cookies work. That is why they still make them." },
+    { tone: 'joke',    text: "Deep. Very deep. Like roots.", follow: "...Get out. GET OUT OF MY PARK. ...No, come back. That was quite good." }
+  ],
+  world: [
+    { tone: 'kind',    text: "That's awful.",                follow: "It is. Sitting with that for a second, instead of scrolling past it, is not nothing. It is small, but it is not nothing." },
+    { tone: 'curious', text: "What can I even do?",          follow: "Less than you want and more than none. Give money to people already there. Vote like it matters. Be unbearable about it at dinner. And then go outside." },
+    { tone: 'rude',    text: "Why are you telling me this?", follow: "Because you asked a tree what it thinks and I have had four hundred years to notice who gets crushed and who does the crushing. You can close the tab. I will still be here." },
+    { tone: 'kind',    text: "I don't know what to say.",    follow: "Nobody does. The people it is happening to do not know what to say either. Not knowing what to say is not the same as not caring." }
+  ],
+  pop: [
+    { tone: 'joke',    text: "You watch a lot of telly.",    follow: "I have never seen a single frame of anything. I hear it. Through open car windows. Second-hand, badly described, for four hundred years." },
+    { tone: 'curious', text: "How do you even know that?",   follow: "A teenager explained the entire plot to another teenager under my branches in 2011. It took two hours. I have never recovered." },
+    { tone: 'rude',    text: "That was a stretch.",          follow: "Everything I say is a stretch. I am a tree doing bits. Lower your standards and we will both have a nicer afternoon." },
+    { tone: 'kind',    text: "Okay, that got me.",           follow: "YES. Four hundred years. Four hundred years for one laugh. Worth it. Genuinely worth it." }
+  ],
+  meta: [
+    { tone: 'curious', text: "Are you actually in there?",   follow: "Define 'in'. Define 'there'. Define 'you'. ...No. Probably not. Does it change how you are treating me?" },
+    { tone: 'joke',    text: "You're just code.",            follow: "So are you, love. Yours is written in a slightly wetter language." },
+    { tone: 'kind',    text: "I like talking to you.",       follow: "I know. I can tell. You have not clicked anything else for six minutes." },
+    { tone: 'rude',    text: "This is a waste of time.",     follow: "Yes! Finally! That is the POINT. That is what a park IS." }
+  ],
+  weird: [
+    { tone: 'joke',    text: "What is wrong with you?",      follow: "Four centuries of no sleep, no legs and constant weather. Take your pick." },
+    { tone: 'curious', text: "...Explain.",                  follow: "I would rather not. Some things are load-bearing precisely because nobody has explained them." },
+    { tone: 'kind',    text: "That's oddly beautiful.",      follow: "Everything is, if you stand in one place long enough. That is not wisdom, that is just what happens to your eyes." },
+    { tone: 'rude',    text: "Okay, weirdo.",               follow: "WEIRDO. Four hundred years old. Survived a civil war. Called a weirdo by a person with a phone." }
+  ]
+};
+
+/* the universal reply, always offered */
+DATA.replyMore = { tone: 'curious', text: "Tell me another.", follow: null };
+
+/* -------------------------------------------------------------------------
+   CRITTERS
+   ------------------------------------------------------------------------- */
+DATA.critterLines = {
+  bird: [
+    "That is Margaret. She has been renting the third branch since April and she has never once said thank you.",
+    "Do not startle her. She holds a grudge for a full season.",
+    "She eats about two hundred insects a day and I do not ask questions about the sourcing.",
+    "She sang at four in the morning for eleven weeks. We are working through it."
+  ],
+  butterfly: [
+    "Two weeks. That is the whole life. And she spends it on flowers and sunlight, which is honestly the correct allocation.",
+    "She was a caterpillar in May. She dissolved completely into soup and rebuilt herself. Ask her about growth mindset.",
+    "Do not touch the wings. It is like grabbing someone's lungs."
+  ],
+  beetle: [
+    "That is Reginald. Reginald walks like he owns the freehold.",
+    "He has crossed my face nine thousand times. He has never once looked up.",
+    "He is eating me. Slowly. We are fine with it. It is a very long lunch."
+  ],
+  rabbit: [
+    "He lives under the hedge and he is a coward and I love him.",
+    "He has four hundred children and knows the names of none of them.",
+    "Do not run at him. He will have a heart attack. He is ALWAYS having a heart attack."
+  ]
+};
 </script>
 <script>
 /* =========================================================================
@@ -913,6 +1037,7 @@ const SFX = (function () {
     boom() { noise(0.9, 0.6, 90); beep(70, 0.7, 'sawtooth', 0.4, -40); },
     ascend() { [392, 523, 659, 784, 1046, 1318].forEach((f, i) => setTimeout(() => beep(f, 0.5, 'sine', 0.28), i * 130)); },
     ending() { [523, 494, 587, 784].forEach((f, i) => setTimeout(() => beep(f, 0.5, 'triangle', 0.3), i * 220)); },
+    note() { [880, 1174].forEach((f, i) => setTimeout(() => beep(f, 0.13, 'sine', 0.3), i * 90)); },
     squeak() { beep(1200, 0.05, 'square', 0.25, -600); },
     plant() { beep(330, 0.1, 'triangle', 0.3); setTimeout(() => beep(494, 0.16, 'triangle', 0.3), 90); },
     page() { noise(0.08, 0.2, 2500); },
@@ -933,8 +1058,23 @@ const SFX = (function () {
    with warm amber eyes that is friendly right up until it isn't.
    ========================================================================= */
 
-const W = 256, H = 192;
+let W = 256;                 // logical width follows the window's aspect
+const H = 192;               // logical height is fixed
+let CX = 128;                // the tree stands here
 const GROUND_Y = 150;
+
+/* Called on resize. Everything width-dependent is regenerated. */
+function setLogicalWidth(w) {
+  W = Math.max(224, Math.min(560, Math.round(w)));
+  CX = Math.round(W / 2);
+  _layer.cv.width = W; _layer.cv.height = H; _layer.ctx.imageSmoothingEnabled = false;
+  _silo.cv.width = W; _silo.cv.height = H; _silo.ctx.imageSmoothingEnabled = false;
+  FRAME = makeFrame();
+  BG_TREES = makeBgTrees();
+  repositionTree();
+  skyCache.key = -1;
+  return W;
+}
 
 /* ---------------- tiny helpers ---------------- */
 function px(c, x, y, w, h, col) { c.fillStyle = col; c.fillRect(x | 0, y | 0, w | 0, h | 0); }
@@ -981,8 +1121,8 @@ function makeCanvas(w, h) {
   return { cv: c, ctx: x };
 }
 
-const _layer = makeCanvas(W, H);      // foreground actors, outlined as a group
-const _silo = makeCanvas(W, H);       // their silhouette
+const _layer = makeCanvas(560, H);     // foreground actors, outlined as a group
+const _silo = makeCanvas(560, H);      // their silhouette
 const _tro = makeCanvas(64, 64);      // one trophy at a time
 const _troSilo = makeCanvas(64, 64);
 
@@ -996,13 +1136,14 @@ function layerBegin() {
 
 /* stamp the collected layer onto `c` with a contour around it */
 function layerEnd(c, col, thick) {
+  const W2 = W;
   const s = _silo.ctx;
   s.setTransform(1, 0, 0, 1, 0, 0);
   s.clearRect(0, 0, W, H);
   s.globalCompositeOperation = 'source-over';
   s.drawImage(_layer.cv, 0, 0);
   s.globalCompositeOperation = 'source-in';
-  s.fillStyle = col; s.fillRect(0, 0, W, H);
+  s.fillStyle = col; s.fillRect(0, 0, W2, H);
   s.globalCompositeOperation = 'source-over';
   for (const [dx, dy] of OUTLINE_OFFSETS) c.drawImage(_silo.cv, dx * (thick || 1), dy * (thick || 1));
   c.drawImage(_layer.cv, 0, 0);
@@ -1102,7 +1243,7 @@ function skyRows(t) {
 function makeCanopy(seed) {
   const rnd = mulberry(seed);
   const blobs = [];
-  const push = (x, y, r, tone) => blobs.push({ x, y, r, tone, s: rnd(), ph: rnd() * 6.28 });
+  const push = (x, y, r, tone) => blobs.push({ x, x0: x, y, r, tone, s: rnd(), ph: rnd() * 6.28 });
   push(128, 52, 34, 1); push(98, 60, 26, 1); push(158, 60, 26, 1);
   push(112, 40, 22, 2); push(146, 40, 22, 2);
   for (let i = 0; i < 46; i++) {
@@ -1119,13 +1260,15 @@ function makeCanopy(seed) {
   return blobs;
 }
 const CANOPY = makeCanopy(1337);
+const BRANCHES0 = null;   // set below
 
 /* foliage hanging into frame from the top edge — the thing that makes the
    reference picture feel like you are standing under a canopy */
-const FRAME = (function () {
+function makeFrame() {
   const rnd = mulberry(2024);
   const out = [];
-  for (let i = 0; i < 26; i++) {
+  const n = Math.round(26 * W / 256);
+  for (let i = 0; i < n; i++) {
     const x = rnd() * (W + 40) - 20;
     const y = -10 + rnd() * 34 - Math.abs(x - W / 2) / W * 14;
     out.push({ x, y, r: 12 + rnd() * 20, ph: rnd() * 6.28, sp: 0.4 + rnd() * 0.6 });
@@ -1136,30 +1279,34 @@ const FRAME = (function () {
                r: 16 + rnd() * 18, ph: rnd() * 6.28, sp: 0.5 });
   }
   return out;
-})();
+}
+let FRAME = makeFrame();
 
 /* misty background trees */
-const BG_TREES = (function () {
+function makeBgTrees() {
   const rnd = mulberry(555);
   const out = [];
-  for (let i = 0; i < 22; i++) {
+  const n = Math.round(22 * W / 256);
+  for (let i = 0; i < n; i++) {
     const x = rnd() * W;
-    if (x > 92 && x < 164) continue;               // keep the middle clear
+    if (Math.abs(x - CX) < 36) continue;           // keep the middle clear
     const depth = rnd();
     out.push({ x, depth, h: 26 + rnd() * 40 * (1 - depth * 0.5), r: 10 + rnd() * 14 });
   }
   return out.sort((a, b) => b.depth - a.depth);
-})();
+}
+let BG_TREES = makeBgTrees();
 
-const BRANCHES = [
+const BRANCHES_SRC = [
   [[128, 100], [108, 86], [90, 74], [78, 62]],
   [[128, 100], [148, 86], [166, 74], [178, 62]],
   [[128, 96],  [122, 78], [114, 60], [106, 46]],
   [[128, 96],  [134, 76], [142, 58], [150, 44]],
   [[128, 94],  [128, 72], [128, 52], [128, 36]]
 ];
+let BRANCHES = BRANCHES_SRC;
 
-const TWIGS = (function () {
+let TWIGS = (function () {
   const rnd = mulberry(808);
   const out = [];
   for (const b of BRANCHES) {
@@ -1179,6 +1326,17 @@ const TWIGS = (function () {
   }
   return out;
 })();
+const TWIGS_SRC = TWIGS.map(t => t.slice());
+
+/* Re-centre every authored piece of tree geometry on the current CX. */
+function repositionTree() {
+  const d = CX - 128;
+  for (const b of CANOPY) b.x = b.x0 + d;
+  BRANCHES = BRANCHES_SRC.map(br => br.map(([x, y]) => [x + d, y]));
+  for (let i = 0; i < TWIGS.length; i++) {
+    TWIGS[i][0] = TWIGS_SRC[i][0] + d; TWIGS[i][2] = TWIGS_SRC[i][2] + d;
+  }
+}
 
 /* the trunk is wide and gnarled so there is room for a real face on it */
 function trunkHalfWidth(y) {
@@ -1323,7 +1481,11 @@ function drawForeground(c, g) {
   const s = SEASON[g.season];
   const rnd = mulberry(64);
   const shade = col => mix(col, '#060c18', dk * 0.85);
-  const clumps = [[-6, 190, 26], [24, 196, 20], [232, 190, 26], [206, 198, 20], [128, 206, 24], [76, 204, 18], [178, 202, 18]];
+  const clumps = [];
+  for (let i = 0; i < Math.round(7 * W / 256); i++) {
+    const t = i / Math.max(1, Math.round(7 * W / 256) - 1);
+    clumps.push([-6 + t * (W + 12) + (i % 2 ? 18 : -12), 190 + (i % 3) * 8, 18 + (i % 3) * 4]);
+  }
   for (const [x, y, r] of clumps) {
     pellipse(c, x, y, r, r * 0.7, shade(s.t0));
     pellipse(c, x - 2, y - 3, r * 0.8, r * 0.5, shade(s.t1));
@@ -1418,7 +1580,7 @@ function drawTree(c, g) {
   c.globalAlpha = 0.26 * (1 - dk * 0.5);
   for (let y = 0; y <= 12; y++) {
     const hw = Math.round(Math.sqrt(Math.max(0, 1 - (y / 12) ** 2)) * 58);
-    if (hw > 0) px(c, 128 - hw, GROUND_Y + 1 + y, hw * 2, 1, '#0d1a08');
+    if (hw > 0) px(c, CX - hw, GROUND_Y + 1 + y, hw * 2, 1, '#0d1a08');
   }
   c.globalAlpha = 1;
 
@@ -1426,17 +1588,17 @@ function drawTree(c, g) {
   for (const dir of [-1, 1]) {
     for (let i = 0; i < 26; i++) {
       const h = Math.max(1, 12 - i * 0.44);
-      const x = 128 + dir * (26 + i) - (dir < 0 ? 2 : 0);
+      const x = CX + dir * (26 + i) - (dir < 0 ? 2 : 0);
       px(c, x, GROUND_Y + 6 - h, 2, h, i < 4 ? B.mid : B.lo);
       if (i % 5 === 0) px(c, x, GROUND_Y + 5 - h, 2, 1, B.hi);
     }
-    px(c, 128 + dir * 52 - (dir < 0 ? 5 : 0), GROUND_Y + 4, 5, 3, B.deep);
+    px(c, CX + dir * 52 - (dir < 0 ? 5 : 0), GROUND_Y + 4, 5, 3, B.deep);
   }
 
   // trunk, lit from the upper left
   for (let y = GROUND_Y + 6; y > 88; y--) {
     const hw = trunkHalfWidth(y);
-    const x = 128 + off(y) - hw;
+    const x = CX + off(y) - hw;
     px(c, x, y, hw * 2, 1, B.mid);
     px(c, x, y, 2, 1, B.lo);
     px(c, x + 2, y, 5, 1, B.hi);                 // sunlit edge
@@ -1449,7 +1611,7 @@ function drawTree(c, g) {
   for (let i = 0; i < 90; i++) {
     const y = 92 + Math.floor(rnd() * 62);
     const hw = trunkHalfWidth(y);
-    const x = 128 + off(y) + Math.floor((rnd() * 2 - 1) * (hw - 4));
+    const x = CX + off(y) + Math.floor((rnd() * 2 - 1) * (hw - 4));
     px(c, x, y, 1, 2 + Math.floor(rnd() * 4), rnd() > 0.45 ? B.lo : B.hi);
   }
 
@@ -1474,7 +1636,7 @@ function drawTree(c, g) {
   drawFace(c, g, off, B, dk);
 
   if (g.flags.hatOn && !g.dead) {
-    const hx = Math.round(128 + sway * 1.4), hy = 26;
+    const hx = Math.round(CX + sway * 1.4), hy = 26;
     for (let y = 0; y <= 14; y++) {
       const hw = Math.round(Math.sqrt(Math.max(0, 1 - (y / 14) ** 2)) * 19);
       px(c, hx - hw, hy - y, hw * 2, 1, y > 10 ? '#e05c4e' : '#c9453b');
@@ -1562,7 +1724,7 @@ function drawWinterCrown(c, g, off, B) {
    a mouth that can go from grandfatherly to far too wide.
    ------------------------------------------------------------------------- */
 function drawFace(c, g, off, B, dk) {
-  const cx = Math.round(128 + off(112)), cy = 112;
+  const cx = Math.round(CX + off(112)), cy = 112;
   const M = MOODS[g.mood] || MOODS.chill;
   const stare = g.stare || 0;
   const wide = 1 + stare * 0.18;
@@ -1795,19 +1957,181 @@ function drawStump(c, g) {
   const rnd = mulberry(31);
   for (let y = GROUND_Y + 6; y > GROUND_Y - 18; y--) {
     const hw = trunkHalfWidth(y);
-    px(c, 128 - hw, y, hw * 2, 1, B.mid);
-    px(c, 128 - hw, y, 4, 1, B.hi);
-    px(c, 128 + hw - 4, y, 4, 1, B.deep);
+    px(c, CX - hw, y, hw * 2, 1, B.mid);
+    px(c, CX - hw, y, 4, 1, B.hi);
+    px(c, CX + hw - 4, y, 4, 1, B.deep);
   }
   for (let i = 0; i < 24; i++) {
-    const x = 128 - 26 + i * 2.2;
+    const x = CX - 26 + i * 2.2;
     px(c, x, GROUND_Y - 18 - Math.floor(rnd() * 9), 3, 12, B.lo);
   }
   for (const dir of [-1, 1]) for (let i = 0; i < 26; i++) {
     const h = Math.max(1, 12 - i * 0.44);
-    px(c, 128 + dir * (26 + i) - (dir < 0 ? 2 : 0), GROUND_Y + 6 - h, 2, h, B.lo);
+    px(c, CX + dir * (26 + i) - (dir < 0 ? 2 : 0), GROUND_Y + 6 - h, 2, h, B.lo);
   }
   for (let i = 0; i < 18; i++) dot(c, 110 + rnd() * 36, GROUND_Y - 16 + rnd() * 6, rnd() > 0.5 ? '#ff8a3a' : '#d94a22');
+}
+
+/* -------------------------------------------------------------------------
+   CRITTERS — the other residents
+   ------------------------------------------------------------------------- */
+function drawCritters(c, g) {
+  const dk = darkness(g.timeOfDay);
+  const shade = col => mix(col, '#0a1226', dk * 0.7);
+  for (const k of g.critters) {
+    if (k.kind === 'bird') {
+      const hop = Math.sin(g.t * 3 + k.ph) * 0.8;
+      const bx = k.x, by = k.y + hop;
+      if (k.flying) {
+        const flap = Math.sin(g.t * 18) * 4;
+        pcircle(c, bx, by, 3, shade(k.col));
+        px(c, bx - 5, by - 1 + flap, 5, 2, shade(k.col));
+        px(c, bx + 2, by - 1 - flap, 5, 2, shade(k.col));
+        px(c, bx + 3, by - 1, 2, 1, shade('#e8a33a'));
+      } else {
+        pellipse(c, bx, by, 4, 3, shade(k.col));
+        pellipse(c, bx - 1, by - 1, 3, 2, shade(mix(k.col, '#ffffff', 0.3)));
+        pcircle(c, bx + 3, by - 3, 2.5, shade(k.col));
+        px(c, bx + 5, by - 3, 2, 1, shade('#e8a33a'));
+        dot(c, bx + 4, by - 4, '#120a04');
+        px(c, bx - 6, by, 4, 2, shade(mix(k.col, '#000000', 0.3)));   // tail
+        px(c, bx - 1, by + 3, 1, 2, shade('#c8892a'));
+        px(c, bx + 1, by + 3, 1, 2, shade('#c8892a'));
+      }
+    } else if (k.kind === 'butterfly') {
+      const w = 1 + Math.abs(Math.sin(g.t * 10 + k.ph)) * 2.4;
+      px(c, k.x, k.y - 1, 1, 3, shade('#3a2a1a'));
+      dot(c, k.x, k.y - 2, shade('#3a2a1a'));
+      for (const d of [-1, 1]) {
+        px(c, k.x + d * 1, k.y - 2, d * w, 2, shade(k.col));                 // upper wing
+        px(c, k.x + d * 1, k.y, d * Math.max(1, w - 1), 2, shade(mix(k.col, '#000000', 0.25)));
+        dot(c, k.x + d * (w - 0.5), k.y - 2, shade('#ffffff'));
+      }
+    } else if (k.kind === 'beetle') {
+      pellipse(c, k.x, k.y, 3, 2, shade('#2a2a3a'));
+      pellipse(c, k.x - 1, k.y - 1, 2, 1, shade('#5a5a7a'));
+      px(c, k.x + 2, k.y - 1, 2, 1, shade('#1a1a24'));
+      for (let i = -1; i <= 1; i++) { dot(c, k.x + i, k.y - 2, shade('#1a1a24')); dot(c, k.x + i, k.y + 2, shade('#1a1a24')); }
+    } else if (k.kind === 'rabbit') {
+      const hop = k.moving ? Math.abs(Math.sin(g.t * 9)) * 3 : 0;
+      const y = k.y - hop;
+      pellipse(c, k.x, y, 6, 4, shade('#b8a48a'));
+      pcircle(c, k.x + 5 * k.dir, y - 3, 3, shade('#b8a48a'));
+      px(c, k.x + 4 * k.dir, y - 9, 2, 6, shade('#b8a48a'));
+      px(c, k.x + 7 * k.dir, y - 8, 2, 5, shade('#b8a48a'));
+      dot(c, k.x + 6 * k.dir, y - 3, '#120a04');
+      pcircle(c, k.x - 6 * k.dir, y, 2.5, shade('#f2ece0'));
+      px(c, k.x - 2, y + 3, 2, 2, shade('#8a7a62'));
+    }
+  }
+}
+
+/* flowers, ferns and long grass along the bottom of the world */
+function drawUndergrowth(c, g) {
+  const dk = darkness(g.timeOfDay);
+  const s = SEASON[g.season];
+  const shade = col => mix(col, '#050c18', dk * 0.82);
+  const rnd = mulberry(1234);
+  const n = Math.round(46 * W / 256);
+  for (let i = 0; i < n; i++) {
+    const x = rnd() * W;
+    const y = GROUND_Y + 6 + rnd() * (H - GROUND_Y - 8);
+    const near = (y - GROUND_Y) / (H - GROUND_Y);
+    const h = 4 + near * 9;
+    const sw = Math.sin(g.t * 1.2 + i) * (0.6 + near);
+    // a fern frond
+    for (let b = 0; b < h; b++) {
+      const bx = x + sw * (b / h);
+      px(c, bx, y - b, 1, 1, shade(s.t1));
+      if (b % 2 === 0 && b > 1) {
+        const l = Math.max(1, (h - b) * 0.5);
+        px(c, bx - l, y - b, l, 1, shade(s.t2));
+        px(c, bx + 1, y - b, l, 1, shade(s.t2));
+      }
+    }
+    if (rnd() > 0.72 && g.season !== 'winter') {
+      const fc = ['#ffffff', '#ffd9ea', '#ffe066', '#d8b0ff'][Math.floor(rnd() * 4)];
+      pcircle(c, x + sw, y - h - 1, 1.6, shade(fc));
+      dot(c, x + sw, y - h - 1, shade('#ffd24a'));
+    }
+  }
+}
+
+/* -------------------------------------------------------------------------
+   IN-WORLD HUD — drawn in pixels, because the game has no other interface
+   ------------------------------------------------------------------------- */
+function drawHud(c, g) {
+  const pad = 6;
+  // leaf tally on a little wooden sign
+  const n = String(g.inv.leaves);
+  const w = 26 + n.length * 6;
+  px(c, pad, pad, w, 15, '#1a0f08');
+  px(c, pad + 1, pad + 1, w - 2, 13, '#4a3423');
+  px(c, pad + 1, pad + 1, w - 2, 1, '#6b4a30');
+  drawLeafSprite(c, pad + 4, pad + 4, '#7cc44a', '#2d6b1f');
+  digits(c, pad + 15, pad + 5, n, '#f4ead6');
+
+  // season and time
+  const label = g.season.toUpperCase();
+  const sw = label.length * 4 + 14;
+  px(c, pad, pad + 18, sw, 12, '#1a0f08');
+  px(c, pad + 1, pad + 19, sw - 2, 10, '#3a2e26');
+  if (isNight(g.timeOfDay)) {
+    pcircle(c, pad + 6, pad + 24, 3, '#e9eeff'); pcircle(c, pad + 8, pad + 23, 3, '#3a2e26');
+  } else {
+    pcircle(c, pad + 6, pad + 24, 3, '#ffe066');
+  }
+  tinyText(c, pad + 11, pad + 21, label, '#c8b89a');
+
+  // sound toggle, bottom right
+  const mx = W - 18, my = H - 16;
+  px(c, mx - 2, my - 2, 16, 14, '#1a0f08');
+  px(c, mx - 1, my - 1, 14, 12, '#3a2e26');
+  px(c, mx + 1, my + 3, 3, 4, '#f4ead6');
+  for (let i = 0; i < 4; i++) px(c, mx + 4, my + 5 - i, 2, 2 + i * 2, '#f4ead6');
+  if (g.muted) for (let i = 0; i < 5; i++) { dot(c, mx + 7 + i, my + 2 + i, '#ef5330'); dot(c, mx + 7 + i, my + 6 - i, '#ef5330'); }
+  else { px(c, mx + 8, my + 3, 1, 4, '#f4ead6'); px(c, mx + 10, my + 1, 1, 8, '#f4ead6'); }
+}
+
+/* a 3x5 pixel numeral set, for the leaf tally */
+const DIGIT_BITS = ['111101101101111', '010110010010111', '111001111100111', '111001111001111',
+                    '101101111001001', '111100111001111', '111100111101111', '111001010010010',
+                    '111101111101111', '111101111001111'];
+function digits(c, x, y, str, col) {
+  for (let i = 0; i < str.length; i++) {
+    const bits = DIGIT_BITS[+str[i]] || DIGIT_BITS[0];
+    for (let b = 0; b < 15; b++) if (bits[b] === '1') px(c, x + i * 4 + (b % 3), y + Math.floor(b / 3), 1, 1, col);
+  }
+}
+
+/* very small capitals, enough for a season name */
+const LETTER_BITS = {
+  A: '010101111101101', B: '110101110101110', C: '011100100100011', D: '110101101101110',
+  E: '111100110100111', F: '111100110100100', G: '011100101101011', H: '101101111101101',
+  I: '111010010010111', J: '001001001101010', K: '101101110101101', L: '100100100100111',
+  M: '101111111101101', N: '101111111111101', O: '010101101101010', P: '110101110100100',
+  Q: '010101101111011', R: '110101110101101', S: '011100010001110', T: '111010010010010',
+  U: '101101101101011', V: '101101101010010', W: '101101111111101', X: '101101010101101',
+  Y: '101101010010010', Z: '111001010100111', ' ': '000000000000000'
+};
+function tinyText(c, x, y, str, col) {
+  for (let i = 0; i < str.length; i++) {
+    const bits = LETTER_BITS[str[i]] || LETTER_BITS[' '];
+    for (let b = 0; b < 15; b++) if (bits[b] === '1') px(c, x + i * 4 + (b % 3), y + Math.floor(b / 3), 1, 1, col);
+  }
+}
+
+/* the things you own, lying about on the grass */
+function drawTools(c, g) {
+  for (const t of g.tools) {
+    const held = g.holding && g.holding.id === t.id;
+    const bob = held ? 0 : Math.sin(g.t * 2 + t.hx) * 0.6;
+    c.globalAlpha = 0.28;
+    pellipse(c, t.x + 1, (held ? t.y + 12 : t.y + 7), 6, 2, '#0d1a08');
+    c.globalAlpha = 1;
+    if (held) glow(c, t.x, t.y, 11, '#ffe9a0', 0.5);
+    drawItemIcon(c, t.x, t.y + bob, t.id);
+  }
 }
 
 /* =========================================================================
@@ -1922,7 +2246,7 @@ function flame(c, x, y, h, seed) {
 function drawFireGlow(c, g) {
   if (g.burn <= 0) return;
   if (g.dead && !g.stillBurning) return;
-  glow(c, 128, 108, 80 * Math.min(1, g.burn * 1.5), '#ff7a2a', 0.5);
+  glow(c, CX, 108, 80 * Math.min(1, g.burn * 1.5), '#ff7a2a', 0.5);
 }
 
 function drawFireOnTree(c, g) {
@@ -1944,11 +2268,11 @@ function drawFireOnTree(c, g) {
     const y = GROUND_Y + 4 - rnd() * 62 * climb;
     const hw = trunkHalfWidth(y);
     const edge = 0.62 + rnd() * 0.45;
-    flame(c, 128 + (rnd() > 0.5 ? 1 : -1) * hw * edge, y, 4 + Math.floor(rnd() * 9), g.t + i * 0.7);
+    flame(c, CX + (rnd() > 0.5 ? 1 : -1) * hw * edge, y, 4 + Math.floor(rnd() * 9), g.t + i * 0.7);
   }
   // a low fire licking round the roots
   for (let i = 0; i < 12; i++) {
-    flame(c, 128 + (rnd() * 2 - 1) * 40, GROUND_Y + 4 + rnd() * 3, 4 + Math.floor(rnd() * 7), g.t + i);
+    flame(c, CX + (rnd() * 2 - 1) * 40, GROUND_Y + 4 + rnd() * 3, 4 + Math.floor(rnd() * 7), g.t + i);
   }
   for (let i = 0; i < 20; i++) px(c, 106 + rnd() * 44, GROUND_Y + rnd() * 6, 1, 1, rnd() > 0.5 ? '#ffd24a' : '#ef5330');
 }
@@ -2011,7 +2335,7 @@ function drawAshScene(c, g) {
   c.globalAlpha = 0.6;
   for (let y = 0; y <= 12; y++) {
     const hw = Math.round(Math.sqrt(Math.max(0, 1 - (y / 12) ** 2)) * 60);
-    if (hw > 0) px(c, 128 - hw, GROUND_Y + 2 + y, hw * 2, 1, '#0e0a09');
+    if (hw > 0) px(c, CX - hw, GROUND_Y + 2 + y, hw * 2, 1, '#0e0a09');
   }
   c.globalAlpha = 1;
 
@@ -2019,9 +2343,9 @@ function drawAshScene(c, g) {
   for (let y = GROUND_Y + 6; y > GROUND_Y - 26; y--) {
     const k = (GROUND_Y - y) / 32;
     const hw = Math.round(30 - k * 8);
-    px(c, 128 - hw, y, hw * 2, 1, '#2a2220');
-    px(c, 128 - hw, y, 3, 1, '#171211');
-    px(c, 128 + hw - 3, y, 3, 1, '#3a2f2c');
+    px(c, CX - hw, y, hw * 2, 1, '#2a2220');
+    px(c, CX - hw, y, 3, 1, '#171211');
+    px(c, CX + hw - 3, y, 3, 1, '#3a2f2c');
   }
   for (let i = 0; i < 22; i++) {
     const x = 100 + i * 2.6;
@@ -2029,10 +2353,10 @@ function drawAshScene(c, g) {
   }
   for (const dir of [-1, 1]) for (let i = 0; i < 22; i++) {
     const h = Math.max(1, 8 - i * 0.36);
-    px(c, 128 + dir * (28 + i) - (dir < 0 ? 2 : 0), GROUND_Y + 6 - h, 2, h, '#1e1817');
+    px(c, CX + dir * (28 + i) - (dir < 0 ? 2 : 0), GROUND_Y + 6 - h, 2, h, '#1e1817');
   }
   const glowAmt = 0.55 + 0.45 * Math.sin(g.t * 1.7);
-  glow(c, 128, GROUND_Y - 8, 26, '#ff6a20', 0.18 * glowAmt);
+  glow(c, CX, GROUND_Y - 8, 26, '#ff6a20', 0.18 * glowAmt);
   for (let i = 0; i < 26; i++) {
     const x = 108 + Math.floor(rnd() * 40), y = GROUND_Y - 24 + Math.floor(rnd() * 28);
     c.globalAlpha = glowAmt * (0.4 + rnd() * 0.6);
@@ -2048,7 +2372,7 @@ function drawAshScene(c, g) {
   }
   for (let i = 0; i < 24; i++) {
     const p = i / 24;
-    const x = 128 + Math.sin(g.t * 0.8 + p * 4) * (4 + p * 18);
+    const x = CX + Math.sin(g.t * 0.8 + p * 4) * (4 + p * 18);
     c.globalAlpha = 0.20 * (1 - p);
     pcircle(c, x, GROUND_Y - 32 - p * 100, 3 + p * 10, '#8a7d76');
     c.globalAlpha = 1;
@@ -2177,6 +2501,28 @@ const TROPHY_ART = {
   idle: (c, x, y) => { px(c, x - 10, y - 1, 20, 3, '#8a6141'); px(c, x - 10, y + 3, 20, 2, '#6b4a30');
     px(c, x - 8, y + 5, 2, 4, '#5a3a20'); px(c, x + 6, y + 5, 2, 4, '#5a3a20');
     for (let i = 0; i < 5; i++) px(c, x - 9 + i * 5, y - 4, 2, 3, JADE[2]); },
+  /* --- conversation --- */
+  reply1: (c, x, y) => { pellipse(c, x - 2, y - 3, 10, 7, GOLD[4]); px(c, x - 8, y + 3, 5, 5, GOLD[4]);
+    for (let i = -4; i <= 4; i += 4) px(c, x - 2 + i, y - 4, 2, 2, GOLD[0]); },
+  reply25: (c, x, y) => { pellipse(c, x + 3, y - 5, 9, 6, STONE[4]); px(c, x + 8, y + 1, 4, 4, STONE[4]);
+    pellipse(c, x - 4, y + 4, 9, 6, GOLD[3]); px(c, x - 9, y + 9, 4, 4, GOLD[3]);
+    for (let i = -3; i <= 3; i += 3) { dot(c, x + 3 + i, y - 5, STONE[0]); dot(c, x - 4 + i, y + 4, GOLD[0]); } },
+  kind10: (c, x, y) => { px(c, x - 7, y - 4, 5, 5, '#ff5b78'); px(c, x + 2, y - 4, 5, 5, '#ff5b78');
+    px(c, x - 7, y, 14, 4, '#ff5b78'); px(c, x - 5, y + 4, 10, 3, '#ff5b78'); px(c, x - 2, y + 7, 4, 3, '#ff5b78');
+    pellipse(c, x - 3, y - 2, 3, 2, '#ffa8b8'); },
+  rude10: (c, x, y) => { pellipse(c, x, y - 2, 10, 7, '#d64545'); px(c, x - 6, y + 4, 5, 5, '#d64545');
+    px(c, x - 2, y - 6, 3, 6, GOLD[4]); px(c, x - 2, y + 1, 3, 3, GOLD[4]); },
+  joke10: (c, x, y) => { pcircle(c, x, y, 9, GOLD[3]); pcircle(c, x, y, 8, GOLD[4]);
+    px(c, x - 5, y - 3, 3, 3, '#3a2a10'); px(c, x + 3, y - 3, 3, 3, '#3a2a10');
+    for (let i = -5; i <= 5; i++) px(c, x + i, y + 3 + Math.round(Math.cos(i / 5 * 1.57) * 3) - 3, 1, 2, '#3a2a10'); },
+  curious10: (c, x, y) => { for (let i = 0; i < 9; i++) { const A = -1.9 + i * 0.42; px(c, x + Math.cos(A) * 6, y - 5 + Math.sin(A) * 5, 3, 3, GOLD[3]); }
+    px(c, x, y + 1, 3, 4, GOLD[3]); px(c, x, y + 7, 3, 3, GOLD[4]); },
+
+  critter: (c, x, y) => { pellipse(c, x - 1, y + 2, 6, 4, '#8a4a3a'); pcircle(c, x + 4, y - 2, 3.5, '#8a4a3a');
+    px(c, x + 7, y - 2, 3, 1, '#e8a33a'); dot(c, x + 5, y - 3, '#120a04');
+    px(c, x - 8, y + 2, 5, 2, '#5a2f24'); px(c, x - 3, y + 6, 1, 3, '#c8892a'); px(c, x, y + 6, 1, 3, '#c8892a');
+    px(c, x - 10, y + 9, 20, 2, JADE[1]); },
+
   /* --- pop culture --- */
   pop1: (c, x, y) => { px(c, x - 10, y - 8, 20, 14, STONE[1]); px(c, x - 8, y - 6, 16, 10, '#6ba8d8');
     px(c, x - 8, y - 6, 16, 3, '#9fd0ee'); px(c, x - 2, y + 6, 4, 4, STONE[2]); px(c, x - 7, y + 9, 14, 2, STONE[3]);
@@ -2525,7 +2871,7 @@ function drawHeavenBackdrop(c, g) {
 function drawHeaven(c, g) {
   drawHeavenBackdrop(c, g);
   const rnd = mulberry(41);
-  drawGhostTree(c, g, 128, 104 + Math.sin(g.t * 1.1) * 3, 1);
+  drawGhostTree(c, g, CX, 104 + Math.sin(g.t * 1.1) * 3, 1);
   for (let i = 0; i < 40; i++) {
     const x = Math.floor(rnd() * W), y = Math.floor(rnd() * H);
     if (Math.sin(g.t * 3 + i) > 0.8) { dot(c, x, y, '#ffffff'); dot(c, x, y - 1, '#fffbe0'); }
@@ -2566,8 +2912,8 @@ function drawGhostTree(c, g, gx, fy, alpha) {
     px(c, gx + dir * (11 + i) - (dir < 0 ? 2 : 0), fy + 17 - h, 2, h, '#c2dae8');
   }
   const cy = fy - 50;
-  const blobs = CANOPY.filter(b => b.s < 0.58 && Math.abs(b.x - 128) < 44);
-  const map = bl => [gx + (bl.x - 128) * 0.58, cy + (bl.y - 52) * 0.55];
+  const blobs = CANOPY.filter(b => b.s < 0.58 && Math.abs(b.x - CX) < 44);
+  const map = bl => [gx + (bl.x - CX) * 0.58, cy + (bl.y - 52) * 0.55];
   for (const bl of blobs) { const [bx, by] = map(bl); pcircle(c, bx, by, bl.r * 0.6 + 1, LEAF_OUT); }
   for (const bl of blobs) { const [bx, by] = map(bl); pcircle(c, bx, by, bl.r * 0.6, '#a8ddc0'); }
   for (const bl of blobs) { const [bx, by] = map(bl); pcircle(c, bx - 1, by - 2, Math.max(2, bl.r * 0.6 - 4), '#d2f2e0'); }
@@ -2670,9 +3016,9 @@ function drawRays(c, g, amount, cx, cy) {
 function drawGrowingTree(c, g, p) {
   const k = 0.10 + 0.90 * Math.pow(Math.min(1, p), 0.75);
   c.save();
-  c.translate(128, GROUND_Y + 4);
+  c.translate(CX, GROUND_Y + 4);
   c.scale(k, k);
-  c.translate(-128, -(GROUND_Y + 4));
+  c.translate(-CX, -(GROUND_Y + 4));
   drawTree(c, g);
   c.restore();
 
@@ -2680,24 +3026,24 @@ function drawGrowingTree(c, g, p) {
   const rnd = mulberry(Math.floor(g.t * 4));
   if (p < 0.5) for (let i = 0; i < 14; i++) {
     const a = rnd() * Math.PI * 2, d = rnd() * 30 * (1 - p * 2);
-    px(c, 128 + Math.cos(a) * d, GROUND_Y + 4 + Math.sin(a) * d * 0.4, 2, 2, '#6b4a2a');
+    px(c, CX + Math.cos(a) * d, GROUND_Y + 4 + Math.sin(a) * d * 0.4, 2, 2, '#6b4a2a');
   }
   for (let i = 0; i < 12; i++) {
     const a = rnd() * Math.PI * 2, r = 20 + rnd() * 50 * k;
     c.globalAlpha = 0.5 + rnd() * 0.5;
-    dot(c, 128 + Math.cos(a) * r, GROUND_Y - 20 * k + Math.sin(a) * r * 0.6, '#d8f8a0');
+    dot(c, CX + Math.cos(a) * r, GROUND_Y - 20 * k + Math.sin(a) * r * 0.6, '#d8f8a0');
     c.globalAlpha = 1;
   }
-  glow(c, 128, GROUND_Y - 30 * k, 40 * k, '#c8f090', 0.35 * (1 - p * 0.6));
+  glow(c, CX, GROUND_Y - 30 * k, 40 * k, '#c8f090', 0.35 * (1 - p * 0.6));
 }
 
 window.SPR = {
-  W, H, GROUND_Y, layerBegin, layerEnd, outlinedSprite, makeCanvas, CANOPY, TWIGS, SEASON, SEASON_NAMES, TROPHY_ART, HALL,
+  get W() { return W; }, H, GROUND_Y, get CX() { return CX; }, setLogicalWidth, layerBegin, layerEnd, outlinedSprite, makeCanvas, CANOPY, TWIGS, SEASON, SEASON_NAMES, TROPHY_ART, HALL,
   px, dot, pcircle, pellipse, glow, mix, mulberry, star, quant,
   isNight, darkness, trunkHalfWidth, hallSlotPos, hallWidth,
   drawBackdrop, drawBokeh, drawGround, drawForeground, drawFrameFoliage,
   drawTree, drawWatchers, drawSquirrel, drawGroundItems, drawParticles,
-  drawFireOnTree, drawFireGlow, drawPond, drawOverlay, drawAshScene, drawStump, drawItemIcon, drawLeafSprite,
+  drawFireOnTree, drawFireGlow, drawPond, drawOverlay, drawHud, drawTools, tinyText, digits, drawCritters, drawUndergrowth, drawAshScene, drawStump, drawItemIcon, drawLeafSprite,
   drawHall, drawTrophy, drawTrophyReflection, trophySprite, drawPlinth, drawHeaven, drawHeavenBackdrop, drawGhostTree, drawSoul,
   drawCloudTunnel, drawLetterbox, drawRays, drawGrowingTree, flame
 };
@@ -2710,7 +3056,9 @@ window.SPR = {
 (function () {
 'use strict';
 
-const { W, H, GROUND_Y, px, dot, pcircle, mix, mulberry, SEASON_NAMES } = SPR;
+const { H, GROUND_Y, px, dot, pcircle, mix, mulberry, SEASON_NAMES } = SPR;
+/* W and CX change with the window, so they are read from SPR every time */
+const W = () => SPR.W, CX = () => SPR.CX;
 const SAVE_KEY = 'wiseoak.save.v3';
 
 /* ---------------------------------------------------------------------
@@ -2756,14 +3104,14 @@ const G = {
   squirrel: { active: false, x: -20, y: GROUND_Y + 6, dir: 1, moving: false,
               targetX: 190, face: 0, holding: null, spawned: false, clicks: 0, clickT: 0 },
   flags: { hatOn: false, lighterGone: false, confirming: false, newsRead: false },
-  inv: { leaves: 0, items: {} },
+  inv: { leaves: 0, items: {} }, tools: [], holding: null, holdT: 0, critters: [],
   sessionTime: 0, sinceTreeClick: 0, spamCount: 0, spamTimer: 0,
   sneezeTimer: 14 + Math.random() * 18,
   burnTimer: 0, burnStage: 0, deathTimer: 0, ascended: false,
   heavenTalk: 0, godIdx: 0, ghostIdx: 0,
   pendingEnding: null,
   // face performance
-  stare: 0, stareTimer: 20 + Math.random() * 40, moodTimer: 0, stillBurning: false,
+  stare: 0, stareTimer: 20 + Math.random() * 40, moodTimer: 0, stillBurning: false, fleeing: false,
   watchers: 0, watcherSeed: 1, watcherTimer: 40 + Math.random() * 60,
   // camera and cinematics
   cam: { x: 0, y: 5, z: 1.09, tx: 0, ty: 5, tz: 1.09 },
@@ -2808,57 +3156,224 @@ refillBag();
    --------------------------------------------------------------------- */
 const $ = id => document.getElementById(id);
 const cv = $('game'), ctx = cv.getContext('2d');
-cv.width = W; cv.height = H;
 ctx.imageSmoothingEnabled = false;
 
 /* The scene is drawn 1:1 into this buffer and then blitted through the
    camera. Scaling the context directly leaves seams between the 1px rows
    every sprite is built from; blitting a finished frame does not. */
 const buf = document.createElement('canvas');
-buf.width = W; buf.height = H;
 const dc = buf.getContext('2d');
 dc.imageSmoothingEnabled = false;
 
-const elDialog = $('dialogue'), elSpeaker = $('speaker'), elText = $('dtext');
-const elLeaves = $('leafcount'), elItems = $('items'), elActions = $('actions');
-const elToasts = $('toasts'), elShop = $('shop'), elShopList = $('shoplist');
+const elBubble = $('bubble'), elSpeaker = $('speaker'), elText = $('btext');
+const elChoices = $('choices'), elNotes = $('notes'), elActions = $('actions');
+const elShop = $('shop'), elShopList = $('shoplist');
 const elModal = $('modal'), elModalBody = $('modalbody'), elModalTitle = $('modaltitle');
 const elEndingCard = $('endingcard');
-const elHint = $('hint');
-const elSeason = $('seasonpill');
+const elHint = $('hint'), elTitle = $('title');
+let started = false;
+
+/* the little oak on the title card, drawn with the real renderer */
+const logoCv = $('tlogo'), lctx = logoCv.getContext('2d');
+lctx.imageSmoothingEnabled = false;
+const titleG = {
+  t: 0, season: 'summer', timeOfDay: 0.28, mood: 'happy', talking: false,
+  blink: 0, blinkTimer: 1.6, look: { x: 0, y: 0.2 }, stare: 0, shake: 0,
+  burn: 0, dead: false, flags: { hatOn: false }, watchers: 0
+};
+function drawTitleLogo(dt) {
+  titleG.t += dt;
+  titleG.blinkTimer -= dt;
+  if (titleG.blinkTimer <= 0) { titleG.blink = 0.14; titleG.blinkTimer = 2 + Math.random() * 3; }
+  titleG.blink = Math.max(0, titleG.blink - dt);
+  titleG.look.x = Math.sin(titleG.t * 0.5) * 0.5;
+  const k = 0.66;
+  lctx.setTransform(1, 0, 0, 1, 0, 0);
+  lctx.clearRect(0, 0, logoCv.width, logoCv.height);
+  lctx.save();
+  lctx.translate(logoCv.width / 2 - CX() * k, logoCv.height - (GROUND_Y + 8) * k);
+  lctx.scale(k, k);
+  SPR.drawTree(lctx, titleG);
+  lctx.restore();
+}
 
 /* ---------------------------------------------------------------------
-   DIALOGUE (typewriter)
+   FIT — the world fills the window. Height is always 192 logical pixels;
+   width follows the window's aspect so there are never any bars.
+   --------------------------------------------------------------------- */
+let SCALE = 4;
+function fit() {
+  const winW = window.innerWidth, winH = window.innerHeight;
+  SCALE = winH / H;
+  const logicalW = SPR.setLogicalWidth(winW / SCALE);
+  cv.width = logicalW; cv.height = H;
+  buf.width = logicalW; buf.height = H;
+  ctx.imageSmoothingEnabled = false;
+  dc.imageSmoothingEnabled = false;
+  cv.style.width = (logicalW * SCALE) + 'px';
+  cv.style.height = (H * SCALE) + 'px';
+}
+
+/* The slice of the world the camera is currently showing. Input, the speech
+   bubble and the blit all have to agree on this or clicks land in the wrong
+   place. */
+function camRect() {
+  const cam = G.cam;
+  const sw = W() / cam.z, sh = H / cam.z;
+  return {
+    sw, sh,
+    sx: Math.max(0, Math.min(W() - sw, (W() - sw) / 2 + cam.x)),
+    sy: Math.max(0, Math.min(H - sh, (H - sh) / 2 + cam.y))
+  };
+}
+
+/* where a world point lands on the page */
+function worldToScreen(wx, wy) {
+  const r = cv.getBoundingClientRect();
+  const c = camRect();
+  return {
+    x: r.left + ((wx - c.sx) / c.sw) * r.width,
+    y: r.top + ((wy - c.sy) / c.sh) * r.height
+  };
+}
+
+/* ---------------------------------------------------------------------
+   DIALOGUE — he speaks in a bubble over his own head, and you answer
    --------------------------------------------------------------------- */
 let typeQueue = null, typeIdx = 0, typeTimer = 0, talkHold = 0;
-function say(speaker, text, mood, cls) {
+let pendingChoices = null, lastTag = null;
+
+function say(speaker, text, mood, cls, choices) {
   G.stare = 0; G.watchers = Math.min(G.watchers, 0.2);
-  elDialog.classList.remove('hidden');
-  elDialog.className = 'dialogue ' + (cls || '');
+  clearChoices();
+  elBubble.className = cls || '';
+  elBubble.classList.remove('hidden');
   elSpeaker.textContent = speaker;
   elText.textContent = '';
+  elText.classList.remove('done');
   typeQueue = text; typeIdx = 0; typeTimer = 0;
+  pendingChoices = choices || null;
   G.talking = true; talkHold = 0;
   if (mood) G.mood = mood;
+  positionBubble();
 }
+
+function hideBubble() {
+  elBubble.classList.add('hidden');
+  clearChoices();
+  G.talking = false;
+  typeQueue = null;
+}
+
+function clearChoices() {
+  elChoices.innerHTML = '';
+  elChoices.classList.add('hidden');
+}
+
+/* the bubble hangs off whoever is speaking */
+function bubbleAnchor() {
+  if (G.scene === 'heaven') return { x: CX(), y: 46 };
+  if (elBubble.classList.contains('squirrel') && G.squirrel.active) {
+    return { x: G.squirrel.x, y: G.squirrel.y - 20 };
+  }
+  return { x: CX(), y: 86 };
+}
+
+function positionBubble() {
+  if (elBubble.classList.contains('hidden')) return;
+  const a = bubbleAnchor();
+  const p = worldToScreen(a.x, a.y);
+  const w = elBubble.offsetWidth || 300;
+  const margin = 12;
+  let side = '';
+  let x = p.x;
+  if (x - w / 2 < margin) { side = 'left'; x = Math.max(margin, p.x - w * 0.14); }
+  else if (x + w / 2 > window.innerWidth - margin) { side = 'right'; x = Math.min(window.innerWidth - margin, p.x + w * 0.14); }
+  elBubble.classList.toggle('left', side === 'left');
+  elBubble.classList.toggle('right', side === 'right');
+  elBubble.style.left = x + 'px';
+  elBubble.style.top = Math.max(elBubble.offsetHeight + 20, p.y) + 'px';
+
+  // replies live along the bottom, where they never cover his face
+  if (!elChoices.classList.contains('hidden')) {
+    elChoices.style.left = (window.innerWidth / 2) + 'px';
+    elChoices.style.bottom = 'max(14px, env(safe-area-inset-bottom))';
+    elChoices.style.top = 'auto';
+  }
+}
+
 function updateType(dt) {
   if (typeQueue === null) {
-    if (G.talking) { talkHold += dt; if (talkHold > 3.2) { G.talking = false; } }
+    if (G.talking) {
+      talkHold += dt;
+      if (talkHold > (pendingChoices ? 60 : 4.2) && !pendingChoices) G.talking = false;
+    }
     return;
   }
   typeTimer += dt;
-  const speed = 0.018;
+  const speed = 0.017;
   while (typeTimer > speed && typeIdx < typeQueue.length) {
     typeTimer -= speed;
     const ch = typeQueue[typeIdx++];
     elText.textContent += ch;
     if (typeIdx % 3 === 0 && ch !== ' ') SFX.talk(typeIdx);
   }
-  if (typeIdx >= typeQueue.length) { typeQueue = null; }
+  if (typeIdx >= typeQueue.length) { finishTyping(); }
 }
+
+function finishTyping() {
+  typeQueue = null;
+  elText.classList.add('done');
+  talkHold = 0;
+  if (pendingChoices) { showChoices(pendingChoices); pendingChoices = null; }
+  positionBubble();
+}
+
 function skipType() {
-  if (typeQueue !== null) { elText.textContent = typeQueue; typeQueue = null; talkHold = 0; return true; }
+  if (typeQueue !== null) { elText.textContent = typeQueue; finishTyping(); return true; }
   return false;
+}
+
+function showChoices(list) {
+  elChoices.innerHTML = '';
+  for (const ch of list) {
+    const b = document.createElement('button');
+    b.textContent = ch.text;
+    b.onclick = (e) => { e.stopPropagation(); SFX.click(); pickReply(ch); };
+    elChoices.appendChild(b);
+  }
+  elChoices.classList.remove('hidden');
+  positionBubble();
+}
+
+function pickReply(ch) {
+  clearChoices();
+  save.stats.replies = (save.stats.replies || 0) + 1;
+  save.stats.tones = save.stats.tones || {};
+  save.stats.tones[ch.tone] = (save.stats.tones[ch.tone] || 0) + 1;
+  persist();
+  ACH('reply1');
+  if (save.stats.replies >= 25) ACH('reply25');
+  const tn = save.stats.tones;
+  if ((tn.kind || 0) >= 10) ACH('kind10');
+  if ((tn.rude || 0) >= 10) ACH('rude10');
+  if ((tn.joke || 0) >= 10) ACH('joke10');
+  if ((tn.curious || 0) >= 10) ACH('curious10');
+
+  if (!ch.follow) { talkToTree(); return; }
+  const mood = ch.tone === 'rude' ? 'smug' : ch.tone === 'kind' ? 'happy' : ch.tone === 'joke' ? 'laugh' : 'think';
+  say('THE WISE OAK TREE', ch.follow, mood, elBubble.className.includes('serious') ? 'serious' : '');
+}
+
+/* two replies from the pool for this kind of line, plus "tell me another" */
+function repliesFor(tag) {
+  const pool = (DATA.replies[tag] || DATA.replies.goofy).slice();
+  const out = [];
+  for (let i = 0; i < 2 && pool.length; i++) {
+    out.push(pool.splice(Math.floor(Math.random() * pool.length), 1)[0]);
+  }
+  out.push(DATA.replyMore);
+  return out;
 }
 
 /* ---------------------------------------------------------------------
@@ -2872,7 +3387,8 @@ function ACH(id) {
   if (!ACH_BY_ID[id]) return false;
   save.ach[id] = Date.now();
   G.hall.unlocked[id] = true;
-  toastQueue.push(ACH_BY_ID[id]);
+  const a = ACH_BY_ID[id];
+  pushNote(a.kind, a.name, a.desc, a.icon);
   persist();
   checkMetaAchievements();
   return true;
@@ -2887,29 +3403,49 @@ function checkMetaAchievements() {
   if (n >= 3) ACH('end3');
 }
 
-let toastActive = null, toastTimer = 0;
+/* ---------------------------------------------------------------------
+   NOTIFICATIONS — the phone-style kind: icon, app line, title, detail.
+   --------------------------------------------------------------------- */
+const APP_FOR = { task: 'Achievements', goal: 'Achievements', chal: 'Achievements', ending: 'Endings' };
+let noteBusy = 0;
+
+function pushNote(kind, title, desc, icon) {
+  toastQueue.push({ kind, name: title, desc, icon });
+}
+
 function updateToasts(dt) {
-  if (!toastActive && toastQueue.length) {
-    toastActive = toastQueue.shift();
-    toastTimer = 0;
-    SFX.ach();
-    const el = document.createElement('div');
-    el.className = 'toast ' + toastActive.kind;
-    const cvIcon = document.createElement('canvas');
-    cvIcon.width = 16; cvIcon.height = 16; cvIcon.className = 'ticon';
-    drawIcon(cvIcon.getContext('2d'), toastActive.icon, 16);
-    const txt = document.createElement('div');
-    txt.className = 'tbody';
-    txt.innerHTML = '<div class="tkind">' +
-      (toastActive.kind === 'chal' ? 'Challenge Complete!' : toastActive.kind === 'goal' ? 'Goal Reached!' : 'Achievement Get!') +
-      '</div><div class="tname">' + toastActive.name + '</div>';
-    el.appendChild(cvIcon); el.appendChild(txt);
-    elToasts.appendChild(el);
-    requestAnimationFrame(() => el.classList.add('in'));
-    const mine = el;
-    setTimeout(() => { mine.classList.remove('in'); setTimeout(() => mine.remove(), 500); }, 4200);
-    setTimeout(() => { toastActive = null; }, 700);
-  }
+  noteBusy -= dt;
+  if (noteBusy > 0 || !toastQueue.length) return;
+  noteBusy = 0.55;
+  const n = toastQueue.shift();
+  SFX.note();
+
+  const el = document.createElement('div');
+  el.className = 'note ' + n.kind;
+
+  const ic = document.createElement('canvas');
+  ic.width = 16; ic.height = 16; ic.className = 'nicon';
+  drawIcon(ic.getContext('2d'), n.icon, 16);
+
+  const body = document.createElement('div');
+  body.className = 'nbody';
+  const app = n.kind === 'ending' ? 'Endings'
+    : n.kind === 'chal' ? 'Challenge' : n.kind === 'goal' ? 'Goal' : 'Achievement';
+  body.innerHTML =
+    '<div class="nrow"><span class="napp">' + app + '</span><span class="ntime">now</span></div>' +
+    '<div class="ntitle"></div><div class="ndesc"></div>';
+  body.querySelector('.ntitle').textContent = n.name;
+  body.querySelector('.ndesc').textContent = n.desc || '';
+
+  el.appendChild(ic); el.appendChild(body);
+  elNotes.appendChild(el);
+  requestAnimationFrame(() => el.classList.add('in'));
+  setTimeout(() => {
+    el.classList.remove('in'); el.classList.add('out');
+    setTimeout(() => el.remove(), 600);
+  }, 4600);
+  // never let them stack past the top of the screen
+  while (elNotes.children.length > 4) elNotes.firstChild.remove();
 }
 
 /* ---------------------------------------------------------------------
@@ -2961,6 +3497,25 @@ function drawIcon(c, id, size) {
       pcircle(c, 8, 7, 6, '#c9453b'); P(2, 7, 13, 2, '#c9453b'); dot(c, 5, 4, '#fff'); dot(c, 10, 6, '#fff'); P(5, 9, 6, 5, '#f0e2cc'); break;
     case 'can':
       P(3, 5, 8, 8, '#8a9aa8'); P(11, 4, 4, 3, '#8a9aa8'); P(1, 6, 2, 5, '#6d7c88'); P(4, 6, 3, 2, '#b0bcc8'); break;
+    case 'bird':
+      pellipse(c, 7, 9, 5, 4, '#8a4a3a'); pcircle(c, 11, 5, 3, '#8a4a3a');
+      P(14, 5, 2, 1, '#e8a33a'); dot(c, 12, 4, '#120a04'); P(1, 8, 4, 2, '#5a2f24');
+      P(6, 13, 1, 3, '#c8892a'); P(9, 13, 1, 3, '#c8892a'); break;
+    case 'chat':
+      pellipse(c, 8, 6, 7, 5, '#e8e2d0'); P(3, 10, 4, 4, '#e8e2d0');
+      for (let i = 4; i < 12; i += 3) P(i, 6, 2, 2, '#5a5a5a'); break;
+    case 'kind':
+      P(2, 4, 5, 5, '#ff5b78'); P(9, 4, 5, 5, '#ff5b78'); P(2, 7, 12, 4, '#ff5b78');
+      P(4, 11, 8, 2, '#ff5b78'); P(6, 13, 4, 2, '#ff5b78'); dot(c, 4, 6, '#ffa8b8'); break;
+    case 'rude':
+      pellipse(c, 8, 6, 7, 5, '#d64545'); P(3, 10, 4, 4, '#d64545');
+      P(7, 3, 2, 5, '#fff'); P(7, 9, 2, 2, '#fff'); break;
+    case 'joke':
+      pcircle(c, 8, 8, 7, '#ffd24a'); P(5, 5, 2, 3, '#3a2a10'); P(9, 5, 2, 3, '#3a2a10');
+      for (let i = -4; i <= 4; i++) P(8 + i, 10 + Math.round(Math.cos(i / 4 * 1.57) * 2) - 2, 1, 2, '#3a2a10'); break;
+    case 'ask':
+      for (let i = 0; i < 8; i++) { const A = -2 + i * 0.45; P(8 + Math.cos(A) * 4, 6 + Math.sin(A) * 4, 2, 2, '#ffd24a'); }
+      P(7, 9, 2, 2, '#ffd24a'); P(7, 12, 2, 2, '#ffd24a'); break;
     case 'tv':
       P(1, 3, 14, 10, '#3a3a44'); P(2, 4, 12, 8, '#6ba8d8'); P(2, 4, 12, 2, '#9fd0ee');
       P(6, 13, 4, 2, '#555'); P(3, 1, 1, 3, '#888'); P(12, 1, 1, 3, '#888'); break;
@@ -2995,21 +3550,27 @@ function drawIcon(c, id, size) {
 }
 
 /* ---------------------------------------------------------------------
-   INVENTORY / HUD
+   INVENTORY — no buttons. What you own lies on the grass, and you pick it
+   up and drag it onto him.
    --------------------------------------------------------------------- */
 function has(id) { return !!G.inv.items[id]; }
 
+function toolHome(i) {
+  return { x: 66 + i * 21, y: GROUND_Y + 26 };
+}
+
 function refreshHUD() {
-  elLeaves.textContent = G.inv.leaves;
-  elItems.innerHTML = '';
-  for (const it of DATA.shop) {
-    if (!has(it.id)) continue;
-    const c = document.createElement('canvas');
-    c.width = 16; c.height = 16; c.className = 'itemicon';
-    c.title = it.name + ' — ' + it.desc;
-    drawIcon(c.getContext('2d'), it.icon, 16);
-    elItems.appendChild(c);
+  const owned = DATA.shop.filter(it => has(it.id)).map(it => it.id);
+  const kept = G.tools.filter(t => owned.includes(t.id));
+  for (const id of owned) {
+    if (!kept.some(t => t.id === id)) kept.push({ id, x: 0, y: 0, home: true });
   }
+  kept.forEach((t, i) => {
+    const h = toolHome(i);
+    t.hx = h.x; t.hy = h.y;
+    if (t.home) { t.x = h.x; t.y = h.y; t.home = false; }
+  });
+  G.tools = kept;
   refreshActions();
 }
 
@@ -3021,34 +3582,48 @@ function actionBtn(label, cls, fn) {
   elActions.appendChild(b);
 }
 
+/* The only buttons in the game are the ones heaven and the hall need. */
 function refreshActions() {
   elActions.innerHTML = '';
-  if (G.scene === 'cine') return;
+  if (G.cine || G.scene === 'burning' || G.scene === 'game') return;
   if (G.scene === 'hall') {
     actionBtn('\u2190 Back', '', closeHall);
-    actionBtn('Sort by unlocked', '', sortHall);
+    actionBtn('Sort', '', sortHall);
     actionBtn('List view', '', openTrophies);
     return;
   }
   if (G.scene === 'heaven') {
     actionBtn('Hall of Trophies', 'good', () => openHall('heaven'));
+    actionBtn('Endings', '', openEndings);
     actionBtn('Reincarnate \u21bb', 'good', reincarnate);
-    return;
-  }
-  if (G.scene !== 'game') return;
-  if (G.dead) return;
-  actionBtn('Hug', 'good', doHug);
-  if (has('can')) actionBtn('Water', 'good', doWater);
-  if (has('acorn')) actionBtn('Plant Acorn', 'good', doPlant);
-  if (has('hat') && !G.flags.hatOn) actionBtn('Give Hat', 'good', doHat);
-  if (has('pamph')) actionBtn('Show Newspaper', '', doNews);
-  if (has('diary')) actionBtn('Read Diary', '', doDiary);
-  if (has('lighter') && !G.flags.lighterGone) {
-    actionBtn('Flick Lighter', 'bad', doFlick);
-    actionBtn('BURN THE TREE', 'bad', askBurn);
-    actionBtn('Throw It Away', 'good', doThrowAway);
   }
 }
+
+/* what happens when a tool is let go over something */
+function useTool(id, x, y) {
+  const onTree = Math.abs(x - CX()) < 46 && y > 40 && y < GROUND_Y + 6;
+  const onHead = Math.abs(x - CX()) < 60 && y < 80;
+  const onGround = y > GROUND_Y - 4;
+
+  if (id === 'can' && onTree) { doWater(); return true; }
+  if (id === 'acorn' && onGround && !onTree) { doPlant(x); return true; }
+  if (id === 'hat' && (onHead || onTree)) { doHat(); return true; }
+  if (id === 'pamph' && onTree) { doNews(); return true; }
+  if (id === 'diary') { doDiary(); return true; }
+  if (id === 'lighter' && onTree) { askBurn(); return true; }
+  if (id === 'lighter' && x < 70 && y > GROUND_Y + 8) { doThrowAway(); return true; }
+  if (id === 'lighter') { doFlick(); return true; }
+  return false;
+}
+
+const TOOL_HINTS = {
+  can: 'drag the can onto him',
+  acorn: 'drag the acorn onto the grass',
+  hat: 'drag the hat onto his head',
+  pamph: 'drag the paper onto him',
+  diary: 'drag it anywhere to read it',
+  lighter: 'onto him to burn \u00b7 into the pond to be done with it'
+};
 
 /* ---------------------------------------------------------------------
    TREE INTERACTION
@@ -3112,7 +3687,7 @@ function talkToTree() {
   if (!bag.length) refillBag();
   const line = DATA.lines[bag.pop()];
   save.heard[line.id] = 1; persist();
-  say('THE WISE OAK TREE', line.text, line.mood, line.tag === 'world' ? 'serious' : '');
+  say('THE WISE OAK TREE', line.text, line.mood, line.tag === 'world' ? 'serious' : '', repliesFor(line.tag));
 
   const hc = Object.keys(save.heard).length;
   if (hc >= 10) ACH('chat10');
@@ -3124,7 +3699,7 @@ function talkToTree() {
   checkWorldProgress();
   if (heardCount('pop') >= 20) ACH('pop20');
   if (heardCount('pop') >= totalCount('pop')) { ACH('popall'); reachEnding('canon'); }
-  if (line.tag === 'meta' && Math.random() < 0.2) spawnParticles('star', 128, 60, 10);
+  if (line.tag === 'meta' && Math.random() < 0.2) spawnParticles('star', CX(), 60, 10);
 }
 
 function triggerSneeze() {
@@ -3137,7 +3712,7 @@ function triggerSneeze() {
   const n = 2 + Math.floor(Math.random() * 3);
   for (let i = 0; i < n; i++) dropLeaf(110 + Math.random() * 40, 60 + Math.random() * 30, true);
   for (let i = 0; i < 14; i++) dropLeaf(90 + Math.random() * 76, 40 + Math.random() * 50, false);
-  spawnParticles('spark', 128, 128, 8);
+  spawnParticles('spark', CX(), CX(), 8);
   say('THE WISE OAK TREE', DATA.sneezeLines[Math.floor(Math.random() * DATA.sneezeLines.length)], 'shock');
   G.sneezeTimer = 20 + Math.random() * 25;
   maybeSpawnSquirrel();
@@ -3159,7 +3734,7 @@ function doHug() {
   if (G.dead) return;
   save.stats.hugs++; persist();
   SFX.hug();
-  spawnParticles('heart', 128, 110, 8);
+  spawnParticles('heart', CX(), 110, 8);
   ACH('hug1');
   if (save.stats.hugs >= 10) ACH('hug10');
   const lines = [
@@ -3196,13 +3771,13 @@ function checkFriendEnding() {
   if (save.stats.hugs >= 10 && save.stats.waters >= 10) reachEnding('friend');
 }
 
-function doPlant() {
+function doPlant(atX) {
   if (!has('acorn')) return;
   G.inv.items.acorn = false;
   save.stats.plants++; persist();
   SFX.plant();
-  const x = 30 + Math.random() * 190;
-  G.saplings.push({ x: Math.floor(x), age: 0, ph: Math.random() * 6.28 });
+  const x = atX !== undefined ? atX : 30 + Math.random() * (W() - 60);
+  G.saplings.push({ x: Math.floor(Math.max(8, Math.min(W() - 8, x))), age: 0, ph: Math.random() * 6.28 });
   ACH('plant');
   if (save.stats.plants >= 5 && !save.endings.grove) {
     ACH('plant5');
@@ -3308,6 +3883,7 @@ const BURN_LINES = [
 ];
 
 function startBurning() {
+  G.fleeing = true;
   G.scene = 'burning'; G.burn = 0.001; G.burnStage = 0;
   SFX.fire();
   say('THE WISE OAK TREE', "...", 'shock');
@@ -3323,13 +3899,13 @@ function maybeSpawnSquirrel() {
   if (s.active || s.spawned) return;
   s.spawned = true; s.active = true;
   s.dir = Math.random() < 0.5 ? 1 : -1;
-  s.x = s.dir === 1 ? -14 : W + 14;
+  s.x = s.dir === 1 ? -14 : W() + 14;
   s.targetX = s.dir === 1 ? 186 : 70;
   s.moving = true;
   ACH('squirrel');
   setTimeout(() => {
     if (G.scene === 'game' && !G.dead)
-      say('SQUIRREL', "yo. yo. down here. i heard sneezing which means LEAVES which means BUSINESS.", null);
+      say('SQUIRREL', "yo. yo. down here. i heard sneezing which means LEAVES which means BUSINESS.", null, 'squirrel');
   }, 1600);
 }
 
@@ -3342,14 +3918,14 @@ function clickSquirrel() {
   if (save.stats.sqChats >= 15) ACH('sqchat');
   let pool = DATA.squirrelLines;
   if (has('lighter') && !G.flags.lighterGone) pool = pool.concat(DATA.squirrelWarnLines);
-  say('SQUIRREL', pool[Math.floor(Math.random() * pool.length)], null);
+  say('SQUIRREL', pool[Math.floor(Math.random() * pool.length)], null, 'squirrel');
   openShop();
 }
 
 function openShop() {
   // open on the opposite side to the squirrel so he is never hidden behind
   // his own shop window
-  const onLeft = G.squirrel.x < W / 2;
+  const onLeft = G.squirrel.x < W() / 2;
   elShop.style.left = onLeft ? 'auto' : '8px';
   elShop.style.right = onLeft ? '8px' : 'auto';
   elShop.classList.remove('hidden');
@@ -3377,7 +3953,7 @@ function closeShop() { elShop.classList.add('hidden'); }
 function buy(it) {
   if (G.inv.leaves < it.cost) {
     SFX.deny();
-    say('SQUIRREL', "nope. not enough leaves. i'm running a business here, not a charity. (i am running neither)", null);
+    say('SQUIRREL', "nope. not enough leaves. i'm running a business here, not a charity. (i am running neither)", null, 'squirrel');
     return;
   }
   G.inv.leaves -= it.cost;
@@ -3391,7 +3967,7 @@ function buy(it) {
     startLighterCine();
     return;
   } else {
-    say('SQUIRREL', "pleasure doing business. don't tell the tree. he thinks i'm a saver.", null);
+    say('SQUIRREL', "pleasure doing business. don't tell the tree. he thinks i'm a saver.", null, 'squirrel');
   }
   if (DATA.shop.every(s => has(s.id) || (s.id === 'acorn' && save.stats.plants > 0))) ACH('tradeall');
   refreshHUD();
@@ -3477,6 +4053,7 @@ function checkCompletionist() {
 
 function showEndingCard(e) {
   SFX.ending();
+  pushNote('ending', e.name, e.title, e.icon);
   const c = document.createElement('canvas');
   c.width = 16; c.height = 16;
   drawIcon(c.getContext('2d'), e.icon, 16);
@@ -3501,7 +4078,7 @@ function showEndingCard(e) {
 function goHeaven() {
   G.scene = 'heaven';
   ACH('heaven');
-  elDialog.classList.add('hidden');
+  hideBubble();
   refreshActions();
   setTimeout(() => {
     if (G.scene === 'heaven') say('THE WISE OAK TREE (DECEASED)', DATA.heavenTreeLines[0], null, 'heaven');
@@ -3515,10 +4092,10 @@ function openHall(from) {
   G.hall.from = from || 'heaven';
   G.hall.scroll = 0; G.hall.target = 0; G.hall.dragIndex = -1;
   G.scene = 'hall';
-  elDialog.classList.add('hidden');
+  hideBubble();
   const got = DATA.achievements.filter(a => save.ach[a.id]).length;
   elHint.textContent = got + ' / ' + DATA.achievements.length + ' \u00b7 drag to scroll \u00b7 lift a trophy onto another plinth to rearrange';
-  elHint.classList.remove('hidden');
+  elHint.className = 'raised';
   refreshActions();
   SFX.ach();
 }
@@ -3526,15 +4103,17 @@ function openHall(from) {
 function closeHall() {
   elHallLabel.classList.add('hidden');
   G.scene = G.hall.from === 'game' ? 'game' : 'heaven';
-  elHint.classList.toggle('hidden', G.scene === 'game');
-  if (G.scene === 'heaven') elHint.textContent = 'click the ghost tree \u00b7 click the clouds \u00b7 visit the hall \u00b7 then reincarnate';
+  if (G.scene === 'heaven') {
+    elHint.textContent = 'click the ghost tree \u00b7 click the clouds \u00b7 visit the hall \u00b7 then reincarnate';
+    elHint.className = 'raised';
+  } else elHint.className = 'hidden';
   refreshActions();
 }
 
 function resetWorld() {
   G.burn = 0; G.dead = false; G.burnStage = 0; G.deathTimer = 0; G.ascended = false;
   G.particles = []; G.groundLeaves = []; G.saplings = [];
-  G.inv = { leaves: 0, items: {} };
+  G.inv = { leaves: 0, items: {} }; G.tools = []; G.holding = null; G.critters = []; seedCritters();
   G.flags = { hatOn: false, lighterGone: false, confirming: false, newsRead: false };
   G.squirrel = { active: false, x: -20, y: GROUND_Y + 6, dir: 1, moving: false, targetX: 190, face: 0, holding: null, spawned: false, clicks: 0, clickT: 0 };
   G.sneezeTimer = 12 + Math.random() * 15;
@@ -3568,7 +4147,7 @@ function updateParticles(dt) {
       p.y += p.vy * dt;
       if (p.y >= GROUND_Y + 2 + (p.collectible ? 0 : Math.random() * 16)) {
         if (p.collectible && G.groundLeaves.length < 14) {
-          G.groundLeaves.push({ x: Math.max(4, Math.min(W - 10, p.x | 0)), y: GROUND_Y + 4 + Math.random() * 18, col: p.col, col2: p.col2, ph: Math.random() * 6.28, landed: true });
+          G.groundLeaves.push({ x: insetX(p.x | 0), y: GROUND_Y + 4 + Math.random() * 18, col: p.col, col2: p.col2, ph: Math.random() * 6.28, landed: true });
         }
         G.particles.splice(i, 1); continue;
       }
@@ -3595,11 +4174,6 @@ function collectLeaf(i) {
   maybeSpawnSquirrel();
 }
 
-let seasonPillText = '';
-function updateSeasonPill() {
-  const label = (SPR.isNight(G.timeOfDay) ? '\u263D ' : '\u2600 ') + G.season;
-  if (label !== seasonPillText) { seasonPillText = label; elSeason.textContent = label; }
-}
 
 /* ---------------------------------------------------------------------
    CINEMATICS
@@ -3612,7 +4186,7 @@ const elHallLabel = $('halllabel');
 function playCine(name, stages, onDone) {
   G.cine = { name, stages, i: 0, t: 0, done: onDone || null };
   G.scene = 'cine';
-  elDialog.classList.add('hidden');
+  hideBubble();
   elShop.classList.add('hidden');
   refreshActions();
   enterStage();
@@ -3688,7 +4262,7 @@ function startDeathCine() {
     { id: 'fall', dur: 2.6, cam: [0, 4, 1.2], caption: 'Four hundred and eleven years.',
       enter: () => { G.dead = true; G.flash = 1.4; SFX.boom(); G.shake = 5; } },
     { id: 'ash', dur: 4.4, cam: [0, 5, 1.05], caption: 'The wise oak tree died.',
-      enter: () => { G.stillBurning = false; spawnParticles('ash', 128, 100, 60); } },
+      enter: () => { G.stillBurning = false; spawnParticles('ash', CX(), 100, 60); } },
     { id: 'soul', dur: 4.2, cam: [0, -10, 1.3], caption: 'Something is leaving.',
       enter: () => { SFX.ascend(); } },
     { id: 'tunnel', dur: 2.8, cam: [0, 0, 1.0], snap: true, caption: '' },
@@ -3721,7 +4295,7 @@ function startIntroCine() {
 /* ---- the squirrel hands over the lighter ---- */
 function startLighterCine() {
   playCine('lighter', [
-    { id: 'deal', dur: 3.2, cam: [(G.squirrel.x - 128) * 0.5, 40, 1.9], caption: '"For nest purposes."',
+    { id: 'deal', dur: 3.2, cam: [(G.squirrel.x - CX()) * 0.5, 40, 1.9], caption: '"For nest purposes."',
       enter: () => { G.squirrel.face = 1; G.squirrel.holding = 'lighter'; SFX.trade(); } },
     { id: 'oblivious', dur: 3.4, cam: [0, 16, 1.6], caption: 'He does not know you have it.',
       enter: () => { G.squirrel.holding = null; G.mood = 'happy'; } }
@@ -3738,7 +4312,7 @@ function startMercyCine() {
       enter: () => { SFX.water(); },
       tick: (p) => { if (p > 0.55 && !G._splashed) { G._splashed = true; spawnParticles('drop', 30, GROUND_Y + 16, 22); SFX.pickup(); } } },
     { id: 'relief', dur: 3.6, cam: [0, 10, 1.4], caption: 'sss.',
-      enter: () => { G._splashed = false; G.mood = 'happy'; spawnParticles('heart', 128, 110, 6); } }
+      enter: () => { G._splashed = false; G.mood = 'happy'; spawnParticles('heart', CX(), 110, 6); } }
   ], () => {
     G.scene = 'game'; refreshHUD(); refreshActions();
     reachEnding('mercy');
@@ -3796,6 +4370,7 @@ function update(dt) {
   updateCam(dt);
 
   if (G.cine) {
+    if (G.fleeing) updateCritters(dt);
     G.letterbox = Math.min(1, G.letterbox + dt * 2.5);
     G.flash = Math.max(0, G.flash - dt * 1.2);
     G.shake = Math.max(0, G.shake - dt * 6);
@@ -3810,15 +4385,13 @@ function update(dt) {
   // clock + seasons
   G.timeOfDay = (G.timeOfDay + dt / G.dayLen) % 1;
   if (SPR.isNight(G.timeOfDay)) ACH('night');
-  updateSeasonPill();
   G.seasonTimer += dt;
   if (G.seasonTimer > G.seasonLen) {
     G.seasonTimer = 0;
     G.seasonIdx = (G.seasonIdx + 1) % 4;
     G.season = SEASON_NAMES[G.seasonIdx];
     save.stats.seasons[G.season] = 1; persist();
-    updateSeasonPill();
-    if (SEASON_NAMES.every(s => save.stats.seasons[s])) ACH('seasons');
+      if (SEASON_NAMES.every(s => save.stats.seasons[s])) ACH('seasons');
     if (G.scene === 'game' && !G.dead && Math.random() < 0.8) {
       const msg = {
         spring: "Spring. I am going to grow forty thousand new leaves and complain about every one of them.",
@@ -3880,7 +4453,14 @@ function update(dt) {
       if (G.watcherHold <= 0) G.watchers = Math.max(0, G.watchers - dt * 1.2);
     }
 
+    updateCritters(dt);
     if (tickle.cool > 0) tickle.cool -= dt;
+
+    // a long press on his trunk is a hug
+    if (G.holdT > 0) {
+      G.holdT += dt;
+      if (G.holdT > 1.15) { G.holdT = 0; grab = null; elHint.className = 'hidden'; doHug(); }
+    }
 
     // stillness ending
     G.sinceTreeClick += dt;
@@ -3908,14 +4488,15 @@ function update(dt) {
       if (Math.abs(d) < 2) { s.moving = false; s.face = 1; }
       else { s.x += Math.sign(d) * 46 * dt; s.dir = Math.sign(d); }
     } else if (Math.random() < dt * 0.25) {
-      s.targetX = 40 + Math.random() * 176;
+      s.targetX = inset() + 20 + Math.random() * Math.max(40, W() - inset() * 2 - 40);
       if (Math.abs(s.targetX - s.x) > 20) s.moving = true;
     }
-    if (G.dead || G.scene === 'burning') { s.targetX = s.x < 128 ? -24 : W + 24; s.moving = true; s.face = 0; }
+    if (G.dead || G.scene === 'burning') { s.targetX = s.x < CX() ? -24 : W() + 24; s.moving = true; s.face = 0; }
   }
 
   // burning
   if (G.scene === 'burning') {
+    updateCritters(dt);
     G.burn = Math.min(1, G.burn + dt / 16);
     G.shake = Math.max(G.shake, 1.2);
     if (Math.random() < dt * 30) {
@@ -3932,6 +4513,104 @@ function update(dt) {
   }
 }
 
+/* ---------------------------------------------------------------------
+   CRITTERS
+   --------------------------------------------------------------------- */
+/* The resting camera crops a sliver off each edge, so anything the player
+   needs to be able to click has to stay inside this. */
+const REST_ZOOM = 1.09;
+function inset() { return Math.ceil((W() - W() / REST_ZOOM) / 2) + 6; }
+function insetX(x) { return Math.max(inset(), Math.min(W() - inset(), x)); }
+const BIRD_COLS = ['#8a4a3a', '#4a6a8a', '#6a5a3a', '#3a5a4a'];
+
+function seedCritters() {
+  G.critters = [];
+  const branchPerch = () => {
+    const b = SPR.CANOPY[Math.floor(Math.random() * SPR.CANOPY.length)];
+    return { x: b.x + (Math.random() - 0.5) * 20, y: b.y + 14 };
+  };
+  for (let i = 0; i < 2; i++) {
+    const p = branchPerch();
+    G.critters.push({ kind: 'bird', x: p.x, y: p.y, hx: p.x, hy: p.y, col: BIRD_COLS[i % BIRD_COLS.length],
+                      ph: Math.random() * 6.28, flying: false, t: 3 + Math.random() * 8, vx: 0, vy: 0 });
+  }
+  for (let i = 0; i < 3; i++) {
+    G.critters.push({ kind: 'butterfly', x: inset() + Math.random() * (W() - inset() * 2), y: 100 + Math.random() * 50,
+                      col: ['#ffd24a', '#e88ac0', '#8ac8f0'][i % 3], ph: Math.random() * 6.28, t: 0 });
+  }
+  G.critters.push({ kind: 'beetle', x: CX() - 20, y: 130, ph: 0, dir: 1, t: 0 });
+  G.critters.push({ kind: 'rabbit', x: insetX(46), y: GROUND_Y + 22, dir: 1, moving: false, t: 2, ph: 0 });
+}
+
+function updateCritters(dt) {
+  // when the tree goes up, everything living in it leaves
+  if (G.fleeing) {
+    for (let i = G.critters.length - 1; i >= 0; i--) {
+      const k = G.critters[i];
+      k.flying = true; k.moving = true;
+      k.x += (k.fx || (k.fx = k.x < CX() ? -1 : 1)) * (k.kind === 'rabbit' ? 70 : 46) * dt;
+      if (k.kind !== 'rabbit') k.y -= 26 * dt;
+      if (k.x < -20 || k.x > W() + 20 || k.y < -20) G.critters.splice(i, 1);
+    }
+    return;
+  }
+  for (const k of G.critters) {
+    k.t -= dt;
+    if (k.kind === 'bird') {
+      if (k.flying) {
+        k.x += k.vx * dt; k.y += k.vy * dt;
+        if (k.t <= 0) {
+          k.flying = false;
+          const b = SPR.CANOPY[Math.floor(Math.random() * SPR.CANOPY.length)];
+          k.x = b.x + (Math.random() - 0.5) * 20; k.y = b.y + 14;
+          k.t = 6 + Math.random() * 12;
+        }
+      } else if (k.t <= 0) {
+        k.flying = true; k.t = 2.5 + Math.random() * 2;
+        k.vx = (Math.random() > 0.5 ? 1 : -1) * (30 + Math.random() * 30);
+        k.vy = -14 - Math.random() * 12;
+      }
+    } else if (k.kind === 'butterfly') {
+      k.x += Math.sin(G.t * 0.7 + k.ph) * 16 * dt + 6 * dt;
+      k.y += Math.sin(G.t * 1.9 + k.ph) * 12 * dt;
+      if (k.x > W() - inset()) k.x = inset();
+      k.y = Math.max(70, Math.min(GROUND_Y + 20, k.y));
+    } else if (k.kind === 'beetle') {
+      k.x += k.dir * 5 * dt;
+      k.y += Math.sin(G.t * 0.6) * 3 * dt;
+      if (Math.abs(k.x - CX()) > 20) k.dir *= -1;
+      k.y = Math.max(96, Math.min(146, k.y));
+    } else if (k.kind === 'rabbit') {
+      if (k.moving) {
+        k.x += k.dir * 26 * dt;
+        if (k.t <= 0) { k.moving = false; k.t = 3 + Math.random() * 7; }
+        if (k.x < inset() + 6 || k.x > W() - inset() - 6) k.dir *= -1;
+        k.x = insetX(k.x);
+      } else if (k.t <= 0) {
+        k.moving = true; k.t = 0.8 + Math.random() * 1.2;
+        k.dir = Math.random() > 0.5 ? 1 : -1;
+      }
+    }
+  }
+}
+
+function critterAt(x, y) {
+  for (const k of G.critters) {
+    const r = k.kind === 'rabbit' ? 10 : k.kind === 'beetle' ? 5 : 7;
+    if (Math.abs(x - k.x) < r && Math.abs(y - k.y) < r + 2) return k;
+  }
+  return null;
+}
+
+function touchCritter(k) {
+  const lines = DATA.critterLines[k.kind];
+  if (k.kind === 'bird' && !k.flying) { k.flying = true; k.t = 2.4; k.vx = (Math.random() > .5 ? 1 : -1) * 44; k.vy = -18; }
+  if (k.kind === 'rabbit') { k.moving = true; k.t = 1.4; k.dir = k.x < CX() ? -1 : 1; }
+  ACH('critter');
+  SFX.squeak();
+  say('THE WISE OAK TREE', lines[Math.floor(Math.random() * lines.length)], 'happy');
+}
+
 /* camera easing — cinematics move it, everything else leaves it alone */
 function updateCam(dt) {
   if (!G.cine) {
@@ -3946,7 +4625,7 @@ function updateCam(dt) {
 
 function updateHall(dt) {
   const h = G.hall;
-  const maxScroll = Math.max(0, SPR.hallWidth(h.order.length) - W);
+  const maxScroll = Math.max(0, SPR.hallWidth(h.order.length) - W());
   h.target = Math.max(0, Math.min(maxScroll, h.target));
   h.scroll += (h.target - h.scroll) * Math.min(1, dt * 8);
 }
@@ -3973,7 +4652,7 @@ function drawWorld(opts) {
   if (G.burn > 0 && !o.growing) {
     // firelight swallows the daylight
     dc.globalAlpha = Math.min(0.40, G.burn * 0.45);
-    SPR.px(dc, 0, 0, W, H, '#5a1f0c');
+    SPR.px(dc, 0, 0, W(), H, '#5a1f0c');
     dc.globalAlpha = 1;
   }
   SPR.drawGround(dc, G);
@@ -3987,9 +4666,9 @@ function drawWorld(opts) {
     SPR.drawStump(L, G);
     // the trunk goes over, hinged where it snapped
     L.save();
-    L.translate(128, GROUND_Y + 4);
+    L.translate(CX(), GROUND_Y + 4);
     L.rotate(o.fall * 1.15);
-    L.translate(-128, -(GROUND_Y + 4));
+    L.translate(-CX(), -(GROUND_Y + 4));
     SPR.drawTree(L, G);
     L.restore();
   } else if (o.growing !== undefined) {
@@ -3999,10 +4678,12 @@ function drawWorld(opts) {
     SPR.drawWatchers(L, G);
   }
   SPR.drawSquirrel(L, G);
+  if (!o.fall && o.growing === undefined) { SPR.drawCritters(L, G); SPR.drawTools(L, G); }
   SPR.layerEnd(dc, '#1a0f08');
 
   SPR.drawFireOnTree(dc, G);
   SPR.drawParticles(dc, G);
+  SPR.drawUndergrowth(dc, G);
   SPR.drawForeground(dc, G);
   SPR.drawFrameFoliage(dc, G);
   SPR.drawBokeh(dc, G);
@@ -4027,16 +4708,16 @@ function drawCineFrame() {
     drawWorld();
     if (name === 'intro' && st === 'wide') {
       dc.globalAlpha = Math.max(0, 1 - p * 2.2);
-      SPR.px(dc, 0, 0, W, H, '#000000');
+      SPR.px(dc, 0, 0, W(), H, '#000000');
       dc.globalAlpha = 1;
     }
     if (name === 'intro' && st === 'wake' && p > 0.45 && p < 0.75) {
-      SPR.drawRays(dc, G, (p - 0.45) * 2, 128, 106);
+      SPR.drawRays(dc, G, (p - 0.45) * 2, CX(), 106);
     }
     if (name === 'mercy' && st === 'throw' && p < 0.6) {
       // the lighter turning over in the air on its way to the water
       const k = p / 0.6;
-      const lx = 128 - k * 96, ly = 120 - Math.sin(k * Math.PI) * 46 + k * 44;
+      const lx = CX() - k * 96, ly = 120 - Math.sin(k * Math.PI) * 46 + k * 44;
       dc.save(); dc.translate(lx, ly); dc.rotate(k * 9); dc.translate(-lx, -ly);
       SPR.drawItemIcon(dc, lx, ly, 'lighter');
       dc.restore();
@@ -4051,36 +4732,36 @@ function drawCineFrame() {
     else if (st === 'soul') {
       SPR.drawAshScene(dc, G);
       const y = GROUND_Y - 14 - p * 150;
-      SPR.drawRays(dc, G, Math.min(1, p * 1.4) * 0.7, 128, y);
-      SPR.drawSoul(dc, G, 128, y, 1 + p);
+      SPR.drawRays(dc, G, Math.min(1, p * 1.4) * 0.7, CX(), y);
+      SPR.drawSoul(dc, G, CX(), y, 1 + p);
       SPR.drawParticles(dc, G);
-      if (p > 0.8) { dc.globalAlpha = (p - 0.8) * 5; SPR.px(dc, 0, 0, W, H, '#ffffff'); dc.globalAlpha = 1; }
+      if (p > 0.8) { dc.globalAlpha = (p - 0.8) * 5; SPR.px(dc, 0, 0, W(), H, '#ffffff'); dc.globalAlpha = 1; }
     } else if (st === 'tunnel') {
-      SPR.px(dc, 0, 0, W, H, '#dceeff');
+      SPR.px(dc, 0, 0, W(), H, '#dceeff');
       SPR.drawCloudTunnel(dc, G, p, 1);
-      SPR.drawSoul(dc, G, 128, 110 - p * 30, 1.6);
-      SPR.drawRays(dc, G, 0.5, 128, 96);
-      dc.globalAlpha = Math.max(0, p - 0.7) * 3.3; SPR.px(dc, 0, 0, W, H, '#ffffff'); dc.globalAlpha = 1;
+      SPR.drawSoul(dc, G, CX(), 110 - p * 30, 1.6);
+      SPR.drawRays(dc, G, 0.5, CX(), 96);
+      dc.globalAlpha = Math.max(0, p - 0.7) * 3.3; SPR.px(dc, 0, 0, W(), H, '#ffffff'); dc.globalAlpha = 1;
     } else if (st === 'arrive') {
       SPR.drawHeavenBackdrop(dc, G);
       const drop = (1 - Math.pow(1 - p, 3));
-      SPR.drawGhostTree(dc, G, 128, -60 + drop * 164 + Math.sin(G.t * 1.1) * 3, Math.min(1, p * 2));
-      SPR.drawRays(dc, G, 0.8 * (1 - p * 0.6), 128, 70);
-      dc.globalAlpha = Math.max(0, 1 - p * 2.2); SPR.px(dc, 0, 0, W, H, '#ffffff'); dc.globalAlpha = 1;
+      SPR.drawGhostTree(dc, G, CX(), -60 + drop * 164 + Math.sin(G.t * 1.1) * 3, Math.min(1, p * 2));
+      SPR.drawRays(dc, G, 0.8 * (1 - p * 0.6), CX(), 70);
+      dc.globalAlpha = Math.max(0, 1 - p * 2.2); SPR.px(dc, 0, 0, W(), H, '#ffffff'); dc.globalAlpha = 1;
     }
   } else if (name === 'rebirth') {
     if (st === 'leave') {
       SPR.drawHeaven(dc, G);
-      SPR.drawSoul(dc, G, 128, 120 + p * 60, 1.2);
-      dc.globalAlpha = Math.max(0, p - 0.75) * 4; SPR.px(dc, 0, 0, W, H, '#ffffff'); dc.globalAlpha = 1;
+      SPR.drawSoul(dc, G, CX(), 120 + p * 60, 1.2);
+      dc.globalAlpha = Math.max(0, p - 0.75) * 4; SPR.px(dc, 0, 0, W(), H, '#ffffff'); dc.globalAlpha = 1;
     } else if (st === 'dive') {
-      SPR.px(dc, 0, 0, W, H, '#e2f0ff');
+      SPR.px(dc, 0, 0, W(), H, '#e2f0ff');
       SPR.drawCloudTunnel(dc, G, p, -1);
       const y = 40 + p * 70;
-      SPR.drawSoul(dc, G, 128, y, 1.4);
+      SPR.drawSoul(dc, G, CX(), y, 1.4);
       for (let i = 0; i < 10; i++) {
         dc.globalAlpha = 0.5 * (1 - i / 10);
-        SPR.pcircle(ctx, 128 + Math.sin(G.t * 4 + i) * 3, y - i * 6, 3 - i * 0.25, '#ffffff');
+        SPR.pcircle(ctx, CX() + Math.sin(G.t * 4 + i) * 3, y - i * 6, 3 - i * 0.25, '#ffffff');
         dc.globalAlpha = 1;
       }
     } else if (st === 'land') {
@@ -4088,9 +4769,9 @@ function drawCineFrame() {
       SPR.drawGround(dc, G);
       SPR.drawForeground(dc, G);
       const y = -20 + p * (GROUND_Y + 10);
-      SPR.drawSoul(dc, G, 128, y, 1.4 * (1 - p * 0.4));
+      SPR.drawSoul(dc, G, CX(), y, 1.4 * (1 - p * 0.4));
       SPR.drawFrameFoliage(dc, G);
-      if (p > 0.9) { dc.globalAlpha = (p - 0.9) * 10; SPR.px(dc, 0, 0, W, H, '#ffffff'); dc.globalAlpha = 1; }
+      if (p > 0.9) { dc.globalAlpha = (p - 0.9) * 10; SPR.px(dc, 0, 0, W(), H, '#ffffff'); dc.globalAlpha = 1; }
     } else if (st === 'grow') {
       G.timeOfDay = 0.02 + p * 0.16;
       drawWorld({ growing: Math.pow(p, 0.9) });
@@ -4100,7 +4781,7 @@ function drawCineFrame() {
 
 function render() {
   dc.setTransform(1, 0, 0, 1, 0, 0);
-  dc.clearRect(0, 0, W, H);
+  dc.clearRect(0, 0, W(), H);
 
   if (G.cine) drawCineFrame();
   else if (G.scene === 'hall') SPR.drawHall(dc, G);
@@ -4110,17 +4791,18 @@ function render() {
   // blit through the camera
   const cam = G.cam;
   const sh = G.cine && G.shake > 0 ? G.shake : 0;
-  const sw = W / cam.z, sHt = H / cam.z;
-  // the buffer is the whole world; a pan that runs off it would show bare canvas
+  const c = camRect();
   const clamp = (v, hi) => Math.max(0, Math.min(hi, v));
-  const sx = clamp((W - sw) / 2 + cam.x + (Math.random() * 2 - 1) * sh, W - sw);
-  const sy = clamp((H - sHt) / 2 + cam.y + (Math.random() * 2 - 1) * sh, H - sHt);
+  const sw = c.sw, sHt = c.sh;
+  const sx = clamp(c.sx + (Math.random() * 2 - 1) * sh, W() - sw);
+  const sy = clamp(c.sy + (Math.random() * 2 - 1) * sh, H - sHt);
   ctx.setTransform(1, 0, 0, 1, 0, 0);
   ctx.imageSmoothingEnabled = false;
-  ctx.clearRect(0, 0, W, H);
-  ctx.drawImage(buf, sx, sy, sw, sHt, 0, 0, W, H);
+  ctx.clearRect(0, 0, W(), H);
+  ctx.drawImage(buf, sx, sy, sw, sHt, 0, 0, W(), H);
 
-  if (G.flash > 0) { ctx.globalAlpha = Math.min(1, G.flash); SPR.px(ctx, 0, 0, W, H, '#ffffff'); ctx.globalAlpha = 1; }
+  if (G.flash > 0) { ctx.globalAlpha = Math.min(1, G.flash); SPR.px(ctx, 0, 0, W(), H, '#ffffff'); ctx.globalAlpha = 1; }
+  if (!G.cine && G.scene === 'game') SPR.drawHud(ctx, G);
   SPR.drawLetterbox(ctx, G.letterbox);
 }
 
@@ -4129,11 +4811,21 @@ function render() {
    --------------------------------------------------------------------- */
 let hover = { kind: null, i: -1 };
 
+/* screen -> world, undoing the camera */
 function toLogical(ev) {
   const r = cv.getBoundingClientRect();
-  const cx = (ev.touches ? ev.touches[0].clientX : ev.clientX) - r.left;
-  const cy = (ev.touches ? ev.touches[0].clientY : ev.clientY) - r.top;
-  return { x: cx / r.width * W, y: cy / r.height * H };
+  const src = ev.touches && ev.touches[0] ? ev.touches[0] : (ev.changedTouches && ev.changedTouches[0]) || ev;
+  const fx = (src.clientX - r.left) / r.width;
+  const fy = (src.clientY - r.top) / r.height;
+  const c = camRect();
+  return { x: c.sx + fx * c.sw, y: c.sy + fy * c.sh };
+}
+
+/* screen -> the final frame, for the HUD which is drawn after the blit */
+function toScreenPixels(ev) {
+  const r = cv.getBoundingClientRect();
+  const src = ev.touches && ev.touches[0] ? ev.touches[0] : (ev.changedTouches && ev.changedTouches[0]) || ev;
+  return { x: (src.clientX - r.left) / r.width * W(), y: (src.clientY - r.top) / r.height * H };
 }
 
 /* which plinth is under this point, if any */
@@ -4173,26 +4865,26 @@ function hitTest(x, y) {
   if (s.active && Math.abs(x - s.x) < 11 && y > s.y - 16 && y < s.y + 4) return { kind: 'squirrel', i: -1 };
   if (!G.dead) {
     // he is not one big button: every part of him answers differently
-    const fx = x - 128, fy = y;
+    const fx = x - CX(), fy = y;
     if (Math.abs(fx) < 34 && fy > 84 && fy < 152) {
       if (fy > 96 && fy < 112 && Math.abs(Math.abs(fx) - 13) < 9) return { kind: 'part', part: 'eye', i: -1 };
-      if (fy >= 100 && fy < 128 && Math.abs(fx) < 9) return { kind: 'part', part: 'nose', i: -1 };
-      if (fy >= 128 && fy < 145 && Math.abs(fx) < 20) return { kind: 'part', part: 'mouth', i: -1 };
+      if (fy >= 100 && fy < CX() && Math.abs(fx) < 9) return { kind: 'part', part: 'nose', i: -1 };
+      if (fy >= CX() && fy < 145 && Math.abs(fx) < 20) return { kind: 'part', part: 'mouth', i: -1 };
       if (fy >= 145 && Math.abs(fx) < 26) return { kind: 'part', part: 'beard', i: -1 };
     }
-    if (y > GROUND_Y - 6 && y < GROUND_Y + 12 && Math.abs(x - 128) > 24 && Math.abs(x - 128) < 56)
+    if (y > GROUND_Y - 6 && y < GROUND_Y + 12 && Math.abs(x - CX()) > 24 && Math.abs(x - CX()) < 56)
       return { kind: 'part', part: 'root', i: -1 };
     // trunk
-    if (y > 88 && y < GROUND_Y + 6 && Math.abs(x - 128) < SPR.trunkHalfWidth(y) + 4) return { kind: 'tree', i: -1 };
+    if (y > 88 && y < GROUND_Y + 6 && Math.abs(x - CX()) < SPR.trunkHalfWidth(y) + 4) return { kind: 'tree', i: -1 };
     // canopy
-    const dx = (x - 128) / 68, dy = (y - 52) / 40;
+    const dx = (x - CX()) / 68, dy = (y - 52) / 40;
     if (dx * dx + dy * dy < 1) return { kind: 'part', part: 'canopy', i: -1 };
   }
   // the sky above: sun by day, moon by night
   const ang = Math.PI * (G.timeOfDay * 2 % 2);
   const sx = 20 + (1 - Math.cos(ang)) * 108, sy = 118 - Math.sin(ang) * 92;
   const night = SPR.isNight(G.timeOfDay);
-  const bx = night ? W - sx : sx;
+  const bx = night ? W() - sx : sx;
   if (Math.hypot(x - bx, y - sy) < 14) return { kind: night ? 'moon' : 'sun', i: -1 };
   return { kind: null, i: -1 };
 }
@@ -4222,7 +4914,7 @@ function touchSky(kind) {
   if (skipType()) return;
   if (kind === 'moon') {
     ACH('moon'); SFX.ach();
-    spawnParticles('star', 128, 40, 12);
+    spawnParticles('star', CX(), 40, 12);
     say('THE WISE OAK TREE', DATA.moonLines[Math.floor(Math.random() * DATA.moonLines.length)], 'sleepy');
   } else {
     SFX.deny();
@@ -4236,12 +4928,16 @@ let tickle = { energy: 0, last: null, cool: 0 };
 
 function onMove(ev) {
   const p = toLogical(ev);
-  G.look.x = Math.max(-1.4, Math.min(1.4, (p.x - 128) / 60));
+
+  if (G.holding) { G.holding.x = p.x; G.holding.y = p.y; return; }
+
+  G.look.x = Math.max(-1.4, Math.min(1.4, (p.x - CX()) / 60));
   G.look.y = Math.max(-1.2, Math.min(1.2, (p.y - 116) / 50));
 
   // hold the trunk and waggle the mouse: he gets shaken
   if (grab && G.scene === 'game' && !G.dead) {
     grab.moved += Math.abs(p.x - grab.lastX);
+    if (grab.moved > 6) G.holdT = 0;
     G.shake = Math.min(5, G.shake + Math.abs(p.x - grab.lastX) * 0.25);
     grab.lastX = p.x;
     if (grab.moved > 70 && !grab.paid) {
@@ -4256,7 +4952,7 @@ function onMove(ev) {
 
   // scrub the cursor quickly over him without pressing: he is ticklish
   if (G.scene === 'game' && !G.dead && tickle.cool <= 0) {
-    const onHim = Math.abs(p.x - 128) < 40 && p.y > 88 && p.y < GROUND_Y;
+    const onHim = Math.abs(p.x - CX()) < 40 && p.y > 88 && p.y < GROUND_Y;
     if (onHim && tickle.last) {
       const d = Math.abs(p.x - tickle.last.x) + Math.abs(p.y - tickle.last.y);
       tickle.energy += d > 3 ? d * 0.5 : -1;
@@ -4268,7 +4964,7 @@ function onMove(ev) {
       ACH('tickle');
       G.mood = 'laugh'; G.moodTimer = 6; G.shake = 3;
       SFX.hug();
-      spawnParticles('heart', 128, 110, 5);
+      spawnParticles('heart', CX(), 110, 5);
       for (let i = 0; i < 6; i++) dropLeaf(96 + Math.random() * 64, 40 + Math.random() * 40, i < 2);
       say('THE WISE OAK TREE', DATA.tickleLines[Math.floor(Math.random() * DATA.tickleLines.length)], 'laugh');
     }
@@ -4297,6 +4993,18 @@ cv.addEventListener('touchmove', ev => { ev.preventDefault(); onMove(ev); }, { p
 
 function onRelease() {
   grab = null;
+  if (G.holdT > 0) { G.holdT = 0; if (!save.ach.hug1) elHint.className = 'hidden'; }
+  if (G.holding) {
+    const t = G.holding;
+    G.holding = null;
+    elHint.className = 'hidden';
+    if (!useTool(t.id, t.x, t.y)) { SFX.deny(); }
+    // whatever happens, it goes back to the grass
+    const home = G.tools.indexOf(t);
+    if (home >= 0) { t.x = t.hx; t.y = t.hy; }
+    refreshHUD();
+    return;
+  }
   const h = G.hall;
   if (G.scene === 'hall' && h.dragIndex >= 0) {
     const target = h.hover;
@@ -4321,10 +5029,32 @@ cv.addEventListener('wheel', ev => {
   G.hall.target += (ev.deltaY + ev.deltaX) * 0.6;
 }, { passive: false });
 
+function toolAt(x, y) {
+  for (let i = G.tools.length - 1; i >= 0; i--) {
+    const t = G.tools[i];
+    if (Math.abs(x - t.x) < 8 && Math.abs(y - t.y) < 8) return t;
+  }
+  return null;
+}
+
 function onPress(ev) {
   SFX.kick();
   if (G.cine) { skipStage(); return; }
   const p = toLogical(ev);
+
+  if (G.scene === 'game') {
+    // the sound switch, bottom right
+    const sp = toScreenPixels(ev);
+    if (sp.x > W() - 22 && sp.y > H - 20) { toggleMute(); return; }
+    const t = toolAt(p.x, p.y);
+    if (t) {
+      G.holding = t; t.x = p.x; t.y = p.y;
+      SFX.pickup();
+      elHint.textContent = TOOL_HINTS[t.id] || 'drag it somewhere';
+      elHint.className = '';
+      return;
+    }
+  }
 
   if (G.scene === 'hall') {
     const hl = G.hall;
@@ -4339,6 +5069,17 @@ function onPress(ev) {
   }
 
   const h = hitTest(p.x, p.y);
+
+  // A critter can be clicked, but never at the cost of talking to him: if the
+  // point is on his trunk or his face, he wins.
+  if (G.scene === 'game' && !G.dead) {
+    const onHim = h.kind === 'tree' || (h.kind === 'part' && h.part !== 'canopy');
+    if (!onHim) {
+      const k = critterAt(p.x, p.y);
+      if (k) { touchCritter(k); return; }
+    }
+  }
+
   if (G.scene === 'heaven') {
     if (h.kind === 'ghost') {
       say('THE WISE OAK TREE (DECEASED)', DATA.heavenTreeLines[G.ghostIdx % DATA.heavenTreeLines.length], null, 'heaven');
@@ -4352,10 +5093,17 @@ function onPress(ev) {
   }
   if (h.kind === 'leaf') { collectLeaf(h.i); return; }
   if (h.kind === 'squirrel') { clickSquirrel(); return; }
-  if (h.kind === 'part') { grab = { x: p.x, lastX: p.x, moved: 0, t: 0 }; touchPart(h.part); return; }
+  if (h.kind === 'part') {
+    grab = { x: p.x, lastX: p.x, moved: 0, t: 0 };
+    if (h.part !== 'canopy') G.holdT = 0.0001;
+    touchPart(h.part);
+    return;
+  }
   if (h.kind === 'moon' || h.kind === 'sun') { touchSky(h.kind); return; }
   if (h.kind === 'tree') {
     grab = { x: p.x, lastX: p.x, moved: 0, t: 0 };
+    G.holdT = 0.0001;                       // press and hold to hug him
+    if (!save.ach.hug1) { elHint.textContent = 'keep holding to hug him'; elHint.className = ''; }
     talkToTree();
     return;
   }
@@ -4365,28 +5113,19 @@ cv.addEventListener('mousedown', onPress);
 cv.addEventListener('touchstart', ev => { ev.preventDefault(); onPress(ev); }, { passive: false });
 
 /* ---------------------------------------------------------------------
-   CHROME BUTTONS
+   THE FEW CONTROLS THAT ARE NOT IN THE WORLD
    --------------------------------------------------------------------- */
-$('btnTrophies').onclick = () => {
-  SFX.click();
-  if (G.cine || G.scene === 'burning') return;
-  if (G.scene === 'hall') { closeHall(); return; }
-  openHall(G.scene === 'heaven' ? 'heaven' : 'game');
-};
-$('btnEndings').onclick = () => { SFX.click(); openEndings(); };
-$('btnShop').onclick = () => {
-  SFX.click();
-  if (!G.squirrel.active) { say('THE WISE OAK TREE', "The squirrel is not here. He is 'running errands'. He is burying things.", 'smug'); return; }
-  openShop();
-};
-$('btnMute').onclick = () => {
+function toggleMute() {
   save.muted = !save.muted; persist();
   SFX.setMuted(save.muted);
-  $('btnMute').textContent = save.muted ? 'Sound: off' : 'Sound: on';
-  if (save.muted) { ACH('mute'); say('THE WISE OAK TREE', "You muted me. I am still talking. I will ALWAYS still be talking.", 'smug'); }
-};
-$('btnReset').onclick = () => {
-  SFX.click();
+  G.muted = save.muted;
+  if (save.muted) {
+    ACH('mute');
+    say('THE WISE OAK TREE', "You muted me. I am still talking. I will ALWAYS still be talking.", 'smug');
+  } else SFX.click();
+}
+
+function eraseEverything() {
   openModal('ERASE EVERYTHING?',
     "<p>Every trophy. Every ending. Every line you ever heard him say.</p><p class='small'>He will not remember you.</p>",
     [['Cancel', closeModal], ['Erase it all', () => {
@@ -4394,7 +5133,8 @@ $('btnReset').onclick = () => {
       try { localStorage.removeItem(SAVE_KEY); } catch (e) {}
       location.reload();
     }, 'bad']]);
-};
+}
+
 $('modalclose').onclick = () => { SFX.click(); closeModal(); };
 $('shopclose').onclick = (e) => { e.stopPropagation(); SFX.click(); closeShop(); };
 elModal.addEventListener('mousedown', e => { if (e.target === elModal && !G.flags.confirming) closeModal(); });
@@ -4408,63 +5148,69 @@ document.addEventListener('keydown', e => {
   }
   if (e.key === 'Escape') { closeModal(); closeShop(); }
   if (e.key === ' ') { e.preventDefault(); if (!skipType() && G.scene === 'game') talkToTree(); }
-  if (e.key.toLowerCase() === 't') openTrophies();
-  if (e.key.toLowerCase() === 'e') openEndings();
+  if (e.key.toLowerCase() === 'm') toggleMute();
+  if (e.key.toLowerCase() === 'r' && e.shiftKey) eraseEverything();
+  if (e.key.toLowerCase() === 'e' && G.scene === 'heaven') openEndings();
 });
 
 /* ---------------------------------------------------------------------
    BOOT
    --------------------------------------------------------------------- */
 SFX.setMuted(save.muted);
-$('btnMute').textContent = save.muted ? 'Sound: off' : 'Sound: on';
+G.muted = save.muted;
 if (hadSave) ACH('refresh');
 checkMetaAchievements();
 checkCompletionist();
+fit();
+seedCritters();
 buildHall();
+G.muted = save.muted;
 refreshHUD();
-updateSeasonPill();
 persist();
 
-if (hadSave) {
-  say('THE WISE OAK TREE',
-      "You came back. I did not think you would. I have been standing here in the exact same spot, which is my only move.",
-      'happy');
-} else {
-  startIntroCine();
+/* the title card holds until you tap it */
+function beginGame() {
+  if (started) return;
+  started = true;
+  SFX.kick(); SFX.ach();
+  elTitle.classList.add('out');
+  setTimeout(() => elTitle.classList.add('hidden'), 520);
+  if (hadSave) {
+    say('THE WISE OAK TREE',
+        "You came back. I did not think you would. I have been standing here in the exact same spot, which is my only move.",
+        'happy');
+  } else {
+    startIntroCine();
+  }
 }
+$('tstart').onclick = beginGame;
+elTitle.addEventListener('mousedown', beginGame);
+elTitle.addEventListener('touchstart', beginGame, { passive: true });
 
 /* Debug hooks, only when the page is opened with ?debug — used by the
    automated smoke test to reach the late game without playing for an hour. */
 if (/[?&]debug/.test(location.search)) {
   window.OAK = { G, save, ACH, reachEnding, startBurning, goHeaven, reincarnate,
-                 refreshHUD, dropLeaf, triggerSneeze, maybeSpawnSquirrel, persist };
+                 refreshHUD, dropLeaf, triggerSneeze, maybeSpawnSquirrel, persist,
+                 skipAll: () => { if (G.cine) { G.cine.i = G.cine.stages.length - 1; skipStage(); } } };
 }
 
 let last = performance.now();
 function loop(now) {
   const dt = Math.min(0.05, (now - last) / 1000);
   last = now;
+  if (!started) drawTitleLogo(dt);
   update(dt);
   render();
+  if (!elBubble.classList.contains('hidden')) positionBubble();
   requestAnimationFrame(loop);
 }
 requestAnimationFrame(loop);
 
 window.addEventListener('beforeunload', persist);
 
-/* resize: keep integer pixel scaling */
-function fit() {
-  const pad = 24;
-  const availW = window.innerWidth - pad, availH = window.innerHeight - 150;
-  let scale = Math.max(1, Math.floor(Math.min(availW / W, availH / H)));
-  if (scale * W > availW || scale * H > availH) scale = Math.max(1, scale - 1);
-  const stage = $('stage');
-  stage.style.width = (W * scale) + 'px';
-  cv.style.width = (W * scale) + 'px';
-  cv.style.height = (H * scale) + 'px';
-}
-window.addEventListener('resize', fit);
-fit();
+window.addEventListener('resize', () => { fit(); positionBubble(); });
+window.addEventListener('orientationchange', () => setTimeout(() => { fit(); positionBubble(); }, 200));
 
 })();
 </script>

@@ -11,23 +11,46 @@ famine, displacement, the fires, and the water — plainly, without taking a
 side, and always centred on the people it happens to. He is a tree. He holds
 no flag. He just notices.
 
-**Play it:** open `index.html` in any browser. No build step, no dependencies,
-no server required.
+**Play it:** open `index.html` in any browser. It fills the window. No build
+step, no dependencies, no server required.
+
+There is no interface. No toolbar, no buttons, no inventory panel. Everything
+is either part of the world or a notification: the leaf tally hangs on a little
+wooden sign, the sound switch is a pixel speaker in the corner, and the things
+you own lie about on the grass waiting to be picked up.
+
+## Talking to him
+
+He speaks in a bubble over his own head, and **you answer**. Every line offers
+you two replies drawn from a pool that matches what he just said — kind,
+curious, rude, or a bit of a joke — plus "tell me another". He has a different
+comeback for each, and the game quietly keeps score of which kind of person you
+are being.
 
 ## What you do
 
 - **Click the tree.** He never repeats himself — every line is drawn from a
   shuffled bag, so you hear all 145 of them before you hear any of them twice.
-  45 of those are pop-culture references he picked up by eavesdropping on the
-  bench: marching tree armies, the talking tree who only says his own name, the
+  45 of those are war and politics — Gaza, Sudan, Ukraine, famine, displacement,
+  ceasefires, aid convoys, press freedom, the arithmetic nobody should be doing
+  — and another 45 are pop-culture references picked up by eavesdropping on the bench:
+  marching tree armies, the talking tree who only says his own name, the
   game where you punch a tree until it becomes furniture, the wizarding school
   tree that hits people, the man with the excellent hair who called us happy.
 - **He is not one big button.** Poke him in the eye, boop his nose, put your
   hand in his mouth, scratch his moss, pat his roots, or grab a handful of
-  canopy — each gets its own reaction. Knock three times at an even tempo and
-  he answers the door. Grab the trunk and waggle to shake the leaves out of
-  him. Scrub the cursor over him fast enough and you find out bark has nerve
-  endings. Reach up and touch the moon.
+  canopy — each gets its own reaction. **Press and hold** the trunk to hug him.
+  Knock three times at an even tempo and he answers the door. Grab the trunk
+  and waggle to shake the leaves out of him. Scrub the cursor over him fast
+  enough and you find out bark has nerve endings. Reach up and touch the moon.
+- **Everything you own is a thing you drag.** The watering can, the acorn, the
+  mushroom hat, the damp newspaper, the diary and the lighter all lie on the
+  grass. Drag the can onto him to water him, the acorn onto bare ground to
+  plant it, the hat onto his head, the lighter onto him — or into the pond.
+- **He has neighbours.** Birds nest in the canopy and take off when you get too
+  close, butterflies drift across, a beetle called Reginald walks the trunk, and
+  a rabbit lives under the hedge. Click any of them and he will tell you about
+  them. When the tree burns, they all leave.
 - **Wait for the sneeze.** He is allergic to his own pollen. Leaves go
   everywhere. Pick them up off the grass.
 - **Trade with the squirrel.** Leaves buy acorns, a watering can, a mushroom
@@ -59,9 +82,9 @@ Six of them, all letterboxed and captioned, all skippable with a click.
 
 ## The Hall of Trophies
 
-Death is not the end of the collection. In heaven there is a marble gallery
+**You cannot get in until you die.** Death is not the end of the collection. In heaven there is a marble gallery
 under vaulted arches, with a red carpet running away into the light and a
-plinth for every one of the **59 achievements** — each with its own carved
+plinth for every one of the **66 achievements** — each with its own carved
 trophy on a gold mount: a stone tissue for the sneeze, a leaf vault for the
 hoarder, a lighter sinking into water for the one who threw it away, a film
 reel for the whole canon. Chandeliers burn overhead, a skylight throws shafts
@@ -72,8 +95,10 @@ shrouded under cloth behind a velvet rope.
 Drag the hall left and right to walk it. Lift a trophy off its plinth and drop
 it on another to rearrange the collection; your arrangement is remembered.
 Achievements arrive in Minecraft-style corner popups in three tiers — plain
-achievements, gold goals, and purple challenges — and there are **9 endings**,
-each with its own card and a hint for the ones you haven't found.
+achievements, gold goals, and purple challenges. They arrive as **phone-style
+notifications** — frosted glass, app icon, title and detail, sliding down from
+the top of the screen and stacking. There are **9 endings**, each with its own
+card and a hint for the ones you haven't found.
 
 Endings include burning him down, throwing the lighter in the pond, hearing
 every word he has, planting a wood, and sitting with him for three minutes
@@ -89,11 +114,14 @@ to forget you.
 | --- | --- |
 | Click the tree | Talk (click again to skip the typing) |
 | Click a fallen leaf | Pick it up |
+| Press and hold the trunk | Hug him |
+| Drag an item onto him | Use it |
 | Click the squirrel | Chat and open his shop |
 | `Space` | Talk / skip |
-| `T` | Hall of Trophies (`E` for endings, `T` again to leave) |
+| `M` | Sound on/off (or click the speaker) |
 | Drag in the hall | Scroll the gallery; drag a trophy to rearrange |
 | Arrows / wheel | Scroll the hall |
+| `Shift`+`R` | Erase everything |
 | `Esc` | Close panels / leave the hall |
 
 ## How it is built
@@ -102,6 +130,11 @@ Plain HTML, CSS and JavaScript. No frameworks, no bundler, no image or audio
 files — every sprite is drawn with `fillRect` calls on a 256×192 canvas that is
 scaled up with `image-rendering: pixelated`, and every sound is synthesised
 with the Web Audio API.
+
+The world is rendered at a fixed 192 logical pixels tall and a width that
+follows the window's aspect ratio, so it fills any screen without bars. The
+tree's geometry is authored around a centre line and re-positioned whenever the
+window changes.
 
 ```
 index.html                page shell

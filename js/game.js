@@ -5,7 +5,9 @@
 (function () {
 'use strict';
 
-const { W, H, GROUND_Y, px, dot, pcircle, mix, mulberry, SEASON_NAMES } = SPR;
+const { H, GROUND_Y, px, dot, pcircle, mix, mulberry, SEASON_NAMES } = SPR;
+/* W and CX change with the window, so they are read from SPR every time */
+const W = () => SPR.W, CX = () => SPR.CX;
 const SAVE_KEY = 'wiseoak.save.v3';
 
 /* ---------------------------------------------------------------------
@@ -51,14 +53,14 @@ const G = {
   squirrel: { active: false, x: -20, y: GROUND_Y + 6, dir: 1, moving: false,
               targetX: 190, face: 0, holding: null, spawned: false, clicks: 0, clickT: 0 },
   flags: { hatOn: false, lighterGone: false, confirming: false, newsRead: false },
-  inv: { leaves: 0, items: {} },
+  inv: { leaves: 0, items: {} }, tools: [], holding: null, holdT: 0, critters: [],
   sessionTime: 0, sinceTreeClick: 0, spamCount: 0, spamTimer: 0,
   sneezeTimer: 14 + Math.random() * 18,
   burnTimer: 0, burnStage: 0, deathTimer: 0, ascended: false,
   heavenTalk: 0, godIdx: 0, ghostIdx: 0,
   pendingEnding: null,
   // face performance
-  stare: 0, stareTimer: 20 + Math.random() * 40, moodTimer: 0, stillBurning: false,
+  stare: 0, stareTimer: 20 + Math.random() * 40, moodTimer: 0, stillBurning: false, fleeing: false,
   watchers: 0, watcherSeed: 1, watcherTimer: 40 + Math.random() * 60,
   // camera and cinematics
   cam: { x: 0, y: 5, z: 1.09, tx: 0, ty: 5, tz: 1.09 },
@@ -103,57 +105,224 @@ refillBag();
    --------------------------------------------------------------------- */
 const $ = id => document.getElementById(id);
 const cv = $('game'), ctx = cv.getContext('2d');
-cv.width = W; cv.height = H;
 ctx.imageSmoothingEnabled = false;
 
 /* The scene is drawn 1:1 into this buffer and then blitted through the
    camera. Scaling the context directly leaves seams between the 1px rows
    every sprite is built from; blitting a finished frame does not. */
 const buf = document.createElement('canvas');
-buf.width = W; buf.height = H;
 const dc = buf.getContext('2d');
 dc.imageSmoothingEnabled = false;
 
-const elDialog = $('dialogue'), elSpeaker = $('speaker'), elText = $('dtext');
-const elLeaves = $('leafcount'), elItems = $('items'), elActions = $('actions');
-const elToasts = $('toasts'), elShop = $('shop'), elShopList = $('shoplist');
+const elBubble = $('bubble'), elSpeaker = $('speaker'), elText = $('btext');
+const elChoices = $('choices'), elNotes = $('notes'), elActions = $('actions');
+const elShop = $('shop'), elShopList = $('shoplist');
 const elModal = $('modal'), elModalBody = $('modalbody'), elModalTitle = $('modaltitle');
 const elEndingCard = $('endingcard');
-const elHint = $('hint');
-const elSeason = $('seasonpill');
+const elHint = $('hint'), elTitle = $('title');
+let started = false;
+
+/* the little oak on the title card, drawn with the real renderer */
+const logoCv = $('tlogo'), lctx = logoCv.getContext('2d');
+lctx.imageSmoothingEnabled = false;
+const titleG = {
+  t: 0, season: 'summer', timeOfDay: 0.28, mood: 'happy', talking: false,
+  blink: 0, blinkTimer: 1.6, look: { x: 0, y: 0.2 }, stare: 0, shake: 0,
+  burn: 0, dead: false, flags: { hatOn: false }, watchers: 0
+};
+function drawTitleLogo(dt) {
+  titleG.t += dt;
+  titleG.blinkTimer -= dt;
+  if (titleG.blinkTimer <= 0) { titleG.blink = 0.14; titleG.blinkTimer = 2 + Math.random() * 3; }
+  titleG.blink = Math.max(0, titleG.blink - dt);
+  titleG.look.x = Math.sin(titleG.t * 0.5) * 0.5;
+  const k = 0.66;
+  lctx.setTransform(1, 0, 0, 1, 0, 0);
+  lctx.clearRect(0, 0, logoCv.width, logoCv.height);
+  lctx.save();
+  lctx.translate(logoCv.width / 2 - CX() * k, logoCv.height - (GROUND_Y + 8) * k);
+  lctx.scale(k, k);
+  SPR.drawTree(lctx, titleG);
+  lctx.restore();
+}
 
 /* ---------------------------------------------------------------------
-   DIALOGUE (typewriter)
+   FIT — the world fills the window. Height is always 192 logical pixels;
+   width follows the window's aspect so there are never any bars.
+   --------------------------------------------------------------------- */
+let SCALE = 4;
+function fit() {
+  const winW = window.innerWidth, winH = window.innerHeight;
+  SCALE = winH / H;
+  const logicalW = SPR.setLogicalWidth(winW / SCALE);
+  cv.width = logicalW; cv.height = H;
+  buf.width = logicalW; buf.height = H;
+  ctx.imageSmoothingEnabled = false;
+  dc.imageSmoothingEnabled = false;
+  cv.style.width = (logicalW * SCALE) + 'px';
+  cv.style.height = (H * SCALE) + 'px';
+}
+
+/* The slice of the world the camera is currently showing. Input, the speech
+   bubble and the blit all have to agree on this or clicks land in the wrong
+   place. */
+function camRect() {
+  const cam = G.cam;
+  const sw = W() / cam.z, sh = H / cam.z;
+  return {
+    sw, sh,
+    sx: Math.max(0, Math.min(W() - sw, (W() - sw) / 2 + cam.x)),
+    sy: Math.max(0, Math.min(H - sh, (H - sh) / 2 + cam.y))
+  };
+}
+
+/* where a world point lands on the page */
+function worldToScreen(wx, wy) {
+  const r = cv.getBoundingClientRect();
+  const c = camRect();
+  return {
+    x: r.left + ((wx - c.sx) / c.sw) * r.width,
+    y: r.top + ((wy - c.sy) / c.sh) * r.height
+  };
+}
+
+/* ---------------------------------------------------------------------
+   DIALOGUE — he speaks in a bubble over his own head, and you answer
    --------------------------------------------------------------------- */
 let typeQueue = null, typeIdx = 0, typeTimer = 0, talkHold = 0;
-function say(speaker, text, mood, cls) {
+let pendingChoices = null, lastTag = null;
+
+function say(speaker, text, mood, cls, choices) {
   G.stare = 0; G.watchers = Math.min(G.watchers, 0.2);
-  elDialog.classList.remove('hidden');
-  elDialog.className = 'dialogue ' + (cls || '');
+  clearChoices();
+  elBubble.className = cls || '';
+  elBubble.classList.remove('hidden');
   elSpeaker.textContent = speaker;
   elText.textContent = '';
+  elText.classList.remove('done');
   typeQueue = text; typeIdx = 0; typeTimer = 0;
+  pendingChoices = choices || null;
   G.talking = true; talkHold = 0;
   if (mood) G.mood = mood;
+  positionBubble();
 }
+
+function hideBubble() {
+  elBubble.classList.add('hidden');
+  clearChoices();
+  G.talking = false;
+  typeQueue = null;
+}
+
+function clearChoices() {
+  elChoices.innerHTML = '';
+  elChoices.classList.add('hidden');
+}
+
+/* the bubble hangs off whoever is speaking */
+function bubbleAnchor() {
+  if (G.scene === 'heaven') return { x: CX(), y: 46 };
+  if (elBubble.classList.contains('squirrel') && G.squirrel.active) {
+    return { x: G.squirrel.x, y: G.squirrel.y - 20 };
+  }
+  return { x: CX(), y: 86 };
+}
+
+function positionBubble() {
+  if (elBubble.classList.contains('hidden')) return;
+  const a = bubbleAnchor();
+  const p = worldToScreen(a.x, a.y);
+  const w = elBubble.offsetWidth || 300;
+  const margin = 12;
+  let side = '';
+  let x = p.x;
+  if (x - w / 2 < margin) { side = 'left'; x = Math.max(margin, p.x - w * 0.14); }
+  else if (x + w / 2 > window.innerWidth - margin) { side = 'right'; x = Math.min(window.innerWidth - margin, p.x + w * 0.14); }
+  elBubble.classList.toggle('left', side === 'left');
+  elBubble.classList.toggle('right', side === 'right');
+  elBubble.style.left = x + 'px';
+  elBubble.style.top = Math.max(elBubble.offsetHeight + 20, p.y) + 'px';
+
+  // replies live along the bottom, where they never cover his face
+  if (!elChoices.classList.contains('hidden')) {
+    elChoices.style.left = (window.innerWidth / 2) + 'px';
+    elChoices.style.bottom = 'max(14px, env(safe-area-inset-bottom))';
+    elChoices.style.top = 'auto';
+  }
+}
+
 function updateType(dt) {
   if (typeQueue === null) {
-    if (G.talking) { talkHold += dt; if (talkHold > 3.2) { G.talking = false; } }
+    if (G.talking) {
+      talkHold += dt;
+      if (talkHold > (pendingChoices ? 60 : 4.2) && !pendingChoices) G.talking = false;
+    }
     return;
   }
   typeTimer += dt;
-  const speed = 0.018;
+  const speed = 0.017;
   while (typeTimer > speed && typeIdx < typeQueue.length) {
     typeTimer -= speed;
     const ch = typeQueue[typeIdx++];
     elText.textContent += ch;
     if (typeIdx % 3 === 0 && ch !== ' ') SFX.talk(typeIdx);
   }
-  if (typeIdx >= typeQueue.length) { typeQueue = null; }
+  if (typeIdx >= typeQueue.length) { finishTyping(); }
 }
+
+function finishTyping() {
+  typeQueue = null;
+  elText.classList.add('done');
+  talkHold = 0;
+  if (pendingChoices) { showChoices(pendingChoices); pendingChoices = null; }
+  positionBubble();
+}
+
 function skipType() {
-  if (typeQueue !== null) { elText.textContent = typeQueue; typeQueue = null; talkHold = 0; return true; }
+  if (typeQueue !== null) { elText.textContent = typeQueue; finishTyping(); return true; }
   return false;
+}
+
+function showChoices(list) {
+  elChoices.innerHTML = '';
+  for (const ch of list) {
+    const b = document.createElement('button');
+    b.textContent = ch.text;
+    b.onclick = (e) => { e.stopPropagation(); SFX.click(); pickReply(ch); };
+    elChoices.appendChild(b);
+  }
+  elChoices.classList.remove('hidden');
+  positionBubble();
+}
+
+function pickReply(ch) {
+  clearChoices();
+  save.stats.replies = (save.stats.replies || 0) + 1;
+  save.stats.tones = save.stats.tones || {};
+  save.stats.tones[ch.tone] = (save.stats.tones[ch.tone] || 0) + 1;
+  persist();
+  ACH('reply1');
+  if (save.stats.replies >= 25) ACH('reply25');
+  const tn = save.stats.tones;
+  if ((tn.kind || 0) >= 10) ACH('kind10');
+  if ((tn.rude || 0) >= 10) ACH('rude10');
+  if ((tn.joke || 0) >= 10) ACH('joke10');
+  if ((tn.curious || 0) >= 10) ACH('curious10');
+
+  if (!ch.follow) { talkToTree(); return; }
+  const mood = ch.tone === 'rude' ? 'smug' : ch.tone === 'kind' ? 'happy' : ch.tone === 'joke' ? 'laugh' : 'think';
+  say('THE WISE OAK TREE', ch.follow, mood, elBubble.className.includes('serious') ? 'serious' : '');
+}
+
+/* two replies from the pool for this kind of line, plus "tell me another" */
+function repliesFor(tag) {
+  const pool = (DATA.replies[tag] || DATA.replies.goofy).slice();
+  const out = [];
+  for (let i = 0; i < 2 && pool.length; i++) {
+    out.push(pool.splice(Math.floor(Math.random() * pool.length), 1)[0]);
+  }
+  out.push(DATA.replyMore);
+  return out;
 }
 
 /* ---------------------------------------------------------------------
@@ -167,7 +336,8 @@ function ACH(id) {
   if (!ACH_BY_ID[id]) return false;
   save.ach[id] = Date.now();
   G.hall.unlocked[id] = true;
-  toastQueue.push(ACH_BY_ID[id]);
+  const a = ACH_BY_ID[id];
+  pushNote(a.kind, a.name, a.desc, a.icon);
   persist();
   checkMetaAchievements();
   return true;
@@ -182,29 +352,49 @@ function checkMetaAchievements() {
   if (n >= 3) ACH('end3');
 }
 
-let toastActive = null, toastTimer = 0;
+/* ---------------------------------------------------------------------
+   NOTIFICATIONS — the phone-style kind: icon, app line, title, detail.
+   --------------------------------------------------------------------- */
+const APP_FOR = { task: 'Achievements', goal: 'Achievements', chal: 'Achievements', ending: 'Endings' };
+let noteBusy = 0;
+
+function pushNote(kind, title, desc, icon) {
+  toastQueue.push({ kind, name: title, desc, icon });
+}
+
 function updateToasts(dt) {
-  if (!toastActive && toastQueue.length) {
-    toastActive = toastQueue.shift();
-    toastTimer = 0;
-    SFX.ach();
-    const el = document.createElement('div');
-    el.className = 'toast ' + toastActive.kind;
-    const cvIcon = document.createElement('canvas');
-    cvIcon.width = 16; cvIcon.height = 16; cvIcon.className = 'ticon';
-    drawIcon(cvIcon.getContext('2d'), toastActive.icon, 16);
-    const txt = document.createElement('div');
-    txt.className = 'tbody';
-    txt.innerHTML = '<div class="tkind">' +
-      (toastActive.kind === 'chal' ? 'Challenge Complete!' : toastActive.kind === 'goal' ? 'Goal Reached!' : 'Achievement Get!') +
-      '</div><div class="tname">' + toastActive.name + '</div>';
-    el.appendChild(cvIcon); el.appendChild(txt);
-    elToasts.appendChild(el);
-    requestAnimationFrame(() => el.classList.add('in'));
-    const mine = el;
-    setTimeout(() => { mine.classList.remove('in'); setTimeout(() => mine.remove(), 500); }, 4200);
-    setTimeout(() => { toastActive = null; }, 700);
-  }
+  noteBusy -= dt;
+  if (noteBusy > 0 || !toastQueue.length) return;
+  noteBusy = 0.55;
+  const n = toastQueue.shift();
+  SFX.note();
+
+  const el = document.createElement('div');
+  el.className = 'note ' + n.kind;
+
+  const ic = document.createElement('canvas');
+  ic.width = 16; ic.height = 16; ic.className = 'nicon';
+  drawIcon(ic.getContext('2d'), n.icon, 16);
+
+  const body = document.createElement('div');
+  body.className = 'nbody';
+  const app = n.kind === 'ending' ? 'Endings'
+    : n.kind === 'chal' ? 'Challenge' : n.kind === 'goal' ? 'Goal' : 'Achievement';
+  body.innerHTML =
+    '<div class="nrow"><span class="napp">' + app + '</span><span class="ntime">now</span></div>' +
+    '<div class="ntitle"></div><div class="ndesc"></div>';
+  body.querySelector('.ntitle').textContent = n.name;
+  body.querySelector('.ndesc').textContent = n.desc || '';
+
+  el.appendChild(ic); el.appendChild(body);
+  elNotes.appendChild(el);
+  requestAnimationFrame(() => el.classList.add('in'));
+  setTimeout(() => {
+    el.classList.remove('in'); el.classList.add('out');
+    setTimeout(() => el.remove(), 600);
+  }, 4600);
+  // never let them stack past the top of the screen
+  while (elNotes.children.length > 4) elNotes.firstChild.remove();
 }
 
 /* ---------------------------------------------------------------------
@@ -256,6 +446,25 @@ function drawIcon(c, id, size) {
       pcircle(c, 8, 7, 6, '#c9453b'); P(2, 7, 13, 2, '#c9453b'); dot(c, 5, 4, '#fff'); dot(c, 10, 6, '#fff'); P(5, 9, 6, 5, '#f0e2cc'); break;
     case 'can':
       P(3, 5, 8, 8, '#8a9aa8'); P(11, 4, 4, 3, '#8a9aa8'); P(1, 6, 2, 5, '#6d7c88'); P(4, 6, 3, 2, '#b0bcc8'); break;
+    case 'bird':
+      pellipse(c, 7, 9, 5, 4, '#8a4a3a'); pcircle(c, 11, 5, 3, '#8a4a3a');
+      P(14, 5, 2, 1, '#e8a33a'); dot(c, 12, 4, '#120a04'); P(1, 8, 4, 2, '#5a2f24');
+      P(6, 13, 1, 3, '#c8892a'); P(9, 13, 1, 3, '#c8892a'); break;
+    case 'chat':
+      pellipse(c, 8, 6, 7, 5, '#e8e2d0'); P(3, 10, 4, 4, '#e8e2d0');
+      for (let i = 4; i < 12; i += 3) P(i, 6, 2, 2, '#5a5a5a'); break;
+    case 'kind':
+      P(2, 4, 5, 5, '#ff5b78'); P(9, 4, 5, 5, '#ff5b78'); P(2, 7, 12, 4, '#ff5b78');
+      P(4, 11, 8, 2, '#ff5b78'); P(6, 13, 4, 2, '#ff5b78'); dot(c, 4, 6, '#ffa8b8'); break;
+    case 'rude':
+      pellipse(c, 8, 6, 7, 5, '#d64545'); P(3, 10, 4, 4, '#d64545');
+      P(7, 3, 2, 5, '#fff'); P(7, 9, 2, 2, '#fff'); break;
+    case 'joke':
+      pcircle(c, 8, 8, 7, '#ffd24a'); P(5, 5, 2, 3, '#3a2a10'); P(9, 5, 2, 3, '#3a2a10');
+      for (let i = -4; i <= 4; i++) P(8 + i, 10 + Math.round(Math.cos(i / 4 * 1.57) * 2) - 2, 1, 2, '#3a2a10'); break;
+    case 'ask':
+      for (let i = 0; i < 8; i++) { const A = -2 + i * 0.45; P(8 + Math.cos(A) * 4, 6 + Math.sin(A) * 4, 2, 2, '#ffd24a'); }
+      P(7, 9, 2, 2, '#ffd24a'); P(7, 12, 2, 2, '#ffd24a'); break;
     case 'tv':
       P(1, 3, 14, 10, '#3a3a44'); P(2, 4, 12, 8, '#6ba8d8'); P(2, 4, 12, 2, '#9fd0ee');
       P(6, 13, 4, 2, '#555'); P(3, 1, 1, 3, '#888'); P(12, 1, 1, 3, '#888'); break;
@@ -290,21 +499,27 @@ function drawIcon(c, id, size) {
 }
 
 /* ---------------------------------------------------------------------
-   INVENTORY / HUD
+   INVENTORY — no buttons. What you own lies on the grass, and you pick it
+   up and drag it onto him.
    --------------------------------------------------------------------- */
 function has(id) { return !!G.inv.items[id]; }
 
+function toolHome(i) {
+  return { x: 66 + i * 21, y: GROUND_Y + 26 };
+}
+
 function refreshHUD() {
-  elLeaves.textContent = G.inv.leaves;
-  elItems.innerHTML = '';
-  for (const it of DATA.shop) {
-    if (!has(it.id)) continue;
-    const c = document.createElement('canvas');
-    c.width = 16; c.height = 16; c.className = 'itemicon';
-    c.title = it.name + ' — ' + it.desc;
-    drawIcon(c.getContext('2d'), it.icon, 16);
-    elItems.appendChild(c);
+  const owned = DATA.shop.filter(it => has(it.id)).map(it => it.id);
+  const kept = G.tools.filter(t => owned.includes(t.id));
+  for (const id of owned) {
+    if (!kept.some(t => t.id === id)) kept.push({ id, x: 0, y: 0, home: true });
   }
+  kept.forEach((t, i) => {
+    const h = toolHome(i);
+    t.hx = h.x; t.hy = h.y;
+    if (t.home) { t.x = h.x; t.y = h.y; t.home = false; }
+  });
+  G.tools = kept;
   refreshActions();
 }
 
@@ -316,34 +531,48 @@ function actionBtn(label, cls, fn) {
   elActions.appendChild(b);
 }
 
+/* The only buttons in the game are the ones heaven and the hall need. */
 function refreshActions() {
   elActions.innerHTML = '';
-  if (G.scene === 'cine') return;
+  if (G.cine || G.scene === 'burning' || G.scene === 'game') return;
   if (G.scene === 'hall') {
     actionBtn('\u2190 Back', '', closeHall);
-    actionBtn('Sort by unlocked', '', sortHall);
+    actionBtn('Sort', '', sortHall);
     actionBtn('List view', '', openTrophies);
     return;
   }
   if (G.scene === 'heaven') {
     actionBtn('Hall of Trophies', 'good', () => openHall('heaven'));
+    actionBtn('Endings', '', openEndings);
     actionBtn('Reincarnate \u21bb', 'good', reincarnate);
-    return;
-  }
-  if (G.scene !== 'game') return;
-  if (G.dead) return;
-  actionBtn('Hug', 'good', doHug);
-  if (has('can')) actionBtn('Water', 'good', doWater);
-  if (has('acorn')) actionBtn('Plant Acorn', 'good', doPlant);
-  if (has('hat') && !G.flags.hatOn) actionBtn('Give Hat', 'good', doHat);
-  if (has('pamph')) actionBtn('Show Newspaper', '', doNews);
-  if (has('diary')) actionBtn('Read Diary', '', doDiary);
-  if (has('lighter') && !G.flags.lighterGone) {
-    actionBtn('Flick Lighter', 'bad', doFlick);
-    actionBtn('BURN THE TREE', 'bad', askBurn);
-    actionBtn('Throw It Away', 'good', doThrowAway);
   }
 }
+
+/* what happens when a tool is let go over something */
+function useTool(id, x, y) {
+  const onTree = Math.abs(x - CX()) < 46 && y > 40 && y < GROUND_Y + 6;
+  const onHead = Math.abs(x - CX()) < 60 && y < 80;
+  const onGround = y > GROUND_Y - 4;
+
+  if (id === 'can' && onTree) { doWater(); return true; }
+  if (id === 'acorn' && onGround && !onTree) { doPlant(x); return true; }
+  if (id === 'hat' && (onHead || onTree)) { doHat(); return true; }
+  if (id === 'pamph' && onTree) { doNews(); return true; }
+  if (id === 'diary') { doDiary(); return true; }
+  if (id === 'lighter' && onTree) { askBurn(); return true; }
+  if (id === 'lighter' && x < 70 && y > GROUND_Y + 8) { doThrowAway(); return true; }
+  if (id === 'lighter') { doFlick(); return true; }
+  return false;
+}
+
+const TOOL_HINTS = {
+  can: 'drag the can onto him',
+  acorn: 'drag the acorn onto the grass',
+  hat: 'drag the hat onto his head',
+  pamph: 'drag the paper onto him',
+  diary: 'drag it anywhere to read it',
+  lighter: 'onto him to burn \u00b7 into the pond to be done with it'
+};
 
 /* ---------------------------------------------------------------------
    TREE INTERACTION
@@ -407,7 +636,7 @@ function talkToTree() {
   if (!bag.length) refillBag();
   const line = DATA.lines[bag.pop()];
   save.heard[line.id] = 1; persist();
-  say('THE WISE OAK TREE', line.text, line.mood, line.tag === 'world' ? 'serious' : '');
+  say('THE WISE OAK TREE', line.text, line.mood, line.tag === 'world' ? 'serious' : '', repliesFor(line.tag));
 
   const hc = Object.keys(save.heard).length;
   if (hc >= 10) ACH('chat10');
@@ -419,7 +648,7 @@ function talkToTree() {
   checkWorldProgress();
   if (heardCount('pop') >= 20) ACH('pop20');
   if (heardCount('pop') >= totalCount('pop')) { ACH('popall'); reachEnding('canon'); }
-  if (line.tag === 'meta' && Math.random() < 0.2) spawnParticles('star', 128, 60, 10);
+  if (line.tag === 'meta' && Math.random() < 0.2) spawnParticles('star', CX(), 60, 10);
 }
 
 function triggerSneeze() {
@@ -432,7 +661,7 @@ function triggerSneeze() {
   const n = 2 + Math.floor(Math.random() * 3);
   for (let i = 0; i < n; i++) dropLeaf(110 + Math.random() * 40, 60 + Math.random() * 30, true);
   for (let i = 0; i < 14; i++) dropLeaf(90 + Math.random() * 76, 40 + Math.random() * 50, false);
-  spawnParticles('spark', 128, 128, 8);
+  spawnParticles('spark', CX(), CX(), 8);
   say('THE WISE OAK TREE', DATA.sneezeLines[Math.floor(Math.random() * DATA.sneezeLines.length)], 'shock');
   G.sneezeTimer = 20 + Math.random() * 25;
   maybeSpawnSquirrel();
@@ -454,7 +683,7 @@ function doHug() {
   if (G.dead) return;
   save.stats.hugs++; persist();
   SFX.hug();
-  spawnParticles('heart', 128, 110, 8);
+  spawnParticles('heart', CX(), 110, 8);
   ACH('hug1');
   if (save.stats.hugs >= 10) ACH('hug10');
   const lines = [
@@ -491,13 +720,13 @@ function checkFriendEnding() {
   if (save.stats.hugs >= 10 && save.stats.waters >= 10) reachEnding('friend');
 }
 
-function doPlant() {
+function doPlant(atX) {
   if (!has('acorn')) return;
   G.inv.items.acorn = false;
   save.stats.plants++; persist();
   SFX.plant();
-  const x = 30 + Math.random() * 190;
-  G.saplings.push({ x: Math.floor(x), age: 0, ph: Math.random() * 6.28 });
+  const x = atX !== undefined ? atX : 30 + Math.random() * (W() - 60);
+  G.saplings.push({ x: Math.floor(Math.max(8, Math.min(W() - 8, x))), age: 0, ph: Math.random() * 6.28 });
   ACH('plant');
   if (save.stats.plants >= 5 && !save.endings.grove) {
     ACH('plant5');
@@ -603,6 +832,7 @@ const BURN_LINES = [
 ];
 
 function startBurning() {
+  G.fleeing = true;
   G.scene = 'burning'; G.burn = 0.001; G.burnStage = 0;
   SFX.fire();
   say('THE WISE OAK TREE', "...", 'shock');
@@ -618,13 +848,13 @@ function maybeSpawnSquirrel() {
   if (s.active || s.spawned) return;
   s.spawned = true; s.active = true;
   s.dir = Math.random() < 0.5 ? 1 : -1;
-  s.x = s.dir === 1 ? -14 : W + 14;
+  s.x = s.dir === 1 ? -14 : W() + 14;
   s.targetX = s.dir === 1 ? 186 : 70;
   s.moving = true;
   ACH('squirrel');
   setTimeout(() => {
     if (G.scene === 'game' && !G.dead)
-      say('SQUIRREL', "yo. yo. down here. i heard sneezing which means LEAVES which means BUSINESS.", null);
+      say('SQUIRREL', "yo. yo. down here. i heard sneezing which means LEAVES which means BUSINESS.", null, 'squirrel');
   }, 1600);
 }
 
@@ -637,14 +867,14 @@ function clickSquirrel() {
   if (save.stats.sqChats >= 15) ACH('sqchat');
   let pool = DATA.squirrelLines;
   if (has('lighter') && !G.flags.lighterGone) pool = pool.concat(DATA.squirrelWarnLines);
-  say('SQUIRREL', pool[Math.floor(Math.random() * pool.length)], null);
+  say('SQUIRREL', pool[Math.floor(Math.random() * pool.length)], null, 'squirrel');
   openShop();
 }
 
 function openShop() {
   // open on the opposite side to the squirrel so he is never hidden behind
   // his own shop window
-  const onLeft = G.squirrel.x < W / 2;
+  const onLeft = G.squirrel.x < W() / 2;
   elShop.style.left = onLeft ? 'auto' : '8px';
   elShop.style.right = onLeft ? '8px' : 'auto';
   elShop.classList.remove('hidden');
@@ -672,7 +902,7 @@ function closeShop() { elShop.classList.add('hidden'); }
 function buy(it) {
   if (G.inv.leaves < it.cost) {
     SFX.deny();
-    say('SQUIRREL', "nope. not enough leaves. i'm running a business here, not a charity. (i am running neither)", null);
+    say('SQUIRREL', "nope. not enough leaves. i'm running a business here, not a charity. (i am running neither)", null, 'squirrel');
     return;
   }
   G.inv.leaves -= it.cost;
@@ -686,7 +916,7 @@ function buy(it) {
     startLighterCine();
     return;
   } else {
-    say('SQUIRREL', "pleasure doing business. don't tell the tree. he thinks i'm a saver.", null);
+    say('SQUIRREL', "pleasure doing business. don't tell the tree. he thinks i'm a saver.", null, 'squirrel');
   }
   if (DATA.shop.every(s => has(s.id) || (s.id === 'acorn' && save.stats.plants > 0))) ACH('tradeall');
   refreshHUD();
@@ -772,6 +1002,7 @@ function checkCompletionist() {
 
 function showEndingCard(e) {
   SFX.ending();
+  pushNote('ending', e.name, e.title, e.icon);
   const c = document.createElement('canvas');
   c.width = 16; c.height = 16;
   drawIcon(c.getContext('2d'), e.icon, 16);
@@ -796,7 +1027,7 @@ function showEndingCard(e) {
 function goHeaven() {
   G.scene = 'heaven';
   ACH('heaven');
-  elDialog.classList.add('hidden');
+  hideBubble();
   refreshActions();
   setTimeout(() => {
     if (G.scene === 'heaven') say('THE WISE OAK TREE (DECEASED)', DATA.heavenTreeLines[0], null, 'heaven');
@@ -810,10 +1041,10 @@ function openHall(from) {
   G.hall.from = from || 'heaven';
   G.hall.scroll = 0; G.hall.target = 0; G.hall.dragIndex = -1;
   G.scene = 'hall';
-  elDialog.classList.add('hidden');
+  hideBubble();
   const got = DATA.achievements.filter(a => save.ach[a.id]).length;
   elHint.textContent = got + ' / ' + DATA.achievements.length + ' \u00b7 drag to scroll \u00b7 lift a trophy onto another plinth to rearrange';
-  elHint.classList.remove('hidden');
+  elHint.className = 'raised';
   refreshActions();
   SFX.ach();
 }
@@ -821,15 +1052,17 @@ function openHall(from) {
 function closeHall() {
   elHallLabel.classList.add('hidden');
   G.scene = G.hall.from === 'game' ? 'game' : 'heaven';
-  elHint.classList.toggle('hidden', G.scene === 'game');
-  if (G.scene === 'heaven') elHint.textContent = 'click the ghost tree \u00b7 click the clouds \u00b7 visit the hall \u00b7 then reincarnate';
+  if (G.scene === 'heaven') {
+    elHint.textContent = 'click the ghost tree \u00b7 click the clouds \u00b7 visit the hall \u00b7 then reincarnate';
+    elHint.className = 'raised';
+  } else elHint.className = 'hidden';
   refreshActions();
 }
 
 function resetWorld() {
   G.burn = 0; G.dead = false; G.burnStage = 0; G.deathTimer = 0; G.ascended = false;
   G.particles = []; G.groundLeaves = []; G.saplings = [];
-  G.inv = { leaves: 0, items: {} };
+  G.inv = { leaves: 0, items: {} }; G.tools = []; G.holding = null; G.critters = []; seedCritters();
   G.flags = { hatOn: false, lighterGone: false, confirming: false, newsRead: false };
   G.squirrel = { active: false, x: -20, y: GROUND_Y + 6, dir: 1, moving: false, targetX: 190, face: 0, holding: null, spawned: false, clicks: 0, clickT: 0 };
   G.sneezeTimer = 12 + Math.random() * 15;
@@ -863,7 +1096,7 @@ function updateParticles(dt) {
       p.y += p.vy * dt;
       if (p.y >= GROUND_Y + 2 + (p.collectible ? 0 : Math.random() * 16)) {
         if (p.collectible && G.groundLeaves.length < 14) {
-          G.groundLeaves.push({ x: Math.max(4, Math.min(W - 10, p.x | 0)), y: GROUND_Y + 4 + Math.random() * 18, col: p.col, col2: p.col2, ph: Math.random() * 6.28, landed: true });
+          G.groundLeaves.push({ x: insetX(p.x | 0), y: GROUND_Y + 4 + Math.random() * 18, col: p.col, col2: p.col2, ph: Math.random() * 6.28, landed: true });
         }
         G.particles.splice(i, 1); continue;
       }
@@ -890,11 +1123,6 @@ function collectLeaf(i) {
   maybeSpawnSquirrel();
 }
 
-let seasonPillText = '';
-function updateSeasonPill() {
-  const label = (SPR.isNight(G.timeOfDay) ? '\u263D ' : '\u2600 ') + G.season;
-  if (label !== seasonPillText) { seasonPillText = label; elSeason.textContent = label; }
-}
 
 /* ---------------------------------------------------------------------
    CINEMATICS
@@ -907,7 +1135,7 @@ const elHallLabel = $('halllabel');
 function playCine(name, stages, onDone) {
   G.cine = { name, stages, i: 0, t: 0, done: onDone || null };
   G.scene = 'cine';
-  elDialog.classList.add('hidden');
+  hideBubble();
   elShop.classList.add('hidden');
   refreshActions();
   enterStage();
@@ -983,7 +1211,7 @@ function startDeathCine() {
     { id: 'fall', dur: 2.6, cam: [0, 4, 1.2], caption: 'Four hundred and eleven years.',
       enter: () => { G.dead = true; G.flash = 1.4; SFX.boom(); G.shake = 5; } },
     { id: 'ash', dur: 4.4, cam: [0, 5, 1.05], caption: 'The wise oak tree died.',
-      enter: () => { G.stillBurning = false; spawnParticles('ash', 128, 100, 60); } },
+      enter: () => { G.stillBurning = false; spawnParticles('ash', CX(), 100, 60); } },
     { id: 'soul', dur: 4.2, cam: [0, -10, 1.3], caption: 'Something is leaving.',
       enter: () => { SFX.ascend(); } },
     { id: 'tunnel', dur: 2.8, cam: [0, 0, 1.0], snap: true, caption: '' },
@@ -1016,7 +1244,7 @@ function startIntroCine() {
 /* ---- the squirrel hands over the lighter ---- */
 function startLighterCine() {
   playCine('lighter', [
-    { id: 'deal', dur: 3.2, cam: [(G.squirrel.x - 128) * 0.5, 40, 1.9], caption: '"For nest purposes."',
+    { id: 'deal', dur: 3.2, cam: [(G.squirrel.x - CX()) * 0.5, 40, 1.9], caption: '"For nest purposes."',
       enter: () => { G.squirrel.face = 1; G.squirrel.holding = 'lighter'; SFX.trade(); } },
     { id: 'oblivious', dur: 3.4, cam: [0, 16, 1.6], caption: 'He does not know you have it.',
       enter: () => { G.squirrel.holding = null; G.mood = 'happy'; } }
@@ -1033,7 +1261,7 @@ function startMercyCine() {
       enter: () => { SFX.water(); },
       tick: (p) => { if (p > 0.55 && !G._splashed) { G._splashed = true; spawnParticles('drop', 30, GROUND_Y + 16, 22); SFX.pickup(); } } },
     { id: 'relief', dur: 3.6, cam: [0, 10, 1.4], caption: 'sss.',
-      enter: () => { G._splashed = false; G.mood = 'happy'; spawnParticles('heart', 128, 110, 6); } }
+      enter: () => { G._splashed = false; G.mood = 'happy'; spawnParticles('heart', CX(), 110, 6); } }
   ], () => {
     G.scene = 'game'; refreshHUD(); refreshActions();
     reachEnding('mercy');
@@ -1091,6 +1319,7 @@ function update(dt) {
   updateCam(dt);
 
   if (G.cine) {
+    if (G.fleeing) updateCritters(dt);
     G.letterbox = Math.min(1, G.letterbox + dt * 2.5);
     G.flash = Math.max(0, G.flash - dt * 1.2);
     G.shake = Math.max(0, G.shake - dt * 6);
@@ -1105,15 +1334,13 @@ function update(dt) {
   // clock + seasons
   G.timeOfDay = (G.timeOfDay + dt / G.dayLen) % 1;
   if (SPR.isNight(G.timeOfDay)) ACH('night');
-  updateSeasonPill();
   G.seasonTimer += dt;
   if (G.seasonTimer > G.seasonLen) {
     G.seasonTimer = 0;
     G.seasonIdx = (G.seasonIdx + 1) % 4;
     G.season = SEASON_NAMES[G.seasonIdx];
     save.stats.seasons[G.season] = 1; persist();
-    updateSeasonPill();
-    if (SEASON_NAMES.every(s => save.stats.seasons[s])) ACH('seasons');
+      if (SEASON_NAMES.every(s => save.stats.seasons[s])) ACH('seasons');
     if (G.scene === 'game' && !G.dead && Math.random() < 0.8) {
       const msg = {
         spring: "Spring. I am going to grow forty thousand new leaves and complain about every one of them.",
@@ -1175,7 +1402,14 @@ function update(dt) {
       if (G.watcherHold <= 0) G.watchers = Math.max(0, G.watchers - dt * 1.2);
     }
 
+    updateCritters(dt);
     if (tickle.cool > 0) tickle.cool -= dt;
+
+    // a long press on his trunk is a hug
+    if (G.holdT > 0) {
+      G.holdT += dt;
+      if (G.holdT > 1.15) { G.holdT = 0; grab = null; elHint.className = 'hidden'; doHug(); }
+    }
 
     // stillness ending
     G.sinceTreeClick += dt;
@@ -1203,14 +1437,15 @@ function update(dt) {
       if (Math.abs(d) < 2) { s.moving = false; s.face = 1; }
       else { s.x += Math.sign(d) * 46 * dt; s.dir = Math.sign(d); }
     } else if (Math.random() < dt * 0.25) {
-      s.targetX = 40 + Math.random() * 176;
+      s.targetX = inset() + 20 + Math.random() * Math.max(40, W() - inset() * 2 - 40);
       if (Math.abs(s.targetX - s.x) > 20) s.moving = true;
     }
-    if (G.dead || G.scene === 'burning') { s.targetX = s.x < 128 ? -24 : W + 24; s.moving = true; s.face = 0; }
+    if (G.dead || G.scene === 'burning') { s.targetX = s.x < CX() ? -24 : W() + 24; s.moving = true; s.face = 0; }
   }
 
   // burning
   if (G.scene === 'burning') {
+    updateCritters(dt);
     G.burn = Math.min(1, G.burn + dt / 16);
     G.shake = Math.max(G.shake, 1.2);
     if (Math.random() < dt * 30) {
@@ -1227,6 +1462,104 @@ function update(dt) {
   }
 }
 
+/* ---------------------------------------------------------------------
+   CRITTERS
+   --------------------------------------------------------------------- */
+/* The resting camera crops a sliver off each edge, so anything the player
+   needs to be able to click has to stay inside this. */
+const REST_ZOOM = 1.09;
+function inset() { return Math.ceil((W() - W() / REST_ZOOM) / 2) + 6; }
+function insetX(x) { return Math.max(inset(), Math.min(W() - inset(), x)); }
+const BIRD_COLS = ['#8a4a3a', '#4a6a8a', '#6a5a3a', '#3a5a4a'];
+
+function seedCritters() {
+  G.critters = [];
+  const branchPerch = () => {
+    const b = SPR.CANOPY[Math.floor(Math.random() * SPR.CANOPY.length)];
+    return { x: b.x + (Math.random() - 0.5) * 20, y: b.y + 14 };
+  };
+  for (let i = 0; i < 2; i++) {
+    const p = branchPerch();
+    G.critters.push({ kind: 'bird', x: p.x, y: p.y, hx: p.x, hy: p.y, col: BIRD_COLS[i % BIRD_COLS.length],
+                      ph: Math.random() * 6.28, flying: false, t: 3 + Math.random() * 8, vx: 0, vy: 0 });
+  }
+  for (let i = 0; i < 3; i++) {
+    G.critters.push({ kind: 'butterfly', x: inset() + Math.random() * (W() - inset() * 2), y: 100 + Math.random() * 50,
+                      col: ['#ffd24a', '#e88ac0', '#8ac8f0'][i % 3], ph: Math.random() * 6.28, t: 0 });
+  }
+  G.critters.push({ kind: 'beetle', x: CX() - 20, y: 130, ph: 0, dir: 1, t: 0 });
+  G.critters.push({ kind: 'rabbit', x: insetX(46), y: GROUND_Y + 22, dir: 1, moving: false, t: 2, ph: 0 });
+}
+
+function updateCritters(dt) {
+  // when the tree goes up, everything living in it leaves
+  if (G.fleeing) {
+    for (let i = G.critters.length - 1; i >= 0; i--) {
+      const k = G.critters[i];
+      k.flying = true; k.moving = true;
+      k.x += (k.fx || (k.fx = k.x < CX() ? -1 : 1)) * (k.kind === 'rabbit' ? 70 : 46) * dt;
+      if (k.kind !== 'rabbit') k.y -= 26 * dt;
+      if (k.x < -20 || k.x > W() + 20 || k.y < -20) G.critters.splice(i, 1);
+    }
+    return;
+  }
+  for (const k of G.critters) {
+    k.t -= dt;
+    if (k.kind === 'bird') {
+      if (k.flying) {
+        k.x += k.vx * dt; k.y += k.vy * dt;
+        if (k.t <= 0) {
+          k.flying = false;
+          const b = SPR.CANOPY[Math.floor(Math.random() * SPR.CANOPY.length)];
+          k.x = b.x + (Math.random() - 0.5) * 20; k.y = b.y + 14;
+          k.t = 6 + Math.random() * 12;
+        }
+      } else if (k.t <= 0) {
+        k.flying = true; k.t = 2.5 + Math.random() * 2;
+        k.vx = (Math.random() > 0.5 ? 1 : -1) * (30 + Math.random() * 30);
+        k.vy = -14 - Math.random() * 12;
+      }
+    } else if (k.kind === 'butterfly') {
+      k.x += Math.sin(G.t * 0.7 + k.ph) * 16 * dt + 6 * dt;
+      k.y += Math.sin(G.t * 1.9 + k.ph) * 12 * dt;
+      if (k.x > W() - inset()) k.x = inset();
+      k.y = Math.max(70, Math.min(GROUND_Y + 20, k.y));
+    } else if (k.kind === 'beetle') {
+      k.x += k.dir * 5 * dt;
+      k.y += Math.sin(G.t * 0.6) * 3 * dt;
+      if (Math.abs(k.x - CX()) > 20) k.dir *= -1;
+      k.y = Math.max(96, Math.min(146, k.y));
+    } else if (k.kind === 'rabbit') {
+      if (k.moving) {
+        k.x += k.dir * 26 * dt;
+        if (k.t <= 0) { k.moving = false; k.t = 3 + Math.random() * 7; }
+        if (k.x < inset() + 6 || k.x > W() - inset() - 6) k.dir *= -1;
+        k.x = insetX(k.x);
+      } else if (k.t <= 0) {
+        k.moving = true; k.t = 0.8 + Math.random() * 1.2;
+        k.dir = Math.random() > 0.5 ? 1 : -1;
+      }
+    }
+  }
+}
+
+function critterAt(x, y) {
+  for (const k of G.critters) {
+    const r = k.kind === 'rabbit' ? 10 : k.kind === 'beetle' ? 5 : 7;
+    if (Math.abs(x - k.x) < r && Math.abs(y - k.y) < r + 2) return k;
+  }
+  return null;
+}
+
+function touchCritter(k) {
+  const lines = DATA.critterLines[k.kind];
+  if (k.kind === 'bird' && !k.flying) { k.flying = true; k.t = 2.4; k.vx = (Math.random() > .5 ? 1 : -1) * 44; k.vy = -18; }
+  if (k.kind === 'rabbit') { k.moving = true; k.t = 1.4; k.dir = k.x < CX() ? -1 : 1; }
+  ACH('critter');
+  SFX.squeak();
+  say('THE WISE OAK TREE', lines[Math.floor(Math.random() * lines.length)], 'happy');
+}
+
 /* camera easing — cinematics move it, everything else leaves it alone */
 function updateCam(dt) {
   if (!G.cine) {
@@ -1241,7 +1574,7 @@ function updateCam(dt) {
 
 function updateHall(dt) {
   const h = G.hall;
-  const maxScroll = Math.max(0, SPR.hallWidth(h.order.length) - W);
+  const maxScroll = Math.max(0, SPR.hallWidth(h.order.length) - W());
   h.target = Math.max(0, Math.min(maxScroll, h.target));
   h.scroll += (h.target - h.scroll) * Math.min(1, dt * 8);
 }
@@ -1268,7 +1601,7 @@ function drawWorld(opts) {
   if (G.burn > 0 && !o.growing) {
     // firelight swallows the daylight
     dc.globalAlpha = Math.min(0.40, G.burn * 0.45);
-    SPR.px(dc, 0, 0, W, H, '#5a1f0c');
+    SPR.px(dc, 0, 0, W(), H, '#5a1f0c');
     dc.globalAlpha = 1;
   }
   SPR.drawGround(dc, G);
@@ -1282,9 +1615,9 @@ function drawWorld(opts) {
     SPR.drawStump(L, G);
     // the trunk goes over, hinged where it snapped
     L.save();
-    L.translate(128, GROUND_Y + 4);
+    L.translate(CX(), GROUND_Y + 4);
     L.rotate(o.fall * 1.15);
-    L.translate(-128, -(GROUND_Y + 4));
+    L.translate(-CX(), -(GROUND_Y + 4));
     SPR.drawTree(L, G);
     L.restore();
   } else if (o.growing !== undefined) {
@@ -1294,10 +1627,12 @@ function drawWorld(opts) {
     SPR.drawWatchers(L, G);
   }
   SPR.drawSquirrel(L, G);
+  if (!o.fall && o.growing === undefined) { SPR.drawCritters(L, G); SPR.drawTools(L, G); }
   SPR.layerEnd(dc, '#1a0f08');
 
   SPR.drawFireOnTree(dc, G);
   SPR.drawParticles(dc, G);
+  SPR.drawUndergrowth(dc, G);
   SPR.drawForeground(dc, G);
   SPR.drawFrameFoliage(dc, G);
   SPR.drawBokeh(dc, G);
@@ -1322,16 +1657,16 @@ function drawCineFrame() {
     drawWorld();
     if (name === 'intro' && st === 'wide') {
       dc.globalAlpha = Math.max(0, 1 - p * 2.2);
-      SPR.px(dc, 0, 0, W, H, '#000000');
+      SPR.px(dc, 0, 0, W(), H, '#000000');
       dc.globalAlpha = 1;
     }
     if (name === 'intro' && st === 'wake' && p > 0.45 && p < 0.75) {
-      SPR.drawRays(dc, G, (p - 0.45) * 2, 128, 106);
+      SPR.drawRays(dc, G, (p - 0.45) * 2, CX(), 106);
     }
     if (name === 'mercy' && st === 'throw' && p < 0.6) {
       // the lighter turning over in the air on its way to the water
       const k = p / 0.6;
-      const lx = 128 - k * 96, ly = 120 - Math.sin(k * Math.PI) * 46 + k * 44;
+      const lx = CX() - k * 96, ly = 120 - Math.sin(k * Math.PI) * 46 + k * 44;
       dc.save(); dc.translate(lx, ly); dc.rotate(k * 9); dc.translate(-lx, -ly);
       SPR.drawItemIcon(dc, lx, ly, 'lighter');
       dc.restore();
@@ -1346,36 +1681,36 @@ function drawCineFrame() {
     else if (st === 'soul') {
       SPR.drawAshScene(dc, G);
       const y = GROUND_Y - 14 - p * 150;
-      SPR.drawRays(dc, G, Math.min(1, p * 1.4) * 0.7, 128, y);
-      SPR.drawSoul(dc, G, 128, y, 1 + p);
+      SPR.drawRays(dc, G, Math.min(1, p * 1.4) * 0.7, CX(), y);
+      SPR.drawSoul(dc, G, CX(), y, 1 + p);
       SPR.drawParticles(dc, G);
-      if (p > 0.8) { dc.globalAlpha = (p - 0.8) * 5; SPR.px(dc, 0, 0, W, H, '#ffffff'); dc.globalAlpha = 1; }
+      if (p > 0.8) { dc.globalAlpha = (p - 0.8) * 5; SPR.px(dc, 0, 0, W(), H, '#ffffff'); dc.globalAlpha = 1; }
     } else if (st === 'tunnel') {
-      SPR.px(dc, 0, 0, W, H, '#dceeff');
+      SPR.px(dc, 0, 0, W(), H, '#dceeff');
       SPR.drawCloudTunnel(dc, G, p, 1);
-      SPR.drawSoul(dc, G, 128, 110 - p * 30, 1.6);
-      SPR.drawRays(dc, G, 0.5, 128, 96);
-      dc.globalAlpha = Math.max(0, p - 0.7) * 3.3; SPR.px(dc, 0, 0, W, H, '#ffffff'); dc.globalAlpha = 1;
+      SPR.drawSoul(dc, G, CX(), 110 - p * 30, 1.6);
+      SPR.drawRays(dc, G, 0.5, CX(), 96);
+      dc.globalAlpha = Math.max(0, p - 0.7) * 3.3; SPR.px(dc, 0, 0, W(), H, '#ffffff'); dc.globalAlpha = 1;
     } else if (st === 'arrive') {
       SPR.drawHeavenBackdrop(dc, G);
       const drop = (1 - Math.pow(1 - p, 3));
-      SPR.drawGhostTree(dc, G, 128, -60 + drop * 164 + Math.sin(G.t * 1.1) * 3, Math.min(1, p * 2));
-      SPR.drawRays(dc, G, 0.8 * (1 - p * 0.6), 128, 70);
-      dc.globalAlpha = Math.max(0, 1 - p * 2.2); SPR.px(dc, 0, 0, W, H, '#ffffff'); dc.globalAlpha = 1;
+      SPR.drawGhostTree(dc, G, CX(), -60 + drop * 164 + Math.sin(G.t * 1.1) * 3, Math.min(1, p * 2));
+      SPR.drawRays(dc, G, 0.8 * (1 - p * 0.6), CX(), 70);
+      dc.globalAlpha = Math.max(0, 1 - p * 2.2); SPR.px(dc, 0, 0, W(), H, '#ffffff'); dc.globalAlpha = 1;
     }
   } else if (name === 'rebirth') {
     if (st === 'leave') {
       SPR.drawHeaven(dc, G);
-      SPR.drawSoul(dc, G, 128, 120 + p * 60, 1.2);
-      dc.globalAlpha = Math.max(0, p - 0.75) * 4; SPR.px(dc, 0, 0, W, H, '#ffffff'); dc.globalAlpha = 1;
+      SPR.drawSoul(dc, G, CX(), 120 + p * 60, 1.2);
+      dc.globalAlpha = Math.max(0, p - 0.75) * 4; SPR.px(dc, 0, 0, W(), H, '#ffffff'); dc.globalAlpha = 1;
     } else if (st === 'dive') {
-      SPR.px(dc, 0, 0, W, H, '#e2f0ff');
+      SPR.px(dc, 0, 0, W(), H, '#e2f0ff');
       SPR.drawCloudTunnel(dc, G, p, -1);
       const y = 40 + p * 70;
-      SPR.drawSoul(dc, G, 128, y, 1.4);
+      SPR.drawSoul(dc, G, CX(), y, 1.4);
       for (let i = 0; i < 10; i++) {
         dc.globalAlpha = 0.5 * (1 - i / 10);
-        SPR.pcircle(ctx, 128 + Math.sin(G.t * 4 + i) * 3, y - i * 6, 3 - i * 0.25, '#ffffff');
+        SPR.pcircle(ctx, CX() + Math.sin(G.t * 4 + i) * 3, y - i * 6, 3 - i * 0.25, '#ffffff');
         dc.globalAlpha = 1;
       }
     } else if (st === 'land') {
@@ -1383,9 +1718,9 @@ function drawCineFrame() {
       SPR.drawGround(dc, G);
       SPR.drawForeground(dc, G);
       const y = -20 + p * (GROUND_Y + 10);
-      SPR.drawSoul(dc, G, 128, y, 1.4 * (1 - p * 0.4));
+      SPR.drawSoul(dc, G, CX(), y, 1.4 * (1 - p * 0.4));
       SPR.drawFrameFoliage(dc, G);
-      if (p > 0.9) { dc.globalAlpha = (p - 0.9) * 10; SPR.px(dc, 0, 0, W, H, '#ffffff'); dc.globalAlpha = 1; }
+      if (p > 0.9) { dc.globalAlpha = (p - 0.9) * 10; SPR.px(dc, 0, 0, W(), H, '#ffffff'); dc.globalAlpha = 1; }
     } else if (st === 'grow') {
       G.timeOfDay = 0.02 + p * 0.16;
       drawWorld({ growing: Math.pow(p, 0.9) });
@@ -1395,7 +1730,7 @@ function drawCineFrame() {
 
 function render() {
   dc.setTransform(1, 0, 0, 1, 0, 0);
-  dc.clearRect(0, 0, W, H);
+  dc.clearRect(0, 0, W(), H);
 
   if (G.cine) drawCineFrame();
   else if (G.scene === 'hall') SPR.drawHall(dc, G);
@@ -1405,17 +1740,18 @@ function render() {
   // blit through the camera
   const cam = G.cam;
   const sh = G.cine && G.shake > 0 ? G.shake : 0;
-  const sw = W / cam.z, sHt = H / cam.z;
-  // the buffer is the whole world; a pan that runs off it would show bare canvas
+  const c = camRect();
   const clamp = (v, hi) => Math.max(0, Math.min(hi, v));
-  const sx = clamp((W - sw) / 2 + cam.x + (Math.random() * 2 - 1) * sh, W - sw);
-  const sy = clamp((H - sHt) / 2 + cam.y + (Math.random() * 2 - 1) * sh, H - sHt);
+  const sw = c.sw, sHt = c.sh;
+  const sx = clamp(c.sx + (Math.random() * 2 - 1) * sh, W() - sw);
+  const sy = clamp(c.sy + (Math.random() * 2 - 1) * sh, H - sHt);
   ctx.setTransform(1, 0, 0, 1, 0, 0);
   ctx.imageSmoothingEnabled = false;
-  ctx.clearRect(0, 0, W, H);
-  ctx.drawImage(buf, sx, sy, sw, sHt, 0, 0, W, H);
+  ctx.clearRect(0, 0, W(), H);
+  ctx.drawImage(buf, sx, sy, sw, sHt, 0, 0, W(), H);
 
-  if (G.flash > 0) { ctx.globalAlpha = Math.min(1, G.flash); SPR.px(ctx, 0, 0, W, H, '#ffffff'); ctx.globalAlpha = 1; }
+  if (G.flash > 0) { ctx.globalAlpha = Math.min(1, G.flash); SPR.px(ctx, 0, 0, W(), H, '#ffffff'); ctx.globalAlpha = 1; }
+  if (!G.cine && G.scene === 'game') SPR.drawHud(ctx, G);
   SPR.drawLetterbox(ctx, G.letterbox);
 }
 
@@ -1424,11 +1760,21 @@ function render() {
    --------------------------------------------------------------------- */
 let hover = { kind: null, i: -1 };
 
+/* screen -> world, undoing the camera */
 function toLogical(ev) {
   const r = cv.getBoundingClientRect();
-  const cx = (ev.touches ? ev.touches[0].clientX : ev.clientX) - r.left;
-  const cy = (ev.touches ? ev.touches[0].clientY : ev.clientY) - r.top;
-  return { x: cx / r.width * W, y: cy / r.height * H };
+  const src = ev.touches && ev.touches[0] ? ev.touches[0] : (ev.changedTouches && ev.changedTouches[0]) || ev;
+  const fx = (src.clientX - r.left) / r.width;
+  const fy = (src.clientY - r.top) / r.height;
+  const c = camRect();
+  return { x: c.sx + fx * c.sw, y: c.sy + fy * c.sh };
+}
+
+/* screen -> the final frame, for the HUD which is drawn after the blit */
+function toScreenPixels(ev) {
+  const r = cv.getBoundingClientRect();
+  const src = ev.touches && ev.touches[0] ? ev.touches[0] : (ev.changedTouches && ev.changedTouches[0]) || ev;
+  return { x: (src.clientX - r.left) / r.width * W(), y: (src.clientY - r.top) / r.height * H };
 }
 
 /* which plinth is under this point, if any */
@@ -1468,26 +1814,26 @@ function hitTest(x, y) {
   if (s.active && Math.abs(x - s.x) < 11 && y > s.y - 16 && y < s.y + 4) return { kind: 'squirrel', i: -1 };
   if (!G.dead) {
     // he is not one big button: every part of him answers differently
-    const fx = x - 128, fy = y;
+    const fx = x - CX(), fy = y;
     if (Math.abs(fx) < 34 && fy > 84 && fy < 152) {
       if (fy > 96 && fy < 112 && Math.abs(Math.abs(fx) - 13) < 9) return { kind: 'part', part: 'eye', i: -1 };
-      if (fy >= 100 && fy < 128 && Math.abs(fx) < 9) return { kind: 'part', part: 'nose', i: -1 };
-      if (fy >= 128 && fy < 145 && Math.abs(fx) < 20) return { kind: 'part', part: 'mouth', i: -1 };
+      if (fy >= 100 && fy < CX() && Math.abs(fx) < 9) return { kind: 'part', part: 'nose', i: -1 };
+      if (fy >= CX() && fy < 145 && Math.abs(fx) < 20) return { kind: 'part', part: 'mouth', i: -1 };
       if (fy >= 145 && Math.abs(fx) < 26) return { kind: 'part', part: 'beard', i: -1 };
     }
-    if (y > GROUND_Y - 6 && y < GROUND_Y + 12 && Math.abs(x - 128) > 24 && Math.abs(x - 128) < 56)
+    if (y > GROUND_Y - 6 && y < GROUND_Y + 12 && Math.abs(x - CX()) > 24 && Math.abs(x - CX()) < 56)
       return { kind: 'part', part: 'root', i: -1 };
     // trunk
-    if (y > 88 && y < GROUND_Y + 6 && Math.abs(x - 128) < SPR.trunkHalfWidth(y) + 4) return { kind: 'tree', i: -1 };
+    if (y > 88 && y < GROUND_Y + 6 && Math.abs(x - CX()) < SPR.trunkHalfWidth(y) + 4) return { kind: 'tree', i: -1 };
     // canopy
-    const dx = (x - 128) / 68, dy = (y - 52) / 40;
+    const dx = (x - CX()) / 68, dy = (y - 52) / 40;
     if (dx * dx + dy * dy < 1) return { kind: 'part', part: 'canopy', i: -1 };
   }
   // the sky above: sun by day, moon by night
   const ang = Math.PI * (G.timeOfDay * 2 % 2);
   const sx = 20 + (1 - Math.cos(ang)) * 108, sy = 118 - Math.sin(ang) * 92;
   const night = SPR.isNight(G.timeOfDay);
-  const bx = night ? W - sx : sx;
+  const bx = night ? W() - sx : sx;
   if (Math.hypot(x - bx, y - sy) < 14) return { kind: night ? 'moon' : 'sun', i: -1 };
   return { kind: null, i: -1 };
 }
@@ -1517,7 +1863,7 @@ function touchSky(kind) {
   if (skipType()) return;
   if (kind === 'moon') {
     ACH('moon'); SFX.ach();
-    spawnParticles('star', 128, 40, 12);
+    spawnParticles('star', CX(), 40, 12);
     say('THE WISE OAK TREE', DATA.moonLines[Math.floor(Math.random() * DATA.moonLines.length)], 'sleepy');
   } else {
     SFX.deny();
@@ -1531,12 +1877,16 @@ let tickle = { energy: 0, last: null, cool: 0 };
 
 function onMove(ev) {
   const p = toLogical(ev);
-  G.look.x = Math.max(-1.4, Math.min(1.4, (p.x - 128) / 60));
+
+  if (G.holding) { G.holding.x = p.x; G.holding.y = p.y; return; }
+
+  G.look.x = Math.max(-1.4, Math.min(1.4, (p.x - CX()) / 60));
   G.look.y = Math.max(-1.2, Math.min(1.2, (p.y - 116) / 50));
 
   // hold the trunk and waggle the mouse: he gets shaken
   if (grab && G.scene === 'game' && !G.dead) {
     grab.moved += Math.abs(p.x - grab.lastX);
+    if (grab.moved > 6) G.holdT = 0;
     G.shake = Math.min(5, G.shake + Math.abs(p.x - grab.lastX) * 0.25);
     grab.lastX = p.x;
     if (grab.moved > 70 && !grab.paid) {
@@ -1551,7 +1901,7 @@ function onMove(ev) {
 
   // scrub the cursor quickly over him without pressing: he is ticklish
   if (G.scene === 'game' && !G.dead && tickle.cool <= 0) {
-    const onHim = Math.abs(p.x - 128) < 40 && p.y > 88 && p.y < GROUND_Y;
+    const onHim = Math.abs(p.x - CX()) < 40 && p.y > 88 && p.y < GROUND_Y;
     if (onHim && tickle.last) {
       const d = Math.abs(p.x - tickle.last.x) + Math.abs(p.y - tickle.last.y);
       tickle.energy += d > 3 ? d * 0.5 : -1;
@@ -1563,7 +1913,7 @@ function onMove(ev) {
       ACH('tickle');
       G.mood = 'laugh'; G.moodTimer = 6; G.shake = 3;
       SFX.hug();
-      spawnParticles('heart', 128, 110, 5);
+      spawnParticles('heart', CX(), 110, 5);
       for (let i = 0; i < 6; i++) dropLeaf(96 + Math.random() * 64, 40 + Math.random() * 40, i < 2);
       say('THE WISE OAK TREE', DATA.tickleLines[Math.floor(Math.random() * DATA.tickleLines.length)], 'laugh');
     }
@@ -1592,6 +1942,18 @@ cv.addEventListener('touchmove', ev => { ev.preventDefault(); onMove(ev); }, { p
 
 function onRelease() {
   grab = null;
+  if (G.holdT > 0) { G.holdT = 0; if (!save.ach.hug1) elHint.className = 'hidden'; }
+  if (G.holding) {
+    const t = G.holding;
+    G.holding = null;
+    elHint.className = 'hidden';
+    if (!useTool(t.id, t.x, t.y)) { SFX.deny(); }
+    // whatever happens, it goes back to the grass
+    const home = G.tools.indexOf(t);
+    if (home >= 0) { t.x = t.hx; t.y = t.hy; }
+    refreshHUD();
+    return;
+  }
   const h = G.hall;
   if (G.scene === 'hall' && h.dragIndex >= 0) {
     const target = h.hover;
@@ -1616,10 +1978,32 @@ cv.addEventListener('wheel', ev => {
   G.hall.target += (ev.deltaY + ev.deltaX) * 0.6;
 }, { passive: false });
 
+function toolAt(x, y) {
+  for (let i = G.tools.length - 1; i >= 0; i--) {
+    const t = G.tools[i];
+    if (Math.abs(x - t.x) < 8 && Math.abs(y - t.y) < 8) return t;
+  }
+  return null;
+}
+
 function onPress(ev) {
   SFX.kick();
   if (G.cine) { skipStage(); return; }
   const p = toLogical(ev);
+
+  if (G.scene === 'game') {
+    // the sound switch, bottom right
+    const sp = toScreenPixels(ev);
+    if (sp.x > W() - 22 && sp.y > H - 20) { toggleMute(); return; }
+    const t = toolAt(p.x, p.y);
+    if (t) {
+      G.holding = t; t.x = p.x; t.y = p.y;
+      SFX.pickup();
+      elHint.textContent = TOOL_HINTS[t.id] || 'drag it somewhere';
+      elHint.className = '';
+      return;
+    }
+  }
 
   if (G.scene === 'hall') {
     const hl = G.hall;
@@ -1634,6 +2018,17 @@ function onPress(ev) {
   }
 
   const h = hitTest(p.x, p.y);
+
+  // A critter can be clicked, but never at the cost of talking to him: if the
+  // point is on his trunk or his face, he wins.
+  if (G.scene === 'game' && !G.dead) {
+    const onHim = h.kind === 'tree' || (h.kind === 'part' && h.part !== 'canopy');
+    if (!onHim) {
+      const k = critterAt(p.x, p.y);
+      if (k) { touchCritter(k); return; }
+    }
+  }
+
   if (G.scene === 'heaven') {
     if (h.kind === 'ghost') {
       say('THE WISE OAK TREE (DECEASED)', DATA.heavenTreeLines[G.ghostIdx % DATA.heavenTreeLines.length], null, 'heaven');
@@ -1647,10 +2042,17 @@ function onPress(ev) {
   }
   if (h.kind === 'leaf') { collectLeaf(h.i); return; }
   if (h.kind === 'squirrel') { clickSquirrel(); return; }
-  if (h.kind === 'part') { grab = { x: p.x, lastX: p.x, moved: 0, t: 0 }; touchPart(h.part); return; }
+  if (h.kind === 'part') {
+    grab = { x: p.x, lastX: p.x, moved: 0, t: 0 };
+    if (h.part !== 'canopy') G.holdT = 0.0001;
+    touchPart(h.part);
+    return;
+  }
   if (h.kind === 'moon' || h.kind === 'sun') { touchSky(h.kind); return; }
   if (h.kind === 'tree') {
     grab = { x: p.x, lastX: p.x, moved: 0, t: 0 };
+    G.holdT = 0.0001;                       // press and hold to hug him
+    if (!save.ach.hug1) { elHint.textContent = 'keep holding to hug him'; elHint.className = ''; }
     talkToTree();
     return;
   }
@@ -1660,28 +2062,19 @@ cv.addEventListener('mousedown', onPress);
 cv.addEventListener('touchstart', ev => { ev.preventDefault(); onPress(ev); }, { passive: false });
 
 /* ---------------------------------------------------------------------
-   CHROME BUTTONS
+   THE FEW CONTROLS THAT ARE NOT IN THE WORLD
    --------------------------------------------------------------------- */
-$('btnTrophies').onclick = () => {
-  SFX.click();
-  if (G.cine || G.scene === 'burning') return;
-  if (G.scene === 'hall') { closeHall(); return; }
-  openHall(G.scene === 'heaven' ? 'heaven' : 'game');
-};
-$('btnEndings').onclick = () => { SFX.click(); openEndings(); };
-$('btnShop').onclick = () => {
-  SFX.click();
-  if (!G.squirrel.active) { say('THE WISE OAK TREE', "The squirrel is not here. He is 'running errands'. He is burying things.", 'smug'); return; }
-  openShop();
-};
-$('btnMute').onclick = () => {
+function toggleMute() {
   save.muted = !save.muted; persist();
   SFX.setMuted(save.muted);
-  $('btnMute').textContent = save.muted ? 'Sound: off' : 'Sound: on';
-  if (save.muted) { ACH('mute'); say('THE WISE OAK TREE', "You muted me. I am still talking. I will ALWAYS still be talking.", 'smug'); }
-};
-$('btnReset').onclick = () => {
-  SFX.click();
+  G.muted = save.muted;
+  if (save.muted) {
+    ACH('mute');
+    say('THE WISE OAK TREE', "You muted me. I am still talking. I will ALWAYS still be talking.", 'smug');
+  } else SFX.click();
+}
+
+function eraseEverything() {
   openModal('ERASE EVERYTHING?',
     "<p>Every trophy. Every ending. Every line you ever heard him say.</p><p class='small'>He will not remember you.</p>",
     [['Cancel', closeModal], ['Erase it all', () => {
@@ -1689,7 +2082,8 @@ $('btnReset').onclick = () => {
       try { localStorage.removeItem(SAVE_KEY); } catch (e) {}
       location.reload();
     }, 'bad']]);
-};
+}
+
 $('modalclose').onclick = () => { SFX.click(); closeModal(); };
 $('shopclose').onclick = (e) => { e.stopPropagation(); SFX.click(); closeShop(); };
 elModal.addEventListener('mousedown', e => { if (e.target === elModal && !G.flags.confirming) closeModal(); });
@@ -1703,62 +2097,68 @@ document.addEventListener('keydown', e => {
   }
   if (e.key === 'Escape') { closeModal(); closeShop(); }
   if (e.key === ' ') { e.preventDefault(); if (!skipType() && G.scene === 'game') talkToTree(); }
-  if (e.key.toLowerCase() === 't') openTrophies();
-  if (e.key.toLowerCase() === 'e') openEndings();
+  if (e.key.toLowerCase() === 'm') toggleMute();
+  if (e.key.toLowerCase() === 'r' && e.shiftKey) eraseEverything();
+  if (e.key.toLowerCase() === 'e' && G.scene === 'heaven') openEndings();
 });
 
 /* ---------------------------------------------------------------------
    BOOT
    --------------------------------------------------------------------- */
 SFX.setMuted(save.muted);
-$('btnMute').textContent = save.muted ? 'Sound: off' : 'Sound: on';
+G.muted = save.muted;
 if (hadSave) ACH('refresh');
 checkMetaAchievements();
 checkCompletionist();
+fit();
+seedCritters();
 buildHall();
+G.muted = save.muted;
 refreshHUD();
-updateSeasonPill();
 persist();
 
-if (hadSave) {
-  say('THE WISE OAK TREE',
-      "You came back. I did not think you would. I have been standing here in the exact same spot, which is my only move.",
-      'happy');
-} else {
-  startIntroCine();
+/* the title card holds until you tap it */
+function beginGame() {
+  if (started) return;
+  started = true;
+  SFX.kick(); SFX.ach();
+  elTitle.classList.add('out');
+  setTimeout(() => elTitle.classList.add('hidden'), 520);
+  if (hadSave) {
+    say('THE WISE OAK TREE',
+        "You came back. I did not think you would. I have been standing here in the exact same spot, which is my only move.",
+        'happy');
+  } else {
+    startIntroCine();
+  }
 }
+$('tstart').onclick = beginGame;
+elTitle.addEventListener('mousedown', beginGame);
+elTitle.addEventListener('touchstart', beginGame, { passive: true });
 
 /* Debug hooks, only when the page is opened with ?debug — used by the
    automated smoke test to reach the late game without playing for an hour. */
 if (/[?&]debug/.test(location.search)) {
   window.OAK = { G, save, ACH, reachEnding, startBurning, goHeaven, reincarnate,
-                 refreshHUD, dropLeaf, triggerSneeze, maybeSpawnSquirrel, persist };
+                 refreshHUD, dropLeaf, triggerSneeze, maybeSpawnSquirrel, persist,
+                 skipAll: () => { if (G.cine) { G.cine.i = G.cine.stages.length - 1; skipStage(); } } };
 }
 
 let last = performance.now();
 function loop(now) {
   const dt = Math.min(0.05, (now - last) / 1000);
   last = now;
+  if (!started) drawTitleLogo(dt);
   update(dt);
   render();
+  if (!elBubble.classList.contains('hidden')) positionBubble();
   requestAnimationFrame(loop);
 }
 requestAnimationFrame(loop);
 
 window.addEventListener('beforeunload', persist);
 
-/* resize: keep integer pixel scaling */
-function fit() {
-  const pad = 24;
-  const availW = window.innerWidth - pad, availH = window.innerHeight - 150;
-  let scale = Math.max(1, Math.floor(Math.min(availW / W, availH / H)));
-  if (scale * W > availW || scale * H > availH) scale = Math.max(1, scale - 1);
-  const stage = $('stage');
-  stage.style.width = (W * scale) + 'px';
-  cv.style.width = (W * scale) + 'px';
-  cv.style.height = (H * scale) + 'px';
-}
-window.addEventListener('resize', fit);
-fit();
+window.addEventListener('resize', () => { fit(); positionBubble(); });
+window.addEventListener('orientationchange', () => setTimeout(() => { fit(); positionBubble(); }, 200));
 
 })();
