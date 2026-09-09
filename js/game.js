@@ -17,7 +17,7 @@ const defaultSave = () => ({
   ach: {}, endings: {}, heard: {}, muted: false, sessions: 0,
   park: { props: [], upgrades: {}, expansions: 0, earned: 0 },
   bag: false, items: {}, taken: {}, plans: {}, planDone: {},
-  quests: {}, questDone: {}, unread: [], snails: {}, setSeen: {}, metNoc: false,
+  quests: {}, questDone: {}, unread: [], snails: {}, setSeen: {}, areasSeen: { oak: 1 }, metNoc: false,
   stats: { leavesTotal: 0, sneezes: 0, hugs: 0, waters: 0, plants: 0, trades: 0,
            sqChats: 0, rebirths: 0, flicks: 0, seasons: {}, boughtAll: false }
 });
@@ -36,6 +36,7 @@ try {
     save.unread = Array.isArray(p.unread) ? p.unread : [];
     save.snails = p.snails || {};
     save.setSeen = p.setSeen || {};
+    save.areasSeen = Object.assign({ oak: 1 }, p.areasSeen || {});
   }
 } catch (e) { /* corrupt save: start fresh, no drama */ }
 
@@ -66,7 +67,8 @@ const G = {
   inv: { leaves: 0, items: {} }, tools: [], holding: null, holdT: 0, critters: [],
   parkPending: 0, parkMotes: [], visitors: [], visitorTimer: 6, menu: null,
   // where you are standing, and the walk between places
-  area: 1, areaFade: 0, areaFadeDir: 0, areaTitle: 0, arrows: [], pickups: [],
+  area: 3, areaFade: 0, areaFadeDir: 0, areaTitle: 0, arrows: [], pickups: [],
+  suit: null, suitTimer: 40,
   noc: { x: 0, y: GROUND_Y + 8, look: 0, talking: 0, thinking: 0 },
   asleep: false, wakeT: 0, squash: 0, squashV: 0,
   boardPop: 0, cottagePop: 0,
@@ -165,6 +167,7 @@ function checkSets() {
   const next = open.find(st => !save.setSeen[st.id]);
   if (!next) return false;
   save.setSeen[next.id] = 1; persist();
+  checkAreas();
   const idx = DATA.sets.indexOf(next);
   if (idx > 0) ACH('set' + Math.min(6, idx));
   if (DATA.sets.every(st => save.setSeen[st.id])) ACH('setall');
@@ -1057,11 +1060,6 @@ function bagItems() {
   const out = [{ t: 'title', s: 'YOUR BACKPACK' }];
   out.push({ t: 'row', label: G.inv.leaves + ' leaves', sub: 'the only currency, and only Noc takes it',
              icon: 'leaf', right: '', dim: false });
-  const nx = nextSet();
-  out.push({ t: 'row', icon: 'mouth', label: 'What he will talk about',
-             sub: nx ? (nx.at - heardTotal()) + ' more things and a new set opens'
-                     : 'every set open \u00b7 ' + heardTotal() + '/' + DATA.lines.length + ' heard',
-             right: 'READ', act: openTopics });
   const jobsDone = DATA.quests.filter(q => save.questDone[q.id]).length;
   out.push({ t: 'text', s: Object.keys(G.inv.items).length + ' things  ·  ' + jobsDone + '/' + DATA.quests.length +
                           ' jobs  ·  ' + plansDone() + '/' + DATA.plans.length + ' plans', col: SPR.PAPER.ink3, align: 'center' });
@@ -1075,6 +1073,16 @@ function bagItems() {
     out.push({ t: 'row', label: it.name, sub: TOOL_HINTS[it.id] || it.desc, icon: it.icon,
                right: 'TAKE OUT', act: () => holdFromBag(it.id) });
   }
+
+  const nx = nextSet();
+  out.push({ t: 'title', s: 'THE PARK, AND HIM' });
+  out.push({ t: 'row', icon: 'globe', label: 'The map',
+             sub: AREAS.filter((a, i) => areaOpen(i)).length + ' of ' + AREAS.length + ' places open',
+             right: 'READ', act: openMap });
+  out.push({ t: 'row', icon: 'mouth', label: 'What he will talk about',
+             sub: nx ? (nx.at - heardTotal()) + ' more things and a new set opens'
+                     : 'every set open \u00b7 ' + heardTotal() + '/' + DATA.lines.length + ' heard',
+             right: 'READ', act: openTopics });
 
   const unread = save.unread || [];
   if (unread.length) {
@@ -1099,6 +1107,38 @@ function bagItems() {
   out.push({ t: 'rule' });
   out.push({ t: 'text', s: 'found, not bought', col: SPR.PAPER.ink3, align: 'center' });
   return out;
+}
+
+/* ---- the map of the park ---- */
+function openMap() {
+  ACH('map');
+  openPanel({
+    id: 'map', anchor: 'mid', wide: true, maxH: H - 30,
+    build: () => {
+      const out = [{ t: 'title', s: 'CENTRAL PARK' }];
+      const open = AREAS.filter((a, i) => areaOpen(i)).length;
+      out.push({ t: 'text', s: open + ' of ' + AREAS.length + ' places open  \u00b7  west to east',
+                 col: SPR.PAPER.ink3, align: 'center' });
+      out.push({ t: 'rule' });
+      for (let i = 0; i < AREAS.length; i++) {
+        const a = AREAS[i];
+        const isOpen = areaOpen(i);
+        const here = i === G.area;
+        out.push({
+          t: 'row', dim: here,
+          label: (here ? '> ' : '') + (isOpen ? a.name : '???'),
+          sub: isOpen ? a.sub : (a.locked || 'shut'),
+          right: here ? 'YOU ARE HERE' : isOpen ? 'OPEN' : areaWants(i),
+          rightCol: here ? SPR.PAPER.leaf : isOpen ? SPR.PAPER.leaf : SPR.PAPER.ink3
+        });
+      }
+      out.push({ t: 'rule' });
+      out.push({ t: 'text', align: 'center', col: SPR.PAPER.ink2,
+                 s: 'Eight hundred and forty-three acres. He has stood in the middle of it longer than any of it has been a park.' });
+      out.push({ t: 'gap', h: 4 });
+      return out;
+    }
+  });
 }
 
 /* ---- what he will talk about ---- */
@@ -1149,6 +1189,8 @@ function settingsItems() {
     { t: 'row', label: 'A real mind',
       sub: live ? 'on \u00b7 ' + NOC_AI.model : 'off \u2014 local brains only',
       icon: 'book', right: live ? 'TURN OFF' : 'ADD KEY', act: askForKey },
+    { t: 'row', label: 'The map', sub: 'everywhere in the park, open or shut', icon: 'globe',
+      right: 'READ', act: openMap },
     { t: 'row', label: 'What he will talk about', sub: 'the sets he has opened so far', icon: 'mouth',
       right: 'READ', act: openTopics },
     { t: 'row', label: 'The Trophy Room', sub: 'everything you have earned', icon: 'crown',
@@ -1606,6 +1648,7 @@ function totalCount(tag) {
    line that came up happened to be a serious one. */
 function checkWorldProgress() {
   checkQuests();
+  checkAreas();
   if (heardCount('world') >= 10) ACH('world10');
   if (heardCount('world') >= totalCount('world')) { ACH('worldall'); reachEnding('witness'); }
 }
@@ -1990,6 +2033,40 @@ const AREAS = DATA.areas;
 function areaId() { return AREAS[G.area].id; }
 function atOak() { return areaId() === 'oak'; }
 
+/* =========================================================================
+   THE MAP
+   Eight hundred acres, eight places, and most of them shut until he decides
+   you are ready. Nothing here is bought: every gate opens on something you
+   did.
+   ========================================================================= */
+function areaOpen(i) {
+  const a = AREAS[i];
+  if (!a) return false;
+  const n = a.need || {};
+  if (n.heard !== undefined && heardTotal() < n.heard) return false;
+  if (n.bag && !save.bag) return false;
+  if (n.jobs !== undefined && Object.keys(save.questDone).length < n.jobs) return false;
+  return true;
+}
+
+/* what it still wants from you, in one line */
+/* the gates you have got open, checked whenever anything could have moved */
+function checkAreas() {
+  const open = AREAS.filter((a, i) => areaOpen(i)).length;
+  if (open >= 4) ACH('area4');
+  if (open >= 6) ACH('area6');
+  if (open >= AREAS.length) ACH('area8');
+}
+
+function areaWants(i) {
+  const a = AREAS[i];
+  const n = (a && a.need) || {};
+  if (n.heard !== undefined && heardTotal() < n.heard) return (n.heard - heardTotal()) + ' more things heard';
+  if (n.bag && !save.bag) return 'something to carry things in';
+  if (n.jobs !== undefined && Object.keys(save.questDone).length < n.jobs) return 'a job finished';
+  return '';
+}
+
 function canTravel(dir) {
   const i = G.area + dir;
   return i >= 0 && i < AREAS.length && !G.cine && G.scene === 'game' && !G.dead && !panelOpen();
@@ -1997,6 +2074,20 @@ function canTravel(dir) {
 
 function travel(dir) {
   if (!canTravel(dir) || G.areaFadeDir) return;
+  const i = G.area + dir;
+  if (!areaOpen(i)) {
+    SFX.deny();
+    G.shake = 1.5;
+    pop('SHUT', dir < 0 ? 34 : W() - 34, GROUND_Y - 34, '#d9707c');
+    sayTree((AREAS[i].locked || 'Not yet.') + ' (' + areaWants(i) + ')', 'smug');
+    return;
+  }
+  if (!save.areasSeen[AREAS[i].id]) {
+    save.areasSeen[AREAS[i].id] = 1; persist();
+    const seen = Object.keys(save.areasSeen).length;
+    if (seen >= 2) ACH('area2');
+    if (AREAS.every(a => save.areasSeen[a.id])) { ACH('areaall'); reachEnding('walker'); }
+  }
   puff(dir < 0 ? 14 : W() - 14, GROUND_Y + 20, 5);
   zips(dir < 0 ? 40 : W() - 40, GROUND_Y - 4, dir, 4);
   G.areaFadeDir = dir;
@@ -2021,6 +2112,16 @@ function arriveArea() {
     }
   }
   if (areaId() === 'hollow') ACH('hollow');
+  if (areaId() === 'seneca') ACH('seneca');
+  if (areaId() === 'rink') { ACH('rink'); G.suitTimer = 3; }
+  else G.suit = null;
+  // he says something about wherever you have just walked into
+  const lines = DATA.areaLines[areaId() === 'lane' ? 'ramble' : areaId()];
+  if (lines && Math.random() < 0.9) {
+    setTimeout(() => {
+      if (G.scene === 'game' && !G.cine) sayTree(lines[Math.floor(Math.random() * lines.length)], 'think');
+    }, 900);
+  }
   refreshHUD();
   persist();
 }
@@ -2050,6 +2151,7 @@ function takePickup(p) {
   if (p.id === 'backpack') {
     save.bag = true; G.hasBag = true; G.bagBadge = 1;
     ACH('backpack');
+    checkAreas();
     pushNote('goal', 'YOU HAVE A BAG', 'Everything you find goes in it. Tap the bag, bottom left.', 'reach', 'backpack');
     nudge('your bag is in the bottom left corner', 10);
     say('YOU', "A backpack. Somebody's. Yours now.", null, 'serious');
@@ -2784,6 +2886,7 @@ function update(dt) {
     }
 
     updateCritters(dt);
+    updateSuit(dt);
     if (atOak()) {
       updatePark(dt); updateVisitors(dt);
       // things that have just turned up are still bouncing
@@ -3118,6 +3221,7 @@ function finishQuest(q) {
 
   persist();
   checkParkAchievements();
+  checkAreas();
   refreshHUD();
   const voice = q.from === 'oak' ? sayTree : nocSay;
   voice(q.done, 'happy');
@@ -3404,33 +3508,88 @@ function drawWorld(opts) {
    deliberately emptier than the park: the point of them is the room.
    ------------------------------------------------------------------------- */
 function drawSideArea() {
-  const lane = areaId() === 'lane';
+  const id = areaId();
+  const lane = id === 'lane';
+  const wild = lane || id === 'hollow' || id === 'seneca';
+
   SPR.drawBackdrop(dc, G);
   SPR.drawGround(dc, G);
+
+  // the ground each place is actually made of
   if (lane) SPR.drawLaneRoad(dc, G);
-  SPR.drawHedgerow(dc, G, lane ? W() * 0.22 : undefined);
-  SPR.drawCosyFoliage(dc, G, lane ? 707 : 909, lane ? 0.45 : 1.4);
+  else if (id === 'bridge') SPR.drawBridgeScene(dc, G);
+  else if (id === 'mall') SPR.drawMallScene(dc, G);
+  else if (id === 'terrace') SPR.drawTerraceScene(dc, G);
+  else if (id === 'rink') SPR.drawRinkScene(dc, G);
+
+  if (wild) SPR.drawHedgerow(dc, G, lane ? W() * 0.22 : undefined);
+  if (wild) SPR.drawCosyFoliage(dc, G, lane ? 707 : id === 'seneca' ? 1857 : 909,
+                                lane ? 0.45 : id === 'seneca' ? 0.25 : 1.4);
 
   const L = SPR.layerBegin();
   SPR.drawGroundItems(L, G);
   if (lane) {
     SPR.drawNocCamp(L, G, Math.round(W() * 0.62) - 34, GROUND_Y + 14);
     SPR.drawNoc(L, G, G.noc);
-  } else {
+  } else if (id === 'hollow') {
     SPR.drawStandingStone(L, G, Math.round(W() * 0.62), GROUND_Y + 12);
     SPR.drawFallenLog(L, G, Math.round(W() * 0.10), GROUND_Y + 26, Math.round(W() * 0.32));
+  } else if (id === 'seneca') {
+    SPR.drawSenecaScene(L, G);
   }
-  SPR.drawCritters(L, G);
+  if (G.suit && id === 'rink') SPR.drawSuit(L, G, G.suit);
+  if (wild) SPR.drawCritters(L, G);
   SPR.layerEnd(dc, '#1a0f08');
 
   SPR.drawParticles(dc, G);
-  if (!lane) SPR.drawUndergrowth(dc, G);
-  SPR.drawForeground(dc, G);
+  if (wild && !lane && id !== 'seneca') SPR.drawUndergrowth(dc, G);
+  if (wild) SPR.drawForeground(dc, G);
   drawPickups(dc);
-  SPR.drawVines(dc, G, lane ? 61 : 71);
+  if (wild) SPR.drawVines(dc, G, lane ? 61 : 71);
   SPR.drawFrameFoliage(dc, G);
   SPR.drawBokeh(dc, G);
   SPR.drawOverlay(dc, G);
+}
+
+/* =========================================================================
+   THE MAN IN THE RED TIE
+   He turns up at the rink, walks across it with two people beside him, and
+   leaves. He is never given a line: the oak narrates, because what the oak
+   has is a record and not an impression.
+   ========================================================================= */
+function updateSuit(dt) {
+  if (areaId() !== 'rink' || G.dead) { G.suit = null; return; }
+  if (!G.suit) {
+    G.suitTimer -= dt;
+    if (G.suitTimer <= 0) {
+      G.suitTimer = 55 + Math.random() * 45;
+      const dir = Math.random() < 0.5 ? 1 : -1;
+      G.suit = { x: dir === 1 ? -26 : W() + 26, y: GROUND_Y + 20, dir, moving: true, said: false, t: 0 };
+      ACH('suit');
+    }
+    return;
+  }
+  const s = G.suit;
+  s.t += dt;
+  s.x += s.dir * 15 * dt;
+  if (Math.random() < dt * 4) puff(s.x - s.dir * 8, s.y + 2, 1);
+  if (!s.said && s.t > 1.6) {
+    s.said = true;
+    save.stats.suitSeen = (save.stats.suitSeen || 0) + 1;
+    if (save.stats.suitSeen >= 5) ACH('suit5');
+    persist();
+    const pool = save.stats.suitSeen <= DATA.suitLines.length
+      ? [DATA.suitLines[save.stats.suitSeen - 1]]
+      : DATA.suitOakAsides;
+    sayTree(pool[Math.floor(Math.random() * pool.length)], 'think');
+  }
+  if (s.x < -40 || s.x > W() + 40) G.suit = null;
+}
+
+function suitAt(x, y) {
+  const s = G.suit;
+  if (!s) return null;
+  return (Math.abs(x - s.x) < 20 && y > s.y - 36 && y < s.y + 4) ? s : null;
 }
 
 function drawPickups(c) {
@@ -3444,9 +3603,10 @@ function refreshArrows() {
   for (const dir of [-1, 1]) {
     const i = G.area + dir;
     if (i < 0 || i >= AREAS.length) continue;
-    const label = AREAS[i].name.replace(/^THE /, '');
+    const open = areaOpen(i);
+    const label = open ? AREAS[i].name.replace(/^THE /, '') : 'LOCKED';
     const box = SPR.travelArrowBox(dir, label);
-    G.arrows.push({ dir, label, hover: false, x: box.x, y: box.y, w: box.w, h: box.h });
+    G.arrows.push({ dir, label, open, hover: false, x: box.x, y: box.y, w: box.w, h: box.h });
   }
 }
 
@@ -3456,7 +3616,7 @@ function arrowAt(x, y) {
 }
 
 function drawArrows(c) {
-  for (const a of G.arrows) SPR.drawTravelArrow(c, G, a.dir, a.label, a.hover);
+  for (const a of G.arrows) SPR.drawTravelArrow(c, G, a.dir, a.label, a.hover, !a.open);
 }
 
 /* Talking is the whole game, and on a phone the middle of him is all face.
@@ -3474,7 +3634,7 @@ function talkSignBox() {
 function talkLabel() {
   if (G.asleep) return 'POKE HIM';
   if (areaId() === 'lane') return 'TALK TO NOC';
-  if (!atOak()) return 'LOOK AROUND';
+  if (!atOak()) return 'BACK TO THE OAK';
   if (DLG.choices && dialogueDone()) return 'TELL ME ANOTHER';
   return DLG.on ? 'GO ON' : 'TALK TO HIM';
 }
@@ -3514,7 +3674,12 @@ function overTalkSign(x, y) {
 function pressTalkSign() {
   if (G.asleep) { wakeHim(); return; }
   if (areaId() === 'lane') { SFX.click(); openChat('noc'); return; }
-  if (!atOak()) { SFX.click(); say('YOU', 'Quiet out here. He is back up the lane.', null, 'serious'); return; }
+  if (!atOak()) {
+    // eight places is a long way to walk back one signpost at a time
+    const oakAt = AREAS.findIndex(a => a.id === 'oak');
+    travel(G.area < oakAt ? 1 : -1);
+    return;
+  }
   // while replies are on offer this is the "keep going" one, so the whole
   // conversation can be had with a single thumb
   if (DLG.choices && dialogueDone()) {
@@ -3706,6 +3871,7 @@ function hitTest(x, y) {
     }
     if (areaId() === 'lane' && Math.abs(x - G.noc.x) < 14 && y > G.noc.y - 40 && y < G.noc.y + 4)
       return { kind: 'noc', i: -1 };
+    if (suitAt(x, y)) return { kind: 'suit', i: -1 };
     return { kind: null, i: -1 };
   }
 
@@ -4060,6 +4226,7 @@ function onPress(ev) {
   if (h.kind === 'leaf') { collectLeaf(h.i); return; }
   if (h.kind === 'pickup') { takePickup(h.p); return; }
   if (h.kind === 'noc') { SFX.click(); openChat('noc'); return; }
+  if (h.kind === 'suit') { SFX.click(); sayTree(DATA.suitOakAsides[Math.floor(Math.random() * DATA.suitOakAsides.length)], 'smug'); return; }
   if (h.kind === 'squirrel') { clickSquirrel(); return; }
   if (h.kind === 'part') {
     grab = { x: p.x, lastX: p.x, moved: 0, t: 0 };
@@ -4238,7 +4405,7 @@ if (/[?&]debug/.test(location.search)) {
                  refreshHUD, dropLeaf, triggerSneeze, maybeSpawnSquirrel, persist,
                  skipAll: () => { if (G.cine) { G.cine.i = G.cine.stages.length - 1; skipStage(); } },
                  parkMargin, parkIncome, parkFill, talkSignBox, pressTalkSign, heardTotal, openSets, nextSet, openTopics,
-                 unlockedTags, setHeard, setTotal, checkSets, talkToTree, boardHere, cottageHere, puff, ring, pop, squash, PANEL, openPanel, closePanel, panelIs, panelOpen, openQuestBoard, openJournal, acceptQuest, checkQuests, questStatus, plotPos, hitTest,
+                 unlockedTags, setHeard, setTotal, checkSets, talkToTree, openMap, areaOpen, areaWants, updateSuit, checkAreas, boardHere, cottageHere, puff, ring, pop, squash, PANEL, openPanel, closePanel, panelIs, panelOpen, openQuestBoard, openJournal, acceptQuest, checkQuests, questStatus, plotPos, hitTest,
                  travel, takePickup, seedPickups, openChat, closeChat, sendChat, openBag, closeBag,
                  agreePlan, completePlan, planById, areaId, wakeHim, AREAS,
                  openPost, closePost, openSettings, openCredits, openTrophies, openEndings, openGarden, closeGarden, buildGarden, snailName, finishQuest, questById, questProgress,

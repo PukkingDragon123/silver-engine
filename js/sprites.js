@@ -3045,7 +3045,7 @@ function drawNocCamp(c, g, x, y) {
 /* -------------------------------------------------------------------------
    WAYS OUT — a signpost arrow at each edge you can actually leave through
    ------------------------------------------------------------------------- */
-function drawTravelArrow(c, g, side, label, hover) {
+function drawTravelArrow(c, g, side, label, hover, locked) {
   const dk = darkness(g.timeOfDay);
   const y = Math.round(GROUND_Y - 26);
   const w = Math.max(46, F.textWidth(label, 1) + 22);
@@ -3057,7 +3057,7 @@ function drawTravelArrow(c, g, side, label, hover) {
   px(c, side < 0 ? x + 8 : x + w - 10, yy + 13, 2, 22, mix('#5a3a1e', '#0a1226', dk * 0.7));
 
   // the board, cut to a point at the travelling end
-  const body = hover ? '#c39a63' : '#a0703c';
+  const body = locked ? (hover ? '#6f6257' : '#59503f') : (hover ? '#c39a63' : '#a0703c');
   roundRect(c, x - 1, yy - 1, w + 2, 15, 3, INK);
   roundRect(c, x, yy, w, 13, 2, mix(body, '#0a1226', dk * 0.55));
   px(c, x + 2, yy + 2, w - 4, 1, mix('#c9a06a', '#0a1226', dk * 0.5));
@@ -3066,7 +3066,18 @@ function drawTravelArrow(c, g, side, label, hover) {
     px(c, px2, yy + i, 1, 13 - i * 2, INK);
     px(c, px2 + (side < 0 ? 1 : -1), yy + 1 + i, 1, 11 - i * 2, mix(body, '#0a1226', dk * 0.55));
   }
-  F.drawTextCentered(c, x + w / 2 + (side < 0 ? 3 : -3), yy + 4, label, hover ? '#2b1c10' : '#ffe9b0', 1);
+  F.drawTextCentered(c, x + w / 2 + (side < 0 ? 3 : -3), yy + 4, label,
+                     locked ? '#b8ac98' : (hover ? '#2b1c10' : '#ffe9b0'), 1);
+  if (locked) {
+    // a padlock hanging off the board
+    const lx = side < 0 ? x + w + 2 : x - 6, ly = yy + 2;
+    px(c, lx, ly + 3, 6, 6, INK);
+    px(c, lx + 1, ly + 4, 4, 4, '#c9a86a');
+    px(c, lx + 1, ly, 4, 4, INK);
+    px(c, lx + 2, ly + 1, 2, 3, '#8a8a94');
+    dot(c, lx + 2, ly + 5, '#5a4a2a');
+    return;
+  }
 
   // a little walking arrow that nudges toward the edge
   const ax = side < 0 ? x + 5 : x + w - 5;
@@ -3247,6 +3258,296 @@ function drawHedgerow(c, g, gapX) {
   }
 }
 
+/* =========================================================================
+   THE REST OF THE PARK
+   Six more places, all built from the same primitives as everything else.
+   ========================================================================= */
+
+/* --- water, used by the bridge and the rink --- */
+function drawStillWater(c, g, top, cols) {
+  const dk = darkness(g.timeOfDay);
+  const sh = col => mix(col, '#0a1226', dk * 0.72);
+  const band = cols || ['#5a8ab0', '#4a7a9e', '#3d6a8a'];
+  px(c, 0, top, W, H - top, sh(band[0]));
+  px(c, 0, top + 14, W, H - top, sh(band[1]));
+  px(c, 0, top + 34, W, H - top, sh(band[2]));
+  for (let y = top + 2; y < H; y += 4) {
+    const ph = Math.sin(g.t * 0.6 + y * 0.22);
+    c.globalAlpha = 0.30;
+    px(c, (ph * 14 + y * 5) % W - 20, y, 20, 1, sh('#c8e4f4'));
+    px(c, (ph * -11 + y * 9 + 140) % W - 20, y + 2, 13, 1, sh('#e8f4ff'));
+    c.globalAlpha = 1;
+  }
+}
+
+/* --- SENECA VILLAGE: foundation stones, a marker, and nothing else --- */
+function drawSenecaScene(c, g) {
+  const dk = darkness(g.timeOfDay);
+  const sh = col => mix(col, '#0a1226', dk * 0.75);
+  const rnd = mulberry(1857);
+  // the outline of a house that is not there
+  const hx = Math.round(W * 0.34), hy = GROUND_Y + 8;
+  for (let i = 0; i < 22; i++) {
+    const x = hx - 44 + i * 4;
+    px(c, x, hy, 4, 3, sh(i % 2 ? '#8a8a92' : '#9a9aa2'));
+    px(c, x, hy, 4, 1, sh('#b6b6c0'));
+  }
+  for (let i = 0; i < 9; i++) {
+    px(c, hx - 44, hy - i * 4, 4, 3, sh(i % 2 ? '#8a8a92' : '#9a9aa2'));
+    px(c, hx + 40, hy - i * 4, 4, 3, sh(i % 2 ? '#8a8a92' : '#9a9aa2'));
+  }
+  // grass growing back through it
+  for (let i = 0; i < 60; i++) {
+    const x = hx - 44 + rnd() * 88, y = hy - rnd() * 34;
+    px(c, x, y, 1, 2 + rnd() * 3, sh('#4a8a3a'));
+  }
+  // the marker
+  const mx = Math.round(W * 0.66), my = GROUND_Y + 6;
+  c.globalAlpha = 0.3; pellipse(c, mx, my + 2, 13, 3, '#0d1a08'); c.globalAlpha = 1;
+  px(c, mx - 2, my - 6, 4, 8, sh('#6a6a74'));
+  px(c, mx - 14, my - 26, 28, 21, sh('#3a3a44'));
+  px(c, mx - 13, my - 25, 26, 19, sh('#5a5a66'));
+  px(c, mx - 13, my - 25, 26, 2, sh('#7a7a86'));
+  tinyText(c, mx - 11, my - 22, 'SENECA', sh('#e0e0e8'));
+  tinyText(c, mx - 11, my - 16, 'VILLAGE', sh('#e0e0e8'));
+  // flowers somebody left
+  for (let i = 0; i < 7; i++) {
+    const fx = mx - 10 + rnd() * 20;
+    px(c, fx, my - 2, 1, 3, sh('#3a7a2a'));
+    pcircle(c, fx, my - 4, 1.6, sh(['#ffffff', '#ffd8e8', '#ffe066'][i % 3]));
+  }
+}
+
+/* --- BOW BRIDGE: cast iron over still water --- */
+function drawBridgeScene(c, g) {
+  const dk = darkness(g.timeOfDay);
+  const sh = col => mix(col, '#0a1226', dk * 0.7);
+  drawStillWater(c, g, GROUND_Y + 6);
+  const cx = Math.round(W / 2), top = GROUND_Y - 12, span = Math.min(W - 40, 210);
+  // the deck: a shallow arch
+  for (let i = 0; i <= span; i++) {
+    const p = i / span;
+    const y = Math.round(top + Math.sin(Math.PI * p) * -12 + 12);
+    px(c, cx - span / 2 + i, y, 1, 5, sh('#d8cfae'));
+    px(c, cx - span / 2 + i, y, 1, 1, sh('#f2ead0'));
+    px(c, cx - span / 2 + i, y + 5, 1, 2, sh('#8a8272'));
+  }
+  // the cast-iron balustrade, the eight arches it is famous for
+  for (let a = 0; a < 8; a++) {
+    const x0 = cx - span / 2 + (a + 0.5) * (span / 8);
+    const p = (a + 0.5) / 8;
+    const y = Math.round(top + Math.sin(Math.PI * p) * -12 + 12);
+    for (let k = -12; k <= 12; k++) {
+      const ay = y - 10 + Math.round((k * k) / 16);
+      px(c, x0 + k, ay, 1, 1, sh('#c9c2a8'));
+    }
+    px(c, x0, y - 11, 1, 11, sh('#b8b09a'));
+  }
+  for (let i = 0; i <= span; i += 1) {
+    const p = i / span;
+    const y = Math.round(top + Math.sin(Math.PI * p) * -12);
+    px(c, cx - span / 2 + i, y - 1, 1, 2, sh('#e8e0c4'));
+  }
+  // reflection
+  c.globalAlpha = 0.22;
+  for (let i = 0; i <= span; i += 2) {
+    const p = i / span;
+    const y = Math.round(top + Math.sin(Math.PI * p) * -12 + 12);
+    px(c, cx - span / 2 + i, GROUND_Y + 40 + (GROUND_Y + 18 - y), 1, 3, '#f2ead0');
+  }
+  c.globalAlpha = 1;
+}
+
+/* --- THE MALL: an avenue of elms, receding --- */
+function drawMallScene(c, g) {
+  const dk = darkness(g.timeOfDay);
+  const s = SEASON[g.season];
+  const sh = col => mix(col, '#050c18', dk * 0.8);
+  // the paving, in perspective
+  for (let i = 0; i < H - GROUND_Y + 8; i++) {
+    const w = 24 + i * 3.4;
+    px(c, W / 2 - w / 2, GROUND_Y - 6 + i, w, 1, sh(mix('#b0a288', '#8a7e68', i / 40)));
+  }
+  for (let i = 0; i < 9; i++) {
+    const t = i / 9, y = GROUND_Y - 6 + t * (H - GROUND_Y + 8);
+    const w = 24 + t * (H - GROUND_Y + 8) * 3.4;
+    px(c, W / 2 - w / 2, y, w, 1, sh('#6a5f4c'));
+  }
+  // two rows of elms, big ones near, small ones far
+  for (const side of [-1, 1]) {
+    for (let i = 0; i < 5; i++) {
+      const t = i / 5;
+      const x = W / 2 + side * (18 + t * (W * 0.42));
+      const base = GROUND_Y + 2 + t * 26;
+      const h = 40 + t * 52;
+      px(c, x - 1 - t * 2, base - h, 3 + t * 4, h, sh('#6b5744'));
+      px(c, x - 1 - t * 2, base - h, 1 + t, h, sh('#8a7258'));
+      // the canopies meet overhead, which is the whole point of the Mall
+      pellipse(c, x, base - h - 4 - t * 8, 16 + t * 20, 10 + t * 14, sh(s.dark));
+      pellipse(c, x - 2, base - h - 8 - t * 10, 12 + t * 15, 7 + t * 10, sh(s.t0));
+      if (t > 0.5) pellipse(c, x - 3, base - h - 12 - t * 10, 8 + t * 9, 5 + t * 6, sh(s.t1));
+    }
+  }
+  // benches down both sides
+  for (const side of [-1, 1]) {
+    for (let i = 0; i < 3; i++) {
+      const x = W / 2 + side * (34 + i * 30);
+      drawBench(c, g, x, GROUND_Y + 22 + i * 6);
+    }
+  }
+}
+
+/* --- BETHESDA TERRACE: the arcade and the angel --- */
+function drawTerraceScene(c, g) {
+  const dk = darkness(g.timeOfDay);
+  const sh = col => mix(col, '#0a1226', dk * 0.72);
+  const cx = Math.round(W / 2);
+  // the sandstone arcade behind
+  px(c, 0, GROUND_Y - 34, W, 30, sh('#c9a878'));
+  px(c, 0, GROUND_Y - 34, W, 3, sh('#e0c49a'));
+  px(c, 0, GROUND_Y - 7, W, 3, sh('#a3865c'));
+  for (let a = -3; a <= 3; a++) {
+    const x = cx + a * 44;
+    for (let k = -13; k <= 13; k++) {
+      const h = Math.round(Math.sqrt(Math.max(0, 169 - k * k)));
+      px(c, x + k, GROUND_Y - 7 - h, 1, h, sh('#5a4630'));
+      px(c, x + k, GROUND_Y - 7 - h, 1, 2, sh('#8a6f4a'));
+    }
+    px(c, x - 15, GROUND_Y - 34, 3, 27, sh('#e0c49a'));
+    px(c, x + 13, GROUND_Y - 34, 3, 27, sh('#a3865c'));
+  }
+  // the plaza
+  px(c, 0, GROUND_Y - 4, W, H, sh('#b8a888'));
+  for (let y = GROUND_Y - 4; y < H; y += 6) px(c, 0, y, W, 1, sh('#a39377'));
+  for (let x = 0; x < W; x += 9) px(c, x, GROUND_Y - 4, 1, H, sh('#a39377'));
+  // the fountain basin
+  pellipse(c, cx, GROUND_Y + 30, 62, 18, sh('#8a7a5e'));
+  pellipse(c, cx, GROUND_Y + 30, 58, 15, sh('#4a7a94'));
+  pellipse(c, cx, GROUND_Y + 29, 52, 12, sh('#5f96b4'));
+  for (let i = 0; i < 5; i++) {
+    const ph = Math.sin(g.t * 0.9 + i);
+    c.globalAlpha = 0.4;
+    pellipse(c, cx + ph * 12, GROUND_Y + 28 + i * 2, 30 - i * 4, 3, '#cbe8f8');
+    c.globalAlpha = 1;
+  }
+  // the pedestal and the Angel of the Waters
+  px(c, cx - 9, GROUND_Y + 4, 18, 22, sh('#9a8a6e'));
+  px(c, cx - 12, GROUND_Y + 2, 24, 4, sh('#b8a888'));
+  px(c, cx - 6, GROUND_Y - 4, 12, 8, sh('#8a7a5e'));
+  const ay = GROUND_Y - 6;
+  const bronze = sh('#6e7a5e'), bronzeLit = sh('#93a37c'), bronzeDk = sh('#4a5440');
+  // the wings first, sweeping up and back behind her
+  for (let k = 0; k < 14; k++) {
+    const rise = Math.round(k * 1.15), len = 3 + Math.round(k * 0.55);
+    px(c, cx - 5 - k, ay - 24 - rise, 2, len, bronzeDk);
+    px(c, cx - 5 - k, ay - 24 - rise, 1, len, bronze);
+    px(c, cx + 4 + k, ay - 24 - rise, 2, len, bronze);
+    px(c, cx + 4 + k, ay - 24 - rise, 1, len, bronzeLit);
+  }
+  // the robe, falling to the plinth
+  for (let i = 0; i < 24; i++) {
+    const w2 = 5 + Math.round(i * 0.28);
+    px(c, cx - w2 / 2, ay - 22 + i, w2, 1, bronze);
+    px(c, cx - w2 / 2, ay - 22 + i, 2, 1, bronzeLit);
+    px(c, cx + w2 / 2 - 1, ay - 22 + i, 1, 1, bronzeDk);
+  }
+  pcircle(c, cx, ay - 26, 3.2, bronze);             // head
+  pcircle(c, cx - 1, ay - 27, 2, bronzeLit);
+  px(c, cx - 3, ay - 29, 7, 2, bronzeDk);           // her hair, bound up
+  px(c, cx - 8, ay - 18, 6, 2, bronze);             // the blessing hand, out and down
+  px(c, cx - 8, ay - 18, 6, 1, bronzeLit);
+  px(c, cx + 3, ay - 21, 5, 2, bronze);             // the lily in the other
+  px(c, cx + 7, ay - 24, 2, 4, bronzeDk);
+  // water falling from the blessing hand
+  for (let i = 0; i < 10; i++) {
+    const tt = (g.t * 1.5 + i * 0.16) % 1;
+    dot(c, cx - 7 + Math.sin(tt * 3) * 1.5, ay - 15 + tt * 42, sh('#dff0ff'));
+  }
+}
+
+/* --- THE WOLLMAN RINK: ice, a rail, and people going round --- */
+function drawRinkScene(c, g) {
+  const dk = darkness(g.timeOfDay);
+  const sh = col => mix(col, '#0a1226', dk * 0.7);
+  // the city behind it, because you can see it from the rink
+  for (let i = 0; i < 9; i++) {
+    const bw = 16 + (i % 3) * 10, bx = (i * 41) % (W + 20) - 10;
+    const bh = 40 + ((i * 37) % 46);
+    px(c, bx, GROUND_Y - 26 - bh, bw, bh, sh(mix('#6a7280', '#98a2b0', (i % 3) / 3)));
+    for (let wy = 0; wy < bh - 6; wy += 6) {
+      for (let wx = 2; wx < bw - 3; wx += 5) {
+        const lit = ((i * 7 + wx + wy) % 5) < 2;
+        px(c, bx + wx, GROUND_Y - 26 - bh + 4 + wy, 2, 3, lit ? mix('#ffe9a0', '#8a8f9a', dk < 0.4 ? 0.7 : 0) : sh('#4a5260'));
+      }
+    }
+  }
+  // the ice
+  px(c, 0, GROUND_Y - 26, W, 26, sh('#8fb8c9'));
+  px(c, 0, GROUND_Y - 22, W, H, sh('#cfe4ee'));
+  px(c, 0, GROUND_Y + 6, W, H, sh('#e2f0f6'));
+  const rnd = mulberry(1986);
+  for (let i = 0; i < 90; i++) {
+    const x = rnd() * W, y = GROUND_Y - 20 + rnd() * (H - GROUND_Y + 20);
+    px(c, x, y, 3 + rnd() * 9, 1, sh('#ffffff'));
+  }
+  // the rail round the edge
+  px(c, 0, GROUND_Y - 27, W, 2, sh('#3a4048'));
+  for (let x = 4; x < W; x += 16) px(c, x, GROUND_Y - 27, 2, 8, sh('#4a5058'));
+  // skaters, going round
+  for (let i = 0; i < 6; i++) {
+    const a = g.t * (0.35 + i * 0.05) + i * 1.05;
+    const x = W / 2 + Math.cos(a) * (W * 0.34);
+    const y = GROUND_Y + 8 + Math.sin(a) * 16;
+    const col = ['#c9453b', '#3f8fd0', '#e8b23a', '#6b3a8a', '#2f9670', '#d9707c'][i];
+    const lean = Math.cos(a) > 0 ? 1 : -1;
+    px(c, x - 2, y - 10, 4, 7, sh(col));
+    pcircle(c, x, y - 12, 2, sh('#e8c9a8'));
+    px(c, x + lean * 3, y - 8, 3, 2, sh(col));
+    px(c, x - 1, y - 3, 2, 3, sh('#3a3a44'));
+    px(c, x - 2, y, 5, 1, sh('#9aa4b0'));
+    c.globalAlpha = 0.25; px(c, x - 6, y + 1, 12, 1, '#ffffff'); c.globalAlpha = 1;
+  }
+}
+
+/* --- the man in the red tie, and the two beside him --- */
+function drawSuit(c, g, s) {
+  const dk = darkness(g.timeOfDay);
+  const sh = col => mix(col, '#0a1226', dk * 0.7);
+  const x = Math.round(s.x), y = Math.round(s.y);
+  const step = s.moving ? Math.abs(Math.sin(g.t * 6)) * 1.5 : 0;
+  const yy = y - step;
+  const suit = sh('#232838'), suitLit = sh('#39405a'), skin = sh('#e0a878');
+
+  // the two beside him, in grey
+  for (const side of [-1, 1]) {
+    const gx = x + side * 15;
+    px(c, gx - 3, yy - 20, 7, 20, sh('#3a3f4a'));
+    pcircle(c, gx, yy - 23, 3, sh('#c9a078'));
+    px(c, gx - 3, yy - 25, 7, 2, sh('#2a2f38'));
+    px(c, gx - 1, yy - 22, 2, 1, sh('#1a1a24'));      // dark glasses
+  }
+
+  c.globalAlpha = 0.3; pellipse(c, x, y + 1, 9, 3, '#0d1a08'); c.globalAlpha = 1;
+  // the long dark coat
+  px(c, x - 6, yy - 26, 12, 27, suit);
+  px(c, x - 6, yy - 26, 4, 27, suitLit);
+  px(c, x - 1, yy - 24, 2, 20, sh('#f0f0f0'));        // the shirt
+  // the tie, which is longer than a tie
+  px(c, x - 1, yy - 23, 2, 18, sh('#c9202a'));
+  px(c, x - 1, yy - 23, 1, 18, sh('#e83a44'));
+  px(c, x - 2, yy - 24, 4, 2, sh('#a01820'));
+  // head
+  pcircle(c, x, yy - 30, 4.4, skin);
+  px(c, x - 4, yy - 33, 9, 3, sh('#e8c86a'));         // the hair
+  px(c, x - 5, yy - 32, 3, 2, sh('#f0d888'));
+  px(c, x + 2, yy - 34, 4, 2, sh('#f0d888'));
+  px(c, x - 3, yy - 30, 2, 1, sh('#3a2a1a'));
+  px(c, x + 2, yy - 30, 2, 1, sh('#3a2a1a'));
+  px(c, x - 2, yy - 27, 4, 1, sh('#b07858'));
+  // one hand out
+  px(c, x + 5, yy - 20, 4, 2, skin);
+}
+
 /* the lane itself: pale earth widening out of the west, with two old ruts */
 function drawLaneRoad(c, g) {
   const dk = darkness(g.timeOfDay);
@@ -3298,6 +3599,7 @@ window.SPR = {
   drawHall, drawTrophy, drawTrophyReflection, trophySprite, drawPlinth, drawHeaven, drawHeavenBackdrop, drawGhostTree, drawSoul,
   drawGarden, gardenSlotPos, gardenWidth, GARDEN, drawCloudTunnel, drawLetterbox, drawRays, drawGrowingTree, flame,
   drawZzz, drawGear, drawSnailParcel, drawWordPop, drawImpactLines, squashTransform, drawScrollFrame, drawSheet, drawRod, drawSeal, PAPER, snailSkin, drawShell, SNAIL_SHELLS, SNAIL_PATTERNS, drawNoc, drawNocCamp, drawTravelArrow, travelArrowBox, drawAreaTitle, drawPickup,
+  drawSenecaScene, drawBridgeScene, drawMallScene, drawTerraceScene, drawRinkScene, drawSuit, drawStillWater,
   drawCosyFoliage, drawFallenLog, drawStandingStone, drawVines, drawHedgerow, drawLaneRoad,
   drawBackpackSprite, drawBagButton
 };

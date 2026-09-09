@@ -536,6 +536,17 @@ DATA.shop = [
    Unlocked by the engine via ACH('id').
    ------------------------------------------------------------------------- */
 DATA.achievements = [
+  // the park itself
+  { id: 'map',         kind: 'task', icon: 'globe',   name: 'Eight Hundred Acres',   desc: "Look at the map of the park." },
+  { id: 'area2',       kind: 'task', icon: 'reach',   name: 'Off The Lawn',          desc: "Walk to a second place in the park." },
+  { id: 'area4',       kind: 'goal', icon: 'reach',   name: 'Half The Park',         desc: "Get four of the park's places open." },
+  { id: 'area6',       kind: 'goal', icon: 'reach',   name: 'Most Of It',            desc: "Get six of the park's places open." },
+  { id: 'area8',       kind: 'chal', icon: 'globe',   name: 'Every Gate',            desc: "Open every place in the park." },
+  { id: 'areaall',     kind: 'chal', icon: 'globe',   name: 'Walked All Of It',      desc: "Stand in every place in the park." },
+  { id: 'seneca',      kind: 'goal', icon: 'ledger',  name: 'Say The Name',          desc: "Stand where Seneca Village stood." },
+  { id: 'rink',        kind: 'task', icon: 'drop',    name: 'Refrigerated Since 1950', desc: "Find the rink." },
+  { id: 'suit',        kind: 'task', icon: 'ledger',  name: 'The Man In The Red Tie', desc: "Watch somebody cross the rink." },
+  { id: 'suit5',       kind: 'goal', icon: 'ledger',  name: 'The Whole Record',      desc: "Hear everything the oak actually watched him do." },
   // talking, which is the game
   { id: 'topics',      kind: 'task', icon: 'book',    name: 'The Running Order',     desc: "Look up what he still has to talk about." },
   { id: 'set1',        kind: 'task', icon: 'mouth',   name: 'He Has More',           desc: "Listen long enough that he opens a second subject." },
@@ -680,6 +691,16 @@ DATA.achievements = [
    ENDINGS
    ------------------------------------------------------------------------- */
 DATA.endings = [
+  {
+    id: 'walker', name: 'THE WALKER', icon: 'globe',
+    title: "You stood in every part of this park.",
+    body: "The Ramble, the bridge, the Mall, the terrace, the north woods, the rink, and the quiet " +
+          "rectangle of grass up the west side where two hundred and twenty-five people lived until " +
+          "1857. Eight hundred and forty-three acres, and you went and stood in all of it, which is " +
+          "more than most people who live here manage in a lifetime. He watched you go and come back " +
+          "seven times, and he was pleased about it, and he will deny that.",
+    hint: "Open every place on the map, and go and stand in each one."
+  },
   {
     id: 'commons', name: 'THE COMMONS', icon: 'ledger',
     title: "You let a tree tell you who has been deciding things.",
@@ -997,10 +1018,10 @@ DATA.expansions = [
 ];
 
 DATA.houseLines = [
-  "The keeper's cottage. Nobody has lived in it since 1974 and the kettle is still warm.",
+  "The keeper's hut. Nobody has worked out of it since 1974 and the kettle is still warm.",
   "You may go in. You will find one chair, one window and nine hundred years of quiet.",
   "That is where the ledger is kept. Somebody has to write down what the park is worth.",
-  "I watched them build it. Took eleven weeks. I have taken nine hundred years and I am still not finished."
+  "I watched them build it. Eleven weeks. I have taken nine hundred years and I am still not finished."
 ];
 
 DATA.boardLines = [
@@ -1047,9 +1068,22 @@ DATA.lines = DATA.lines.concat([
 
 /* ---- the areas you can walk to ---- */
 DATA.areas = [
-  { id: 'lane',   name: 'THE WEST LANE',   sub: 'where the road forgets to go' },
-  { id: 'oak',    name: 'THE OAK',         sub: 'he has not moved' },
-  { id: 'hollow', name: 'THE EAST HOLLOW', sub: 'quiet, mossy, slightly too green' }
+  { id: 'seneca',  name: 'SENECA VILLAGE',    sub: 'it was here first',
+    need: { heard: 72 }, locked: 'He will not take you there until he has told you who decided about this land.' },
+  { id: 'lane',    name: 'THE RAMBLE',        sub: 'thirty-six acres of deliberate confusion',
+    need: {} },
+  { id: 'bridge',  name: 'BOW BRIDGE',        sub: 'cast iron over still water',
+    need: { bag: true }, locked: 'Nothing to carry across it yet. Find something to carry things in.' },
+  { id: 'oak',     name: 'THE GREAT OAK',     sub: 'he has not moved',
+    need: {} },
+  { id: 'mall',    name: 'THE MALL',          sub: 'the only straight line in the park',
+    need: { heard: 8 }, locked: 'Stay and listen a while first. He has eight things to get through.' },
+  { id: 'hollow',  name: 'THE NORTH WOODS',   sub: 'the part they let go wild',
+    need: {} },
+  { id: 'terrace', name: 'BETHESDA TERRACE',  sub: 'the angel, and the water',
+    need: { jobs: 1 }, locked: 'The terrace is shut for works. Finish a job for somebody and it opens.' },
+  { id: 'rink',    name: 'THE WOLLMAN RINK',  sub: 'refrigerated since 1950',
+    need: { heard: 34 }, locked: 'Not yet. He is nowhere near finished with you.' }
 ];
 
 /* ---- NOC ---- */
@@ -1317,41 +1351,43 @@ DATA.gardenLines = [
    standing under him, and who was in the room when it was decided.
    ========================================================================= */
 DATA.lines = DATA.lines.concat([
-  { id: 'w01', tag: 'power', mood: 'idle',  text: "This field was common land. Everyone's cows, everyone's firewood, everyone's mushrooms. Then it was fenced, and it was one man's. Nobody voted. There was a document." },
-  { id: 'w02', tag: 'power', mood: 'smug',  text: "I have outlived nineteen governments and every single one of them said the situation they inherited was unprecedented." },
-  { id: 'w03', tag: 'power', mood: 'think', text: "Politics, as far as I can tell from down here, is the argument about who has to move and who gets to stay." },
-  { id: 'w04', tag: 'power', mood: 'sad',   text: "They enclosed the commons and called it improvement. It probably was, for the soil. Nobody asked the people who had been eating off it." },
-  { id: 'w05', tag: 'power', mood: 'idle',  text: "Every so often somebody nails a notice to me. A tax, a law, a name for a war. I am the oldest noticeboard in the parish and I have never once agreed to it." },
-  { id: 'w06', tag: 'power', mood: 'think', text: "The men who decided about this field never stood in it. That is the single most consistent thing I have observed in nine hundred years." },
-  { id: 'w07', tag: 'power', mood: 'shock', text: "They moved the parish boundary in 1743 and half the village woke up in a different jurisdiction with different rights. Same beds. Same mud. Different rules." },
-  { id: 'w08', tag: 'power', mood: 'idle',  text: "A border is a decision that hardens. Give it two generations and people will tell you it is geography." },
-  { id: 'w09', tag: 'power', mood: 'sad',   text: "The mill came, and the wages came, and the children went into the mill. Both things were true at once. That is usually how it goes and nobody wants to hear it." },
-  { id: 'w10', tag: 'power', mood: 'smug',  text: "I have heard 'there is no alternative' in four different accents across three centuries. There was, each time. It was just expensive for somebody specific." },
-  { id: 'w11', tag: 'power', mood: 'think', text: "Voting is a strange, thin, magnificent thing. A whole afternoon of power, once every few years, and then back to the mill. I would still queue for it." },
-  { id: 'w12', tag: 'power', mood: 'idle',  text: "They came round canvassing last spring. Both of them promised the same three things in a different order and neither of them mentioned the water." },
-  { id: 'w13', tag: 'power', mood: 'sad',   text: "The village had a hall, a surgery, a bus and a library. It has one of them left. Nobody announced the closing of a village. It was done in instalments." },
-  { id: 'w14', tag: 'power', mood: 'think', text: "Every generation is told the previous one had it easier and the next one will have it worse. From here it looks less like a slope and more like a tide with an argument on top of it." },
-  { id: 'w15', tag: 'power', mood: 'shock', text: "Somebody stood on a crate under me in 1889 and said working men should have a say in what the country did with them. He was arrested. He was also right, in the end, which is the usual sequence." },
-  { id: 'w16', tag: 'power', mood: 'idle',  text: "Propaganda is not lying. Lying is easy to catch. Propaganda is choosing, very carefully, which true thing you say first." },
-  { id: 'w17', tag: 'power', mood: 'think', text: "Every side in every argument I have overheard believed it was the reasonable one being pushed. All of them. Simultaneously. For nine hundred years." },
-  { id: 'w18', tag: 'power', mood: 'sad',   text: "They plant a tree when they open something and cut one down when they build something, and they photograph the first and not the second." },
-  { id: 'w19', tag: 'power', mood: 'idle',  text: "The rent on the cottage went up four times in ten years and the cottage did not change. I watched it not change. I was here the whole time." },
-  { id: 'w20', tag: 'power', mood: 'think', text: "'Who decides?' is the only political question. Everything else is a debate about the seating." },
-  { id: 'w21', tag: 'power', mood: 'smug',  text: "A politician stood under me and said we must think of future generations. I am a future generation. Nobody has ever asked me anything." },
-  { id: 'w22', tag: 'power', mood: 'sad',   text: "The stream was clean, then it was a drain, then it was clean again because people complained for eleven years. Nothing out here improves on its own. It improves because somebody would not shut up." },
-  { id: 'w23', tag: 'power', mood: 'idle',  text: "There were bread riots in the next parish. Not a movement, not an ideology. People were hungry and the price was a decision somebody had made in a warm room." },
-  { id: 'w24', tag: 'power', mood: 'think', text: "The law arrives here about thirty years after the harm and about ten years after everybody already knew." },
-  { id: 'w25', tag: 'power', mood: 'shock', text: "They put a bypass through the meadow and held a consultation about the colour of the fence." },
-  { id: 'w26', tag: 'power', mood: 'idle',  text: "I do not think people are stupid. I have listened to them for nine centuries. I think they are tired, and being tired is very useful to somebody." },
-  { id: 'w27', tag: 'power', mood: 'sad',   text: "Empire, from here, was other people's fields being decided about by men who had never stood in those either. It is the same sentence. It is only ever the same sentence." },
-  { id: 'w28', tag: 'power', mood: 'think', text: "The commons worked for four hundred years because everybody could see everybody else using it. Most things fail when nobody can see who is taking." },
-  { id: 'w29', tag: 'power', mood: 'happy', text: "The best thing this country ever did, and I say this as a tree with no politics: it decided that being ill should not bankrupt you. I heard people cry about it in this field. With relief." },
-  { id: 'w30', tag: 'power', mood: 'idle',  text: "I am not going to tell you who to vote for. I am a tree. But I will tell you that the people who benefit most from you not bothering are extremely aware of the arithmetic." },
-  { id: 'w31', tag: 'power', mood: 'think', text: "They argue about the climate as though it were an opinion. I keep the record in my rings. Nineteen seventy-six. Two thousand and three. Two thousand and twenty-two. It is not an opinion, it is a diary." },
-  { id: 'w32', tag: 'power', mood: 'sad',   text: "The council meeting about this park had eleven people in it. Nine were retired. The decision lasted forty years and none of them lived to see it land." },
-  { id: 'w33', tag: 'power', mood: 'smug',  text: "Somebody called me a stakeholder in a planning document once. Correct. I have a very large stake and it goes down eleven metres." },
-  { id: 'w34', tag: 'power', mood: 'idle',  text: "Two men fought under me over a hedge for six years. It was never about the hedge. It is almost never about the hedge." },
-  { id: 'w35', tag: 'power', mood: 'think', text: "Nothing out here has ever been given. It was asked for badly, then asked for well, then demanded, and then granted as though it had been the plan all along." }
+  { id: 'w01', tag: 'power', mood: 'idle',  text: "Eight hundred acres. Before the park there were farms, bone-boilers, pig keepers, a convent and about sixteen hundred people living on it. In 1856 the city took the lot under eminent domain." },
+  { id: 'w02', tag: 'power', mood: 'sad',   text: "Seneca Village stood up there. Founded 1825. Mostly Black landowners, three churches, a school, a burial ground. About two hundred and twenty-five people. In 1857 it was cleared for the lawn you are standing on." },
+  { id: 'w03', tag: 'power', mood: 'think', text: "Owning land in Seneca Village meant a Black man could vote in this state — you needed two hundred and fifty dollars of property, and only if you were Black. Clearing the village took the votes with the houses." },
+  { id: 'w04', tag: 'power', mood: 'idle',  text: "The newspapers of the day called the village a shantytown. I was here. It had a school and three churches. It was not a shantytown. That word was doing a job." },
+  { id: 'w05', tag: 'power', mood: 'think', text: "Politics, as far as I can tell from down here, is the argument about who has to move and who gets to stay. This park is nine hundred people's answer to that, and they were not asked." },
+  { id: 'w06', tag: 'power', mood: 'smug',  text: "I have outlived thirty-one presidents and every single administration said the situation it inherited was unprecedented." },
+  { id: 'w07', tag: 'power', mood: 'idle',  text: "Olmsted and Vaux won the design competition in 1858 with a plan called Greensward. They wanted somewhere a clerk and a banker would have to walk past each other. That part worked." },
+  { id: 'w08', tag: 'power', mood: 'sad',   text: "Eighteen sixty-three, the draft riots. Men could pay three hundred dollars to get out of the war, so the ones who could not pay went into the streets, and then the mob went after Black New Yorkers. Eleven were lynched. The Colored Orphan Asylum was burned." },
+  { id: 'w09', tag: 'power', mood: 'think', text: "Every generation is told the last one had it easier and the next will have it worse. From here it looks less like a slope and more like a tide with an argument on top of it." },
+  { id: 'w10', tag: 'power', mood: 'smug',  text: "Tammany Hall ran the park for a while. Every gardener was somebody's cousin. The flowerbeds were magnificent. The books were fiction." },
+  { id: 'w11', tag: 'power', mood: 'idle',  text: "There were sheep on that meadow until 1934. Real ones. They were moved to Brooklyn because the city was worried people would eat them. That is what the Depression was actually like." },
+  { id: 'w12', tag: 'power', mood: 'sad',   text: "Nineteen thirty-one: they drained the old reservoir and about two hundred men out of work built a village of shacks in the hole. Stone masons, bricklayers. They made it well, because that was their trade. The city cleared it in 1933." },
+  { id: 'w13', tag: 'power', mood: 'think', text: "They called it Hooverville, after the president. Naming a slum after the man in charge is the most concise political act I have ever watched." },
+  { id: 'w14', tag: 'power', mood: 'idle',  text: "Robert Moses had the parks from 1934 to 1960. Twenty-odd playgrounds in this park alone, and a rink, and the zoo rebuilt. Also whole neighbourhoods gone for expressways. Both true. Nobody wants it to be both." },
+  { id: 'w15', tag: 'power', mood: 'think', text: "Moses never learned to drive. The man who put a highway through the Bronx was driven everywhere. The men who decide about a place are almost never standing in it." },
+  { id: 'w16', tag: 'power', mood: 'sad',   text: "By 1979 the lawns were dust, the benches were firewood and the Sheep Meadow was bare earth. A city does not announce that it is giving up on a place. It does it in instalments." },
+  { id: 'w17', tag: 'power', mood: 'happy', text: "Then a few thousand people who had no power at all formed a conservancy in 1980 and refused to go away, and the grass came back. Nothing out here improves on its own. It improves because somebody would not shut up." },
+  { id: 'w18', tag: 'power', mood: 'idle',  text: "The city spent six years and a great deal of money failing to rebuild the ice rink. In 1986 a developer from Queens took the job over and it opened that winter. He has mentioned it a few times since. It is a good rink." },
+  { id: 'w19', tag: 'power', mood: 'sad',   text: "Nineteen eighty-nine. A woman was attacked near the reservoir and nearly died. Five boys, fourteen to sixteen, were arrested. That developer paid for full-page adverts in four newspapers calling for the death penalty back. The boys were convicted." },
+  { id: 'w20', tag: 'power', mood: 'sad',   text: "In 2002 another man confessed to that attack, and the DNA was his, and the five were exonerated. They had done thirteen years between them. The city settled for forty-one million in 2014. They were children when the adverts ran." },
+  { id: 'w21', tag: 'power', mood: 'think', text: "The men who were freed are alive. So is the man who paid for the adverts, and he has been president twice. They are all still in this city. I am not going to tell you what to make of that. I am telling you I watched all of it from here." },
+  { id: 'w22', tag: 'power', mood: 'idle',  text: "Somebody nails a notice to me about once a decade. A bond issue, a curfew, a name for a war. I am the oldest noticeboard in Manhattan and I have never once been consulted." },
+  { id: 'w23', tag: 'power', mood: 'shock', text: "They redrew the district lines in the nineties and half the neighbourhood woke up voting in a different race. Same beds. Same rent. Different arithmetic." },
+  { id: 'w24', tag: 'power', mood: 'think', text: "Propaganda is not lying. Lying is easy to catch. Propaganda is choosing very carefully which true thing you print first, and how large." },
+  { id: 'w25', tag: 'power', mood: 'idle',  text: "Every side in every argument I have overheard believed it was the reasonable one being pushed. All of them. At once. For nine hundred years." },
+  { id: 'w26', tag: 'power', mood: 'sad',   text: "The rent on the buildings along the east side went up eleven times in my lifetime and the buildings did not change. I watched them not change. I was here the whole time." },
+  { id: 'w27', tag: 'power', mood: 'think', text: "'Who decides?' is the only political question. Everything else is a debate about the seating." },
+  { id: 'w28', tag: 'power', mood: 'smug',  text: "A candidate stood on the Mall and said we must think of future generations. I am a future generation. Nobody has ever asked me anything." },
+  { id: 'w29', tag: 'power', mood: 'idle',  text: "Half a million people came for two men with guitars in 1981. Same grass. No trouble. It can be done. It just cannot be done cheaply and it cannot be done by accident." },
+  { id: 'w30', tag: 'power', mood: 'think', text: "The park works because everyone can see everyone else using it. Most things fail the moment nobody can see who is taking." },
+  { id: 'w31', tag: 'power', mood: 'idle',  text: "I do not think people are stupid. I have listened to them for nine centuries. I think they are tired, and being tired is extremely useful to somebody." },
+  { id: 'w32', tag: 'power', mood: 'think', text: "They argue about the climate as though it were an opinion. I keep the record in my rings. Eighteen sixteen. Nineteen thirty-six. Twenty twenty-three. It is not an opinion, it is a diary." },
+  { id: 'w33', tag: 'power', mood: 'smug',  text: "A planning document once called me a stakeholder. Correct. I have a very large stake and it goes down eleven metres." },
+  { id: 'w34', tag: 'power', mood: 'idle',  text: "Two men argued under me about a bench for six years. It was never about the bench. It is almost never about the bench." },
+  { id: 'w35', tag: 'power', mood: 'think', text: "Nothing in this park was given. It was asked for badly, then asked for well, then demanded, and then granted as though it had been the plan all along." },
+  { id: 'w36', tag: 'power', mood: 'idle',  text: "I am not going to tell you who to vote for. I am a tree. I will tell you that the people who do best out of you not bothering are extremely aware of the arithmetic." },
+  { id: 'w37', tag: 'power', mood: 'happy', text: "The single best thing I ever watched happen on this ground: they built a playground where a fence used to be, and nobody had to prove they lived nearby to use it." }
 ]);
 
 DATA.replies.power = [
@@ -1381,7 +1417,7 @@ DATA.sets = [
   { id: 'meta',  at: 52, name: 'THE UNCOMFORTABLE SET', tags: ['meta'],
     intro: "I am going to say some things about you, and about this, and about the fact that there is a screen. You may not enjoy it. Sit down." },
   { id: 'power', at: 72, name: 'POWER, AND WHO HAS IT', tags: ['power'],
-    intro: "Here is the set I keep for people who come back. Nine hundred years in one field, watching who decides things about it. I take no side and I will not tell you how to vote. But you should know what I saw." },
+    intro: "Right. Here is the set I keep for people who come back. Nine hundred years on this ground, most of it before there was a park, watching who decided about it. I take no side, I name no party, and I will not tell you how to vote. But you should know what I watched from here." },
   { id: 'world', at: 100, name: 'THE REAL PARTS', tags: ['world'],
     intro: "Last set. This is the one I would rather not do. It is the world as it actually is, for people who are in it right now. I will not make jokes in this one." }
 ];
@@ -1393,6 +1429,78 @@ DATA.setOpen = [
 ];
 
 DATA.setAllDone = "That is everything. Nine hundred years, all of it, handed over to one person who kept clicking. I have nothing left to introduce and I am oddly upset about it.";
+
+
+/* -------------------------------------------------------------------------
+   NEW YORK
+   He is nine hundred years old and about a hundred and seventy of those have
+   had a city round them.
+   ------------------------------------------------------------------------- */
+DATA.lines = DATA.lines.concat([
+  { id: 'n01', tag: 'goofy', mood: 'smug',  text: "Eight and a half million people on this island and every single one of them thinks they discovered this bench." },
+  { id: 'n02', tag: 'goofy', mood: 'idle',  text: "There is a subway under me. Every eleven minutes my roots hum. I have been humming since 1904 and I still have not learned the tune." },
+  { id: 'n03', tag: 'goofy', mood: 'happy', text: "A man sells pretzels at the Fifth Avenue gate and has done for thirty-one years. He is the most reliable institution I have ever met." },
+  { id: 'n04', tag: 'goofy', mood: 'shock', text: "A yellow cab came THROUGH the railings in 1998. The driver was fine. I was not consulted. The railings were replaced. Nobody apologised to me." },
+  { id: 'n05', tag: 'goofy', mood: 'idle',  text: "Joggers. Thousands of them. Going round and round a body of water at six in the morning, voluntarily, in weather. I have watched this for fifty years and I have no explanation." },
+  { id: 'n06', tag: 'goofy', mood: 'sly',   text: "Somebody proposed marriage under me on a Tuesday in April. She said yes. They come back every April. I have never once been thanked and I am the setting." },
+  { id: 'n07', tag: 'goofy', mood: 'idle',  text: "The carriage horses go past at four. They know the route better than the drivers do. One of them looks at me every single time." },
+  { id: 'n08', tag: 'wise',  mood: 'think', text: "Eight million people agreed, without a meeting, that this eight hundred acres would not be sold. That is the most impressive thing this species has ever done in my presence." },
+  { id: 'n09', tag: 'wise',  mood: 'idle',  text: "This is the most filmed park on earth and I have never been in shot. Not once. I am nine hundred years old with excellent bark and no agent." },
+  { id: 'n10', tag: 'weird', mood: 'creepy',text: "There is a plaque on a bench near me for a woman who died in 1974, and somebody still leaves a coffee on it. Fifty years. I have never seen who." }
+]);
+
+/* -------------------------------------------------------------------------
+   THE MAN IN THE RED TIE
+   A real person with a documented history in this park, so the tree does what
+   the tree always does: says what it watched, names the year, and leaves the
+   conclusion to you. He gets no invented dialogue — the oak narrates.
+   ------------------------------------------------------------------------- */
+DATA.suitLines = [
+  "Him. He is from Queens. He rebuilt that ice rink in 1986 after the city had spent six years failing to, and it opened that winter, and it works.",
+  "In 1989 he paid for full-page adverts in four newspapers about five boys arrested in this park. They were convicted. In 2002 another man's confession and the DNA cleared them.",
+  "He has been president of this country twice. He is standing in the park he took out adverts about. I have no comment. I have a record.",
+  "The five who were cleared are alive. So is he. So am I. We are all still here, which is the part nobody finds convenient.",
+  "I watched him cut a ribbon down there. I watched the boys' mothers on the same grass in 1990. Same grass. That is all I have got and it is quite a lot."
+];
+
+DATA.suitOakAsides = [
+  "Do not shout at him. It has never once worked and I have watched everyone try.",
+  "He does not know I am here. Nobody knows I am here. It is my one advantage.",
+  "Whatever you think of him, this is a park, and he paid for a rink in it. Both facts fit in the same afternoon. Most facts do."
+];
+
+/* things the areas say when you arrive */
+DATA.areaLines = {
+  seneca: [
+    "Two hundred and twenty-five people. Three churches. A school. This exact grass.",
+    "There is a marker now. It took until 2001 for anyone to put one up.",
+    "Say the name out loud when you are here. That is the whole job."
+  ],
+  ramble: [
+    "Thirty-six acres designed to make you lose your way on purpose. It works on everybody.",
+    "Two hundred and thirty species of bird come through here. They all complain about the rent."
+  ],
+  bridge: [
+    "Cast iron, 1862. It has held every proposal, argument and reconciliation on the west side.",
+    "People stand in the middle of it and go quiet. Every time. Nobody tells them to."
+  ],
+  mall: [
+    "The only straight line in eight hundred acres, and the largest stand of American elms left in the country.",
+    "They planted these to make you feel like something. It is cheating and it works."
+  ],
+  terrace: [
+    "The angel is called the Angel of the Waters. Emma Stebbins sculpted her in 1868 — the first woman in this city to get a public commission.",
+    "The water she is blessing is the Croton aqueduct. Clean water arriving in a filthy city. That is what the statue is actually about."
+  ],
+  rink: [
+    "Refrigerated since 1950. Rebuilt in 1986 by a developer from Queens after the city could not manage it.",
+    "Children skate on it in circles all winter and none of them know a single thing about any of that, which is correct."
+  ],
+  hollow: [
+    "Forty acres they agreed to stop tidying. It is the only part of this park that is allowed to be a wood.",
+    "Things get left behind up here. That is why you should look."
+  ]
+};
 </script>
 <script>
 /* =========================================================================
@@ -4840,7 +4948,7 @@ function drawNocCamp(c, g, x, y) {
 /* -------------------------------------------------------------------------
    WAYS OUT — a signpost arrow at each edge you can actually leave through
    ------------------------------------------------------------------------- */
-function drawTravelArrow(c, g, side, label, hover) {
+function drawTravelArrow(c, g, side, label, hover, locked) {
   const dk = darkness(g.timeOfDay);
   const y = Math.round(GROUND_Y - 26);
   const w = Math.max(46, F.textWidth(label, 1) + 22);
@@ -4852,7 +4960,7 @@ function drawTravelArrow(c, g, side, label, hover) {
   px(c, side < 0 ? x + 8 : x + w - 10, yy + 13, 2, 22, mix('#5a3a1e', '#0a1226', dk * 0.7));
 
   // the board, cut to a point at the travelling end
-  const body = hover ? '#c39a63' : '#a0703c';
+  const body = locked ? (hover ? '#6f6257' : '#59503f') : (hover ? '#c39a63' : '#a0703c');
   roundRect(c, x - 1, yy - 1, w + 2, 15, 3, INK);
   roundRect(c, x, yy, w, 13, 2, mix(body, '#0a1226', dk * 0.55));
   px(c, x + 2, yy + 2, w - 4, 1, mix('#c9a06a', '#0a1226', dk * 0.5));
@@ -4861,7 +4969,18 @@ function drawTravelArrow(c, g, side, label, hover) {
     px(c, px2, yy + i, 1, 13 - i * 2, INK);
     px(c, px2 + (side < 0 ? 1 : -1), yy + 1 + i, 1, 11 - i * 2, mix(body, '#0a1226', dk * 0.55));
   }
-  F.drawTextCentered(c, x + w / 2 + (side < 0 ? 3 : -3), yy + 4, label, hover ? '#2b1c10' : '#ffe9b0', 1);
+  F.drawTextCentered(c, x + w / 2 + (side < 0 ? 3 : -3), yy + 4, label,
+                     locked ? '#b8ac98' : (hover ? '#2b1c10' : '#ffe9b0'), 1);
+  if (locked) {
+    // a padlock hanging off the board
+    const lx = side < 0 ? x + w + 2 : x - 6, ly = yy + 2;
+    px(c, lx, ly + 3, 6, 6, INK);
+    px(c, lx + 1, ly + 4, 4, 4, '#c9a86a');
+    px(c, lx + 1, ly, 4, 4, INK);
+    px(c, lx + 2, ly + 1, 2, 3, '#8a8a94');
+    dot(c, lx + 2, ly + 5, '#5a4a2a');
+    return;
+  }
 
   // a little walking arrow that nudges toward the edge
   const ax = side < 0 ? x + 5 : x + w - 5;
@@ -5042,6 +5161,296 @@ function drawHedgerow(c, g, gapX) {
   }
 }
 
+/* =========================================================================
+   THE REST OF THE PARK
+   Six more places, all built from the same primitives as everything else.
+   ========================================================================= */
+
+/* --- water, used by the bridge and the rink --- */
+function drawStillWater(c, g, top, cols) {
+  const dk = darkness(g.timeOfDay);
+  const sh = col => mix(col, '#0a1226', dk * 0.72);
+  const band = cols || ['#5a8ab0', '#4a7a9e', '#3d6a8a'];
+  px(c, 0, top, W, H - top, sh(band[0]));
+  px(c, 0, top + 14, W, H - top, sh(band[1]));
+  px(c, 0, top + 34, W, H - top, sh(band[2]));
+  for (let y = top + 2; y < H; y += 4) {
+    const ph = Math.sin(g.t * 0.6 + y * 0.22);
+    c.globalAlpha = 0.30;
+    px(c, (ph * 14 + y * 5) % W - 20, y, 20, 1, sh('#c8e4f4'));
+    px(c, (ph * -11 + y * 9 + 140) % W - 20, y + 2, 13, 1, sh('#e8f4ff'));
+    c.globalAlpha = 1;
+  }
+}
+
+/* --- SENECA VILLAGE: foundation stones, a marker, and nothing else --- */
+function drawSenecaScene(c, g) {
+  const dk = darkness(g.timeOfDay);
+  const sh = col => mix(col, '#0a1226', dk * 0.75);
+  const rnd = mulberry(1857);
+  // the outline of a house that is not there
+  const hx = Math.round(W * 0.34), hy = GROUND_Y + 8;
+  for (let i = 0; i < 22; i++) {
+    const x = hx - 44 + i * 4;
+    px(c, x, hy, 4, 3, sh(i % 2 ? '#8a8a92' : '#9a9aa2'));
+    px(c, x, hy, 4, 1, sh('#b6b6c0'));
+  }
+  for (let i = 0; i < 9; i++) {
+    px(c, hx - 44, hy - i * 4, 4, 3, sh(i % 2 ? '#8a8a92' : '#9a9aa2'));
+    px(c, hx + 40, hy - i * 4, 4, 3, sh(i % 2 ? '#8a8a92' : '#9a9aa2'));
+  }
+  // grass growing back through it
+  for (let i = 0; i < 60; i++) {
+    const x = hx - 44 + rnd() * 88, y = hy - rnd() * 34;
+    px(c, x, y, 1, 2 + rnd() * 3, sh('#4a8a3a'));
+  }
+  // the marker
+  const mx = Math.round(W * 0.66), my = GROUND_Y + 6;
+  c.globalAlpha = 0.3; pellipse(c, mx, my + 2, 13, 3, '#0d1a08'); c.globalAlpha = 1;
+  px(c, mx - 2, my - 6, 4, 8, sh('#6a6a74'));
+  px(c, mx - 14, my - 26, 28, 21, sh('#3a3a44'));
+  px(c, mx - 13, my - 25, 26, 19, sh('#5a5a66'));
+  px(c, mx - 13, my - 25, 26, 2, sh('#7a7a86'));
+  tinyText(c, mx - 11, my - 22, 'SENECA', sh('#e0e0e8'));
+  tinyText(c, mx - 11, my - 16, 'VILLAGE', sh('#e0e0e8'));
+  // flowers somebody left
+  for (let i = 0; i < 7; i++) {
+    const fx = mx - 10 + rnd() * 20;
+    px(c, fx, my - 2, 1, 3, sh('#3a7a2a'));
+    pcircle(c, fx, my - 4, 1.6, sh(['#ffffff', '#ffd8e8', '#ffe066'][i % 3]));
+  }
+}
+
+/* --- BOW BRIDGE: cast iron over still water --- */
+function drawBridgeScene(c, g) {
+  const dk = darkness(g.timeOfDay);
+  const sh = col => mix(col, '#0a1226', dk * 0.7);
+  drawStillWater(c, g, GROUND_Y + 6);
+  const cx = Math.round(W / 2), top = GROUND_Y - 12, span = Math.min(W - 40, 210);
+  // the deck: a shallow arch
+  for (let i = 0; i <= span; i++) {
+    const p = i / span;
+    const y = Math.round(top + Math.sin(Math.PI * p) * -12 + 12);
+    px(c, cx - span / 2 + i, y, 1, 5, sh('#d8cfae'));
+    px(c, cx - span / 2 + i, y, 1, 1, sh('#f2ead0'));
+    px(c, cx - span / 2 + i, y + 5, 1, 2, sh('#8a8272'));
+  }
+  // the cast-iron balustrade, the eight arches it is famous for
+  for (let a = 0; a < 8; a++) {
+    const x0 = cx - span / 2 + (a + 0.5) * (span / 8);
+    const p = (a + 0.5) / 8;
+    const y = Math.round(top + Math.sin(Math.PI * p) * -12 + 12);
+    for (let k = -12; k <= 12; k++) {
+      const ay = y - 10 + Math.round((k * k) / 16);
+      px(c, x0 + k, ay, 1, 1, sh('#c9c2a8'));
+    }
+    px(c, x0, y - 11, 1, 11, sh('#b8b09a'));
+  }
+  for (let i = 0; i <= span; i += 1) {
+    const p = i / span;
+    const y = Math.round(top + Math.sin(Math.PI * p) * -12);
+    px(c, cx - span / 2 + i, y - 1, 1, 2, sh('#e8e0c4'));
+  }
+  // reflection
+  c.globalAlpha = 0.22;
+  for (let i = 0; i <= span; i += 2) {
+    const p = i / span;
+    const y = Math.round(top + Math.sin(Math.PI * p) * -12 + 12);
+    px(c, cx - span / 2 + i, GROUND_Y + 40 + (GROUND_Y + 18 - y), 1, 3, '#f2ead0');
+  }
+  c.globalAlpha = 1;
+}
+
+/* --- THE MALL: an avenue of elms, receding --- */
+function drawMallScene(c, g) {
+  const dk = darkness(g.timeOfDay);
+  const s = SEASON[g.season];
+  const sh = col => mix(col, '#050c18', dk * 0.8);
+  // the paving, in perspective
+  for (let i = 0; i < H - GROUND_Y + 8; i++) {
+    const w = 24 + i * 3.4;
+    px(c, W / 2 - w / 2, GROUND_Y - 6 + i, w, 1, sh(mix('#b0a288', '#8a7e68', i / 40)));
+  }
+  for (let i = 0; i < 9; i++) {
+    const t = i / 9, y = GROUND_Y - 6 + t * (H - GROUND_Y + 8);
+    const w = 24 + t * (H - GROUND_Y + 8) * 3.4;
+    px(c, W / 2 - w / 2, y, w, 1, sh('#6a5f4c'));
+  }
+  // two rows of elms, big ones near, small ones far
+  for (const side of [-1, 1]) {
+    for (let i = 0; i < 5; i++) {
+      const t = i / 5;
+      const x = W / 2 + side * (18 + t * (W * 0.42));
+      const base = GROUND_Y + 2 + t * 26;
+      const h = 40 + t * 52;
+      px(c, x - 1 - t * 2, base - h, 3 + t * 4, h, sh('#6b5744'));
+      px(c, x - 1 - t * 2, base - h, 1 + t, h, sh('#8a7258'));
+      // the canopies meet overhead, which is the whole point of the Mall
+      pellipse(c, x, base - h - 4 - t * 8, 16 + t * 20, 10 + t * 14, sh(s.dark));
+      pellipse(c, x - 2, base - h - 8 - t * 10, 12 + t * 15, 7 + t * 10, sh(s.t0));
+      if (t > 0.5) pellipse(c, x - 3, base - h - 12 - t * 10, 8 + t * 9, 5 + t * 6, sh(s.t1));
+    }
+  }
+  // benches down both sides
+  for (const side of [-1, 1]) {
+    for (let i = 0; i < 3; i++) {
+      const x = W / 2 + side * (34 + i * 30);
+      drawBench(c, g, x, GROUND_Y + 22 + i * 6);
+    }
+  }
+}
+
+/* --- BETHESDA TERRACE: the arcade and the angel --- */
+function drawTerraceScene(c, g) {
+  const dk = darkness(g.timeOfDay);
+  const sh = col => mix(col, '#0a1226', dk * 0.72);
+  const cx = Math.round(W / 2);
+  // the sandstone arcade behind
+  px(c, 0, GROUND_Y - 34, W, 30, sh('#c9a878'));
+  px(c, 0, GROUND_Y - 34, W, 3, sh('#e0c49a'));
+  px(c, 0, GROUND_Y - 7, W, 3, sh('#a3865c'));
+  for (let a = -3; a <= 3; a++) {
+    const x = cx + a * 44;
+    for (let k = -13; k <= 13; k++) {
+      const h = Math.round(Math.sqrt(Math.max(0, 169 - k * k)));
+      px(c, x + k, GROUND_Y - 7 - h, 1, h, sh('#5a4630'));
+      px(c, x + k, GROUND_Y - 7 - h, 1, 2, sh('#8a6f4a'));
+    }
+    px(c, x - 15, GROUND_Y - 34, 3, 27, sh('#e0c49a'));
+    px(c, x + 13, GROUND_Y - 34, 3, 27, sh('#a3865c'));
+  }
+  // the plaza
+  px(c, 0, GROUND_Y - 4, W, H, sh('#b8a888'));
+  for (let y = GROUND_Y - 4; y < H; y += 6) px(c, 0, y, W, 1, sh('#a39377'));
+  for (let x = 0; x < W; x += 9) px(c, x, GROUND_Y - 4, 1, H, sh('#a39377'));
+  // the fountain basin
+  pellipse(c, cx, GROUND_Y + 30, 62, 18, sh('#8a7a5e'));
+  pellipse(c, cx, GROUND_Y + 30, 58, 15, sh('#4a7a94'));
+  pellipse(c, cx, GROUND_Y + 29, 52, 12, sh('#5f96b4'));
+  for (let i = 0; i < 5; i++) {
+    const ph = Math.sin(g.t * 0.9 + i);
+    c.globalAlpha = 0.4;
+    pellipse(c, cx + ph * 12, GROUND_Y + 28 + i * 2, 30 - i * 4, 3, '#cbe8f8');
+    c.globalAlpha = 1;
+  }
+  // the pedestal and the Angel of the Waters
+  px(c, cx - 9, GROUND_Y + 4, 18, 22, sh('#9a8a6e'));
+  px(c, cx - 12, GROUND_Y + 2, 24, 4, sh('#b8a888'));
+  px(c, cx - 6, GROUND_Y - 4, 12, 8, sh('#8a7a5e'));
+  const ay = GROUND_Y - 6;
+  const bronze = sh('#6e7a5e'), bronzeLit = sh('#93a37c'), bronzeDk = sh('#4a5440');
+  // the wings first, sweeping up and back behind her
+  for (let k = 0; k < 14; k++) {
+    const rise = Math.round(k * 1.15), len = 3 + Math.round(k * 0.55);
+    px(c, cx - 5 - k, ay - 24 - rise, 2, len, bronzeDk);
+    px(c, cx - 5 - k, ay - 24 - rise, 1, len, bronze);
+    px(c, cx + 4 + k, ay - 24 - rise, 2, len, bronze);
+    px(c, cx + 4 + k, ay - 24 - rise, 1, len, bronzeLit);
+  }
+  // the robe, falling to the plinth
+  for (let i = 0; i < 24; i++) {
+    const w2 = 5 + Math.round(i * 0.28);
+    px(c, cx - w2 / 2, ay - 22 + i, w2, 1, bronze);
+    px(c, cx - w2 / 2, ay - 22 + i, 2, 1, bronzeLit);
+    px(c, cx + w2 / 2 - 1, ay - 22 + i, 1, 1, bronzeDk);
+  }
+  pcircle(c, cx, ay - 26, 3.2, bronze);             // head
+  pcircle(c, cx - 1, ay - 27, 2, bronzeLit);
+  px(c, cx - 3, ay - 29, 7, 2, bronzeDk);           // her hair, bound up
+  px(c, cx - 8, ay - 18, 6, 2, bronze);             // the blessing hand, out and down
+  px(c, cx - 8, ay - 18, 6, 1, bronzeLit);
+  px(c, cx + 3, ay - 21, 5, 2, bronze);             // the lily in the other
+  px(c, cx + 7, ay - 24, 2, 4, bronzeDk);
+  // water falling from the blessing hand
+  for (let i = 0; i < 10; i++) {
+    const tt = (g.t * 1.5 + i * 0.16) % 1;
+    dot(c, cx - 7 + Math.sin(tt * 3) * 1.5, ay - 15 + tt * 42, sh('#dff0ff'));
+  }
+}
+
+/* --- THE WOLLMAN RINK: ice, a rail, and people going round --- */
+function drawRinkScene(c, g) {
+  const dk = darkness(g.timeOfDay);
+  const sh = col => mix(col, '#0a1226', dk * 0.7);
+  // the city behind it, because you can see it from the rink
+  for (let i = 0; i < 9; i++) {
+    const bw = 16 + (i % 3) * 10, bx = (i * 41) % (W + 20) - 10;
+    const bh = 40 + ((i * 37) % 46);
+    px(c, bx, GROUND_Y - 26 - bh, bw, bh, sh(mix('#6a7280', '#98a2b0', (i % 3) / 3)));
+    for (let wy = 0; wy < bh - 6; wy += 6) {
+      for (let wx = 2; wx < bw - 3; wx += 5) {
+        const lit = ((i * 7 + wx + wy) % 5) < 2;
+        px(c, bx + wx, GROUND_Y - 26 - bh + 4 + wy, 2, 3, lit ? mix('#ffe9a0', '#8a8f9a', dk < 0.4 ? 0.7 : 0) : sh('#4a5260'));
+      }
+    }
+  }
+  // the ice
+  px(c, 0, GROUND_Y - 26, W, 26, sh('#8fb8c9'));
+  px(c, 0, GROUND_Y - 22, W, H, sh('#cfe4ee'));
+  px(c, 0, GROUND_Y + 6, W, H, sh('#e2f0f6'));
+  const rnd = mulberry(1986);
+  for (let i = 0; i < 90; i++) {
+    const x = rnd() * W, y = GROUND_Y - 20 + rnd() * (H - GROUND_Y + 20);
+    px(c, x, y, 3 + rnd() * 9, 1, sh('#ffffff'));
+  }
+  // the rail round the edge
+  px(c, 0, GROUND_Y - 27, W, 2, sh('#3a4048'));
+  for (let x = 4; x < W; x += 16) px(c, x, GROUND_Y - 27, 2, 8, sh('#4a5058'));
+  // skaters, going round
+  for (let i = 0; i < 6; i++) {
+    const a = g.t * (0.35 + i * 0.05) + i * 1.05;
+    const x = W / 2 + Math.cos(a) * (W * 0.34);
+    const y = GROUND_Y + 8 + Math.sin(a) * 16;
+    const col = ['#c9453b', '#3f8fd0', '#e8b23a', '#6b3a8a', '#2f9670', '#d9707c'][i];
+    const lean = Math.cos(a) > 0 ? 1 : -1;
+    px(c, x - 2, y - 10, 4, 7, sh(col));
+    pcircle(c, x, y - 12, 2, sh('#e8c9a8'));
+    px(c, x + lean * 3, y - 8, 3, 2, sh(col));
+    px(c, x - 1, y - 3, 2, 3, sh('#3a3a44'));
+    px(c, x - 2, y, 5, 1, sh('#9aa4b0'));
+    c.globalAlpha = 0.25; px(c, x - 6, y + 1, 12, 1, '#ffffff'); c.globalAlpha = 1;
+  }
+}
+
+/* --- the man in the red tie, and the two beside him --- */
+function drawSuit(c, g, s) {
+  const dk = darkness(g.timeOfDay);
+  const sh = col => mix(col, '#0a1226', dk * 0.7);
+  const x = Math.round(s.x), y = Math.round(s.y);
+  const step = s.moving ? Math.abs(Math.sin(g.t * 6)) * 1.5 : 0;
+  const yy = y - step;
+  const suit = sh('#232838'), suitLit = sh('#39405a'), skin = sh('#e0a878');
+
+  // the two beside him, in grey
+  for (const side of [-1, 1]) {
+    const gx = x + side * 15;
+    px(c, gx - 3, yy - 20, 7, 20, sh('#3a3f4a'));
+    pcircle(c, gx, yy - 23, 3, sh('#c9a078'));
+    px(c, gx - 3, yy - 25, 7, 2, sh('#2a2f38'));
+    px(c, gx - 1, yy - 22, 2, 1, sh('#1a1a24'));      // dark glasses
+  }
+
+  c.globalAlpha = 0.3; pellipse(c, x, y + 1, 9, 3, '#0d1a08'); c.globalAlpha = 1;
+  // the long dark coat
+  px(c, x - 6, yy - 26, 12, 27, suit);
+  px(c, x - 6, yy - 26, 4, 27, suitLit);
+  px(c, x - 1, yy - 24, 2, 20, sh('#f0f0f0'));        // the shirt
+  // the tie, which is longer than a tie
+  px(c, x - 1, yy - 23, 2, 18, sh('#c9202a'));
+  px(c, x - 1, yy - 23, 1, 18, sh('#e83a44'));
+  px(c, x - 2, yy - 24, 4, 2, sh('#a01820'));
+  // head
+  pcircle(c, x, yy - 30, 4.4, skin);
+  px(c, x - 4, yy - 33, 9, 3, sh('#e8c86a'));         // the hair
+  px(c, x - 5, yy - 32, 3, 2, sh('#f0d888'));
+  px(c, x + 2, yy - 34, 4, 2, sh('#f0d888'));
+  px(c, x - 3, yy - 30, 2, 1, sh('#3a2a1a'));
+  px(c, x + 2, yy - 30, 2, 1, sh('#3a2a1a'));
+  px(c, x - 2, yy - 27, 4, 1, sh('#b07858'));
+  // one hand out
+  px(c, x + 5, yy - 20, 4, 2, skin);
+}
+
 /* the lane itself: pale earth widening out of the west, with two old ruts */
 function drawLaneRoad(c, g) {
   const dk = darkness(g.timeOfDay);
@@ -5093,6 +5502,7 @@ window.SPR = {
   drawHall, drawTrophy, drawTrophyReflection, trophySprite, drawPlinth, drawHeaven, drawHeavenBackdrop, drawGhostTree, drawSoul,
   drawGarden, gardenSlotPos, gardenWidth, GARDEN, drawCloudTunnel, drawLetterbox, drawRays, drawGrowingTree, flame,
   drawZzz, drawGear, drawSnailParcel, drawWordPop, drawImpactLines, squashTransform, drawScrollFrame, drawSheet, drawRod, drawSeal, PAPER, snailSkin, drawShell, SNAIL_SHELLS, SNAIL_PATTERNS, drawNoc, drawNocCamp, drawTravelArrow, travelArrowBox, drawAreaTitle, drawPickup,
+  drawSenecaScene, drawBridgeScene, drawMallScene, drawTerraceScene, drawRinkScene, drawSuit, drawStillWater,
   drawCosyFoliage, drawFallenLog, drawStandingStone, drawVines, drawHedgerow, drawLaneRoad,
   drawBackpackSprite, drawBagButton
 };
@@ -5117,7 +5527,7 @@ const defaultSave = () => ({
   ach: {}, endings: {}, heard: {}, muted: false, sessions: 0,
   park: { props: [], upgrades: {}, expansions: 0, earned: 0 },
   bag: false, items: {}, taken: {}, plans: {}, planDone: {},
-  quests: {}, questDone: {}, unread: [], snails: {}, setSeen: {}, metNoc: false,
+  quests: {}, questDone: {}, unread: [], snails: {}, setSeen: {}, areasSeen: { oak: 1 }, metNoc: false,
   stats: { leavesTotal: 0, sneezes: 0, hugs: 0, waters: 0, plants: 0, trades: 0,
            sqChats: 0, rebirths: 0, flicks: 0, seasons: {}, boughtAll: false }
 });
@@ -5136,6 +5546,7 @@ try {
     save.unread = Array.isArray(p.unread) ? p.unread : [];
     save.snails = p.snails || {};
     save.setSeen = p.setSeen || {};
+    save.areasSeen = Object.assign({ oak: 1 }, p.areasSeen || {});
   }
 } catch (e) { /* corrupt save: start fresh, no drama */ }
 
@@ -5166,7 +5577,8 @@ const G = {
   inv: { leaves: 0, items: {} }, tools: [], holding: null, holdT: 0, critters: [],
   parkPending: 0, parkMotes: [], visitors: [], visitorTimer: 6, menu: null,
   // where you are standing, and the walk between places
-  area: 1, areaFade: 0, areaFadeDir: 0, areaTitle: 0, arrows: [], pickups: [],
+  area: 3, areaFade: 0, areaFadeDir: 0, areaTitle: 0, arrows: [], pickups: [],
+  suit: null, suitTimer: 40,
   noc: { x: 0, y: GROUND_Y + 8, look: 0, talking: 0, thinking: 0 },
   asleep: false, wakeT: 0, squash: 0, squashV: 0,
   boardPop: 0, cottagePop: 0,
@@ -5265,6 +5677,7 @@ function checkSets() {
   const next = open.find(st => !save.setSeen[st.id]);
   if (!next) return false;
   save.setSeen[next.id] = 1; persist();
+  checkAreas();
   const idx = DATA.sets.indexOf(next);
   if (idx > 0) ACH('set' + Math.min(6, idx));
   if (DATA.sets.every(st => save.setSeen[st.id])) ACH('setall');
@@ -6157,11 +6570,6 @@ function bagItems() {
   const out = [{ t: 'title', s: 'YOUR BACKPACK' }];
   out.push({ t: 'row', label: G.inv.leaves + ' leaves', sub: 'the only currency, and only Noc takes it',
              icon: 'leaf', right: '', dim: false });
-  const nx = nextSet();
-  out.push({ t: 'row', icon: 'mouth', label: 'What he will talk about',
-             sub: nx ? (nx.at - heardTotal()) + ' more things and a new set opens'
-                     : 'every set open \u00b7 ' + heardTotal() + '/' + DATA.lines.length + ' heard',
-             right: 'READ', act: openTopics });
   const jobsDone = DATA.quests.filter(q => save.questDone[q.id]).length;
   out.push({ t: 'text', s: Object.keys(G.inv.items).length + ' things  ·  ' + jobsDone + '/' + DATA.quests.length +
                           ' jobs  ·  ' + plansDone() + '/' + DATA.plans.length + ' plans', col: SPR.PAPER.ink3, align: 'center' });
@@ -6175,6 +6583,16 @@ function bagItems() {
     out.push({ t: 'row', label: it.name, sub: TOOL_HINTS[it.id] || it.desc, icon: it.icon,
                right: 'TAKE OUT', act: () => holdFromBag(it.id) });
   }
+
+  const nx = nextSet();
+  out.push({ t: 'title', s: 'THE PARK, AND HIM' });
+  out.push({ t: 'row', icon: 'globe', label: 'The map',
+             sub: AREAS.filter((a, i) => areaOpen(i)).length + ' of ' + AREAS.length + ' places open',
+             right: 'READ', act: openMap });
+  out.push({ t: 'row', icon: 'mouth', label: 'What he will talk about',
+             sub: nx ? (nx.at - heardTotal()) + ' more things and a new set opens'
+                     : 'every set open \u00b7 ' + heardTotal() + '/' + DATA.lines.length + ' heard',
+             right: 'READ', act: openTopics });
 
   const unread = save.unread || [];
   if (unread.length) {
@@ -6199,6 +6617,38 @@ function bagItems() {
   out.push({ t: 'rule' });
   out.push({ t: 'text', s: 'found, not bought', col: SPR.PAPER.ink3, align: 'center' });
   return out;
+}
+
+/* ---- the map of the park ---- */
+function openMap() {
+  ACH('map');
+  openPanel({
+    id: 'map', anchor: 'mid', wide: true, maxH: H - 30,
+    build: () => {
+      const out = [{ t: 'title', s: 'CENTRAL PARK' }];
+      const open = AREAS.filter((a, i) => areaOpen(i)).length;
+      out.push({ t: 'text', s: open + ' of ' + AREAS.length + ' places open  \u00b7  west to east',
+                 col: SPR.PAPER.ink3, align: 'center' });
+      out.push({ t: 'rule' });
+      for (let i = 0; i < AREAS.length; i++) {
+        const a = AREAS[i];
+        const isOpen = areaOpen(i);
+        const here = i === G.area;
+        out.push({
+          t: 'row', dim: here,
+          label: (here ? '> ' : '') + (isOpen ? a.name : '???'),
+          sub: isOpen ? a.sub : (a.locked || 'shut'),
+          right: here ? 'YOU ARE HERE' : isOpen ? 'OPEN' : areaWants(i),
+          rightCol: here ? SPR.PAPER.leaf : isOpen ? SPR.PAPER.leaf : SPR.PAPER.ink3
+        });
+      }
+      out.push({ t: 'rule' });
+      out.push({ t: 'text', align: 'center', col: SPR.PAPER.ink2,
+                 s: 'Eight hundred and forty-three acres. He has stood in the middle of it longer than any of it has been a park.' });
+      out.push({ t: 'gap', h: 4 });
+      return out;
+    }
+  });
 }
 
 /* ---- what he will talk about ---- */
@@ -6249,6 +6699,8 @@ function settingsItems() {
     { t: 'row', label: 'A real mind',
       sub: live ? 'on \u00b7 ' + NOC_AI.model : 'off \u2014 local brains only',
       icon: 'book', right: live ? 'TURN OFF' : 'ADD KEY', act: askForKey },
+    { t: 'row', label: 'The map', sub: 'everywhere in the park, open or shut', icon: 'globe',
+      right: 'READ', act: openMap },
     { t: 'row', label: 'What he will talk about', sub: 'the sets he has opened so far', icon: 'mouth',
       right: 'READ', act: openTopics },
     { t: 'row', label: 'The Trophy Room', sub: 'everything you have earned', icon: 'crown',
@@ -6706,6 +7158,7 @@ function totalCount(tag) {
    line that came up happened to be a serious one. */
 function checkWorldProgress() {
   checkQuests();
+  checkAreas();
   if (heardCount('world') >= 10) ACH('world10');
   if (heardCount('world') >= totalCount('world')) { ACH('worldall'); reachEnding('witness'); }
 }
@@ -7090,6 +7543,40 @@ const AREAS = DATA.areas;
 function areaId() { return AREAS[G.area].id; }
 function atOak() { return areaId() === 'oak'; }
 
+/* =========================================================================
+   THE MAP
+   Eight hundred acres, eight places, and most of them shut until he decides
+   you are ready. Nothing here is bought: every gate opens on something you
+   did.
+   ========================================================================= */
+function areaOpen(i) {
+  const a = AREAS[i];
+  if (!a) return false;
+  const n = a.need || {};
+  if (n.heard !== undefined && heardTotal() < n.heard) return false;
+  if (n.bag && !save.bag) return false;
+  if (n.jobs !== undefined && Object.keys(save.questDone).length < n.jobs) return false;
+  return true;
+}
+
+/* what it still wants from you, in one line */
+/* the gates you have got open, checked whenever anything could have moved */
+function checkAreas() {
+  const open = AREAS.filter((a, i) => areaOpen(i)).length;
+  if (open >= 4) ACH('area4');
+  if (open >= 6) ACH('area6');
+  if (open >= AREAS.length) ACH('area8');
+}
+
+function areaWants(i) {
+  const a = AREAS[i];
+  const n = (a && a.need) || {};
+  if (n.heard !== undefined && heardTotal() < n.heard) return (n.heard - heardTotal()) + ' more things heard';
+  if (n.bag && !save.bag) return 'something to carry things in';
+  if (n.jobs !== undefined && Object.keys(save.questDone).length < n.jobs) return 'a job finished';
+  return '';
+}
+
 function canTravel(dir) {
   const i = G.area + dir;
   return i >= 0 && i < AREAS.length && !G.cine && G.scene === 'game' && !G.dead && !panelOpen();
@@ -7097,6 +7584,20 @@ function canTravel(dir) {
 
 function travel(dir) {
   if (!canTravel(dir) || G.areaFadeDir) return;
+  const i = G.area + dir;
+  if (!areaOpen(i)) {
+    SFX.deny();
+    G.shake = 1.5;
+    pop('SHUT', dir < 0 ? 34 : W() - 34, GROUND_Y - 34, '#d9707c');
+    sayTree((AREAS[i].locked || 'Not yet.') + ' (' + areaWants(i) + ')', 'smug');
+    return;
+  }
+  if (!save.areasSeen[AREAS[i].id]) {
+    save.areasSeen[AREAS[i].id] = 1; persist();
+    const seen = Object.keys(save.areasSeen).length;
+    if (seen >= 2) ACH('area2');
+    if (AREAS.every(a => save.areasSeen[a.id])) { ACH('areaall'); reachEnding('walker'); }
+  }
   puff(dir < 0 ? 14 : W() - 14, GROUND_Y + 20, 5);
   zips(dir < 0 ? 40 : W() - 40, GROUND_Y - 4, dir, 4);
   G.areaFadeDir = dir;
@@ -7121,6 +7622,16 @@ function arriveArea() {
     }
   }
   if (areaId() === 'hollow') ACH('hollow');
+  if (areaId() === 'seneca') ACH('seneca');
+  if (areaId() === 'rink') { ACH('rink'); G.suitTimer = 3; }
+  else G.suit = null;
+  // he says something about wherever you have just walked into
+  const lines = DATA.areaLines[areaId() === 'lane' ? 'ramble' : areaId()];
+  if (lines && Math.random() < 0.9) {
+    setTimeout(() => {
+      if (G.scene === 'game' && !G.cine) sayTree(lines[Math.floor(Math.random() * lines.length)], 'think');
+    }, 900);
+  }
   refreshHUD();
   persist();
 }
@@ -7150,6 +7661,7 @@ function takePickup(p) {
   if (p.id === 'backpack') {
     save.bag = true; G.hasBag = true; G.bagBadge = 1;
     ACH('backpack');
+    checkAreas();
     pushNote('goal', 'YOU HAVE A BAG', 'Everything you find goes in it. Tap the bag, bottom left.', 'reach', 'backpack');
     nudge('your bag is in the bottom left corner', 10);
     say('YOU', "A backpack. Somebody's. Yours now.", null, 'serious');
@@ -7884,6 +8396,7 @@ function update(dt) {
     }
 
     updateCritters(dt);
+    updateSuit(dt);
     if (atOak()) {
       updatePark(dt); updateVisitors(dt);
       // things that have just turned up are still bouncing
@@ -8218,6 +8731,7 @@ function finishQuest(q) {
 
   persist();
   checkParkAchievements();
+  checkAreas();
   refreshHUD();
   const voice = q.from === 'oak' ? sayTree : nocSay;
   voice(q.done, 'happy');
@@ -8504,33 +9018,88 @@ function drawWorld(opts) {
    deliberately emptier than the park: the point of them is the room.
    ------------------------------------------------------------------------- */
 function drawSideArea() {
-  const lane = areaId() === 'lane';
+  const id = areaId();
+  const lane = id === 'lane';
+  const wild = lane || id === 'hollow' || id === 'seneca';
+
   SPR.drawBackdrop(dc, G);
   SPR.drawGround(dc, G);
+
+  // the ground each place is actually made of
   if (lane) SPR.drawLaneRoad(dc, G);
-  SPR.drawHedgerow(dc, G, lane ? W() * 0.22 : undefined);
-  SPR.drawCosyFoliage(dc, G, lane ? 707 : 909, lane ? 0.45 : 1.4);
+  else if (id === 'bridge') SPR.drawBridgeScene(dc, G);
+  else if (id === 'mall') SPR.drawMallScene(dc, G);
+  else if (id === 'terrace') SPR.drawTerraceScene(dc, G);
+  else if (id === 'rink') SPR.drawRinkScene(dc, G);
+
+  if (wild) SPR.drawHedgerow(dc, G, lane ? W() * 0.22 : undefined);
+  if (wild) SPR.drawCosyFoliage(dc, G, lane ? 707 : id === 'seneca' ? 1857 : 909,
+                                lane ? 0.45 : id === 'seneca' ? 0.25 : 1.4);
 
   const L = SPR.layerBegin();
   SPR.drawGroundItems(L, G);
   if (lane) {
     SPR.drawNocCamp(L, G, Math.round(W() * 0.62) - 34, GROUND_Y + 14);
     SPR.drawNoc(L, G, G.noc);
-  } else {
+  } else if (id === 'hollow') {
     SPR.drawStandingStone(L, G, Math.round(W() * 0.62), GROUND_Y + 12);
     SPR.drawFallenLog(L, G, Math.round(W() * 0.10), GROUND_Y + 26, Math.round(W() * 0.32));
+  } else if (id === 'seneca') {
+    SPR.drawSenecaScene(L, G);
   }
-  SPR.drawCritters(L, G);
+  if (G.suit && id === 'rink') SPR.drawSuit(L, G, G.suit);
+  if (wild) SPR.drawCritters(L, G);
   SPR.layerEnd(dc, '#1a0f08');
 
   SPR.drawParticles(dc, G);
-  if (!lane) SPR.drawUndergrowth(dc, G);
-  SPR.drawForeground(dc, G);
+  if (wild && !lane && id !== 'seneca') SPR.drawUndergrowth(dc, G);
+  if (wild) SPR.drawForeground(dc, G);
   drawPickups(dc);
-  SPR.drawVines(dc, G, lane ? 61 : 71);
+  if (wild) SPR.drawVines(dc, G, lane ? 61 : 71);
   SPR.drawFrameFoliage(dc, G);
   SPR.drawBokeh(dc, G);
   SPR.drawOverlay(dc, G);
+}
+
+/* =========================================================================
+   THE MAN IN THE RED TIE
+   He turns up at the rink, walks across it with two people beside him, and
+   leaves. He is never given a line: the oak narrates, because what the oak
+   has is a record and not an impression.
+   ========================================================================= */
+function updateSuit(dt) {
+  if (areaId() !== 'rink' || G.dead) { G.suit = null; return; }
+  if (!G.suit) {
+    G.suitTimer -= dt;
+    if (G.suitTimer <= 0) {
+      G.suitTimer = 55 + Math.random() * 45;
+      const dir = Math.random() < 0.5 ? 1 : -1;
+      G.suit = { x: dir === 1 ? -26 : W() + 26, y: GROUND_Y + 20, dir, moving: true, said: false, t: 0 };
+      ACH('suit');
+    }
+    return;
+  }
+  const s = G.suit;
+  s.t += dt;
+  s.x += s.dir * 15 * dt;
+  if (Math.random() < dt * 4) puff(s.x - s.dir * 8, s.y + 2, 1);
+  if (!s.said && s.t > 1.6) {
+    s.said = true;
+    save.stats.suitSeen = (save.stats.suitSeen || 0) + 1;
+    if (save.stats.suitSeen >= 5) ACH('suit5');
+    persist();
+    const pool = save.stats.suitSeen <= DATA.suitLines.length
+      ? [DATA.suitLines[save.stats.suitSeen - 1]]
+      : DATA.suitOakAsides;
+    sayTree(pool[Math.floor(Math.random() * pool.length)], 'think');
+  }
+  if (s.x < -40 || s.x > W() + 40) G.suit = null;
+}
+
+function suitAt(x, y) {
+  const s = G.suit;
+  if (!s) return null;
+  return (Math.abs(x - s.x) < 20 && y > s.y - 36 && y < s.y + 4) ? s : null;
 }
 
 function drawPickups(c) {
@@ -8544,9 +9113,10 @@ function refreshArrows() {
   for (const dir of [-1, 1]) {
     const i = G.area + dir;
     if (i < 0 || i >= AREAS.length) continue;
-    const label = AREAS[i].name.replace(/^THE /, '');
+    const open = areaOpen(i);
+    const label = open ? AREAS[i].name.replace(/^THE /, '') : 'LOCKED';
     const box = SPR.travelArrowBox(dir, label);
-    G.arrows.push({ dir, label, hover: false, x: box.x, y: box.y, w: box.w, h: box.h });
+    G.arrows.push({ dir, label, open, hover: false, x: box.x, y: box.y, w: box.w, h: box.h });
   }
 }
 
@@ -8556,7 +9126,7 @@ function arrowAt(x, y) {
 }
 
 function drawArrows(c) {
-  for (const a of G.arrows) SPR.drawTravelArrow(c, G, a.dir, a.label, a.hover);
+  for (const a of G.arrows) SPR.drawTravelArrow(c, G, a.dir, a.label, a.hover, !a.open);
 }
 
 /* Talking is the whole game, and on a phone the middle of him is all face.
@@ -8574,7 +9144,7 @@ function talkSignBox() {
 function talkLabel() {
   if (G.asleep) return 'POKE HIM';
   if (areaId() === 'lane') return 'TALK TO NOC';
-  if (!atOak()) return 'LOOK AROUND';
+  if (!atOak()) return 'BACK TO THE OAK';
   if (DLG.choices && dialogueDone()) return 'TELL ME ANOTHER';
   return DLG.on ? 'GO ON' : 'TALK TO HIM';
 }
@@ -8614,7 +9184,12 @@ function overTalkSign(x, y) {
 function pressTalkSign() {
   if (G.asleep) { wakeHim(); return; }
   if (areaId() === 'lane') { SFX.click(); openChat('noc'); return; }
-  if (!atOak()) { SFX.click(); say('YOU', 'Quiet out here. He is back up the lane.', null, 'serious'); return; }
+  if (!atOak()) {
+    // eight places is a long way to walk back one signpost at a time
+    const oakAt = AREAS.findIndex(a => a.id === 'oak');
+    travel(G.area < oakAt ? 1 : -1);
+    return;
+  }
   // while replies are on offer this is the "keep going" one, so the whole
   // conversation can be had with a single thumb
   if (DLG.choices && dialogueDone()) {
@@ -8806,6 +9381,7 @@ function hitTest(x, y) {
     }
     if (areaId() === 'lane' && Math.abs(x - G.noc.x) < 14 && y > G.noc.y - 40 && y < G.noc.y + 4)
       return { kind: 'noc', i: -1 };
+    if (suitAt(x, y)) return { kind: 'suit', i: -1 };
     return { kind: null, i: -1 };
   }
 
@@ -9160,6 +9736,7 @@ function onPress(ev) {
   if (h.kind === 'leaf') { collectLeaf(h.i); return; }
   if (h.kind === 'pickup') { takePickup(h.p); return; }
   if (h.kind === 'noc') { SFX.click(); openChat('noc'); return; }
+  if (h.kind === 'suit') { SFX.click(); sayTree(DATA.suitOakAsides[Math.floor(Math.random() * DATA.suitOakAsides.length)], 'smug'); return; }
   if (h.kind === 'squirrel') { clickSquirrel(); return; }
   if (h.kind === 'part') {
     grab = { x: p.x, lastX: p.x, moved: 0, t: 0 };
@@ -9338,7 +9915,7 @@ if (/[?&]debug/.test(location.search)) {
                  refreshHUD, dropLeaf, triggerSneeze, maybeSpawnSquirrel, persist,
                  skipAll: () => { if (G.cine) { G.cine.i = G.cine.stages.length - 1; skipStage(); } },
                  parkMargin, parkIncome, parkFill, talkSignBox, pressTalkSign, heardTotal, openSets, nextSet, openTopics,
-                 unlockedTags, setHeard, setTotal, checkSets, talkToTree, boardHere, cottageHere, puff, ring, pop, squash, PANEL, openPanel, closePanel, panelIs, panelOpen, openQuestBoard, openJournal, acceptQuest, checkQuests, questStatus, plotPos, hitTest,
+                 unlockedTags, setHeard, setTotal, checkSets, talkToTree, openMap, areaOpen, areaWants, updateSuit, checkAreas, boardHere, cottageHere, puff, ring, pop, squash, PANEL, openPanel, closePanel, panelIs, panelOpen, openQuestBoard, openJournal, acceptQuest, checkQuests, questStatus, plotPos, hitTest,
                  travel, takePickup, seedPickups, openChat, closeChat, sendChat, openBag, closeBag,
                  agreePlan, completePlan, planById, areaId, wakeHim, AREAS,
                  openPost, closePost, openSettings, openCredits, openTrophies, openEndings, openGarden, closeGarden, buildGarden, snailName, finishQuest, questById, questProgress,

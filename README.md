@@ -20,11 +20,26 @@ actually told you something. The cottage turns up once there is anything in the
 park worth writing down. Everything else arrives as you earn it, and everything
 arrives with a puff of dust and a bounce.
 
-The park is three places wide. Signposts at the left and right edges of the
-frame walk you **west to the lane**, where **Noc** keeps the lamp lit, and
-**east to the hollow**, where things get left behind. **Nobody in this game
-sells anything.** You type at Noc and at the oak, in your own words, and what
-you get out of the park you get by doing jobs for the two of them.
+**The park is Central Park.** He is standing in the middle of eight hundred and
+forty-three acres of Manhattan, and he was standing there before any of it was
+a park. Signposts at the edges of the frame walk you west and east through
+**eight places**, and most of them are shut when you arrive:
+
+| | Place | Opens on |
+| --- | --- | --- |
+| 1 | Seneca Village | 72 things heard |
+| 2 | The Ramble | open — **Noc** keeps the lamp here |
+| 3 | Bow Bridge | finding something to carry things in |
+| 4 | **The Great Oak** | you start here |
+| 5 | The Mall | 8 things heard |
+| 6 | The North Woods | open — the backpack is up here |
+| 7 | Bethesda Terrace | one job finished |
+| 8 | The Wollman Rink | 34 things heard |
+
+Nothing is bought: every gate opens on something you did, and almost all of it
+is listening. There is a map scroll in your backpack showing what is open, what
+is shut, and what each shut one still wants. **Nobody in this game sells
+anything.**
 
 It is a joke game that is not entirely a joke. In between the bits about the
 woodpecker living in his elbow, the tree talks about Gaza, Sudan, Ukraine,
@@ -84,18 +99,36 @@ the backpack or the squirrel's settings.
 
 ## Power, and who has it
 
-The sixth set is the political one, and it is the one only a nine-hundred-year-old
-tree could do: he has stood in the same field through the commons, the fence
-and the document nobody voted on, the poor laws, the mill, the boy on the crate
-who was arrested and turned out to be right, the parish boundary that moved
-overnight, the bypass consultation about the colour of the fence, the eleven
-people in the council meeting, and the stream that got clean again because
-somebody would not shut up for eleven years.
+The sixth set is the political one, and it is the one only a tree that was here
+first can do: he watched the city take eight hundred acres by eminent domain in
+1856, and he watched **Seneca Village** — founded 1825, mostly Black
+landowners, three churches, a school, about two hundred and twenty-five people
+— cleared in 1857 for the lawn you are standing on. He watched the draft riots,
+Tammany Hall's gardeners, the sheep on the meadow until 1934, the two hundred
+out-of-work stonemasons who built a village of shacks in the drained reservoir
+in 1931, Robert Moses building twenty playgrounds and taking whole
+neighbourhoods for expressways, the park falling apart by 1979, and a few
+thousand people with no power at all bringing the grass back after 1980.
 
-**He takes no side and he endorses nobody.** He names no party and no
-politician, he will not tell you how to vote, and he says so out loud. What he
-does is keep the record: who was in the room when it was decided, and who had
-to move afterwards. Hearing all of it is its own ending.
+Every date in that set is a real one. **He takes no side and endorses nobody.**
+He names no party, he will not tell you how to vote, and he says so out loud.
+What he does is keep the record: who was in the room when it was decided, and
+who had to move afterwards. Hearing all of it is its own ending.
+
+## The man in the red tie
+
+Somebody crosses the Wollman Rink occasionally, with two people beside him.
+He is drawn, and he is named in the oak's lines, because he has a real and
+documented history with this specific park: he took over the rink's stalled
+reconstruction in 1986 after the city had spent six years failing, and it
+opened that winter; and in 1989 he paid for full-page newspaper adverts about
+five teenagers arrested in this park, who were convicted, and who were
+exonerated in 2002 when another man's confession and the DNA cleared them.
+
+**He is never given a line.** The oak narrates, with years attached, and stops.
+No invented quotes, no speech put in a living person's mouth, and no
+instruction about what to conclude — the tree's whole method is that it says
+what it watched and leaves the rest to you.
 
 ## Talking to him
 
@@ -109,7 +142,7 @@ are being.
 ## What you do
 
 - **Click the tree.** He never repeats himself — every line is drawn from a
-  shuffled bag of the subjects he has opened, so you hear all 221 of them before you hear any of them twice.
+  shuffled bag of the subjects he has opened, so you hear all 233 of them before you hear any of them twice.
   45 of those are war and politics — Gaza, Sudan, Ukraine, famine, displacement,
   ceasefires, aid convoys, press freedom, the arithmetic nobody should be doing
   — and another 66 are pop-culture references picked up by eavesdropping on the bench —
@@ -319,7 +352,7 @@ promise.
 
 **You cannot get in until you die.** Death is not the end of the collection. In heaven there is a marble gallery
 under vaulted arches, with a red carpet running away into the light and a
-plinth for every one of the **109 achievements** — each with its own carved
+plinth for every one of the **119 achievements** — each with its own carved
 trophy on a gold mount: a stone tissue for the sneeze, a leaf vault for the
 hoarder, a lighter sinking into water for the one who threw it away, a film
 reel for the whole canon. Chandeliers burn overhead, a skylight throws shafts
@@ -333,7 +366,7 @@ Achievements arrive in Minecraft-style corner popups in three tiers — plain
 achievements, gold goals, and purple challenges. They are **delivered by a
 snail**, who crawls in from the left carrying an unrolled scroll with your news
 on it, leaves a slime trail across the grass, and eventually reaches the other
-side. Poke him and he hurries. There are **12 endings**, each with its own
+side. Poke him and he hurries. There are **13 endings**, each with its own
 card and a hint for the ones you haven't found.
 
 Endings include burning him down, throwing the lighter in the pond, hearing

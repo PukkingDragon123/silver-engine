@@ -263,6 +263,17 @@ DATA.shop = [
    Unlocked by the engine via ACH('id').
    ------------------------------------------------------------------------- */
 DATA.achievements = [
+  // the park itself
+  { id: 'map',         kind: 'task', icon: 'globe',   name: 'Eight Hundred Acres',   desc: "Look at the map of the park." },
+  { id: 'area2',       kind: 'task', icon: 'reach',   name: 'Off The Lawn',          desc: "Walk to a second place in the park." },
+  { id: 'area4',       kind: 'goal', icon: 'reach',   name: 'Half The Park',         desc: "Get four of the park's places open." },
+  { id: 'area6',       kind: 'goal', icon: 'reach',   name: 'Most Of It',            desc: "Get six of the park's places open." },
+  { id: 'area8',       kind: 'chal', icon: 'globe',   name: 'Every Gate',            desc: "Open every place in the park." },
+  { id: 'areaall',     kind: 'chal', icon: 'globe',   name: 'Walked All Of It',      desc: "Stand in every place in the park." },
+  { id: 'seneca',      kind: 'goal', icon: 'ledger',  name: 'Say The Name',          desc: "Stand where Seneca Village stood." },
+  { id: 'rink',        kind: 'task', icon: 'drop',    name: 'Refrigerated Since 1950', desc: "Find the rink." },
+  { id: 'suit',        kind: 'task', icon: 'ledger',  name: 'The Man In The Red Tie', desc: "Watch somebody cross the rink." },
+  { id: 'suit5',       kind: 'goal', icon: 'ledger',  name: 'The Whole Record',      desc: "Hear everything the oak actually watched him do." },
   // talking, which is the game
   { id: 'topics',      kind: 'task', icon: 'book',    name: 'The Running Order',     desc: "Look up what he still has to talk about." },
   { id: 'set1',        kind: 'task', icon: 'mouth',   name: 'He Has More',           desc: "Listen long enough that he opens a second subject." },
@@ -407,6 +418,16 @@ DATA.achievements = [
    ENDINGS
    ------------------------------------------------------------------------- */
 DATA.endings = [
+  {
+    id: 'walker', name: 'THE WALKER', icon: 'globe',
+    title: "You stood in every part of this park.",
+    body: "The Ramble, the bridge, the Mall, the terrace, the north woods, the rink, and the quiet " +
+          "rectangle of grass up the west side where two hundred and twenty-five people lived until " +
+          "1857. Eight hundred and forty-three acres, and you went and stood in all of it, which is " +
+          "more than most people who live here manage in a lifetime. He watched you go and come back " +
+          "seven times, and he was pleased about it, and he will deny that.",
+    hint: "Open every place on the map, and go and stand in each one."
+  },
   {
     id: 'commons', name: 'THE COMMONS', icon: 'ledger',
     title: "You let a tree tell you who has been deciding things.",
@@ -724,10 +745,10 @@ DATA.expansions = [
 ];
 
 DATA.houseLines = [
-  "The keeper's cottage. Nobody has lived in it since 1974 and the kettle is still warm.",
+  "The keeper's hut. Nobody has worked out of it since 1974 and the kettle is still warm.",
   "You may go in. You will find one chair, one window and nine hundred years of quiet.",
   "That is where the ledger is kept. Somebody has to write down what the park is worth.",
-  "I watched them build it. Took eleven weeks. I have taken nine hundred years and I am still not finished."
+  "I watched them build it. Eleven weeks. I have taken nine hundred years and I am still not finished."
 ];
 
 DATA.boardLines = [
@@ -774,9 +795,22 @@ DATA.lines = DATA.lines.concat([
 
 /* ---- the areas you can walk to ---- */
 DATA.areas = [
-  { id: 'lane',   name: 'THE WEST LANE',   sub: 'where the road forgets to go' },
-  { id: 'oak',    name: 'THE OAK',         sub: 'he has not moved' },
-  { id: 'hollow', name: 'THE EAST HOLLOW', sub: 'quiet, mossy, slightly too green' }
+  { id: 'seneca',  name: 'SENECA VILLAGE',    sub: 'it was here first',
+    need: { heard: 72 }, locked: 'He will not take you there until he has told you who decided about this land.' },
+  { id: 'lane',    name: 'THE RAMBLE',        sub: 'thirty-six acres of deliberate confusion',
+    need: {} },
+  { id: 'bridge',  name: 'BOW BRIDGE',        sub: 'cast iron over still water',
+    need: { bag: true }, locked: 'Nothing to carry across it yet. Find something to carry things in.' },
+  { id: 'oak',     name: 'THE GREAT OAK',     sub: 'he has not moved',
+    need: {} },
+  { id: 'mall',    name: 'THE MALL',          sub: 'the only straight line in the park',
+    need: { heard: 8 }, locked: 'Stay and listen a while first. He has eight things to get through.' },
+  { id: 'hollow',  name: 'THE NORTH WOODS',   sub: 'the part they let go wild',
+    need: {} },
+  { id: 'terrace', name: 'BETHESDA TERRACE',  sub: 'the angel, and the water',
+    need: { jobs: 1 }, locked: 'The terrace is shut for works. Finish a job for somebody and it opens.' },
+  { id: 'rink',    name: 'THE WOLLMAN RINK',  sub: 'refrigerated since 1950',
+    need: { heard: 34 }, locked: 'Not yet. He is nowhere near finished with you.' }
 ];
 
 /* ---- NOC ---- */
@@ -1044,41 +1078,43 @@ DATA.gardenLines = [
    standing under him, and who was in the room when it was decided.
    ========================================================================= */
 DATA.lines = DATA.lines.concat([
-  { id: 'w01', tag: 'power', mood: 'idle',  text: "This field was common land. Everyone's cows, everyone's firewood, everyone's mushrooms. Then it was fenced, and it was one man's. Nobody voted. There was a document." },
-  { id: 'w02', tag: 'power', mood: 'smug',  text: "I have outlived nineteen governments and every single one of them said the situation they inherited was unprecedented." },
-  { id: 'w03', tag: 'power', mood: 'think', text: "Politics, as far as I can tell from down here, is the argument about who has to move and who gets to stay." },
-  { id: 'w04', tag: 'power', mood: 'sad',   text: "They enclosed the commons and called it improvement. It probably was, for the soil. Nobody asked the people who had been eating off it." },
-  { id: 'w05', tag: 'power', mood: 'idle',  text: "Every so often somebody nails a notice to me. A tax, a law, a name for a war. I am the oldest noticeboard in the parish and I have never once agreed to it." },
-  { id: 'w06', tag: 'power', mood: 'think', text: "The men who decided about this field never stood in it. That is the single most consistent thing I have observed in nine hundred years." },
-  { id: 'w07', tag: 'power', mood: 'shock', text: "They moved the parish boundary in 1743 and half the village woke up in a different jurisdiction with different rights. Same beds. Same mud. Different rules." },
-  { id: 'w08', tag: 'power', mood: 'idle',  text: "A border is a decision that hardens. Give it two generations and people will tell you it is geography." },
-  { id: 'w09', tag: 'power', mood: 'sad',   text: "The mill came, and the wages came, and the children went into the mill. Both things were true at once. That is usually how it goes and nobody wants to hear it." },
-  { id: 'w10', tag: 'power', mood: 'smug',  text: "I have heard 'there is no alternative' in four different accents across three centuries. There was, each time. It was just expensive for somebody specific." },
-  { id: 'w11', tag: 'power', mood: 'think', text: "Voting is a strange, thin, magnificent thing. A whole afternoon of power, once every few years, and then back to the mill. I would still queue for it." },
-  { id: 'w12', tag: 'power', mood: 'idle',  text: "They came round canvassing last spring. Both of them promised the same three things in a different order and neither of them mentioned the water." },
-  { id: 'w13', tag: 'power', mood: 'sad',   text: "The village had a hall, a surgery, a bus and a library. It has one of them left. Nobody announced the closing of a village. It was done in instalments." },
-  { id: 'w14', tag: 'power', mood: 'think', text: "Every generation is told the previous one had it easier and the next one will have it worse. From here it looks less like a slope and more like a tide with an argument on top of it." },
-  { id: 'w15', tag: 'power', mood: 'shock', text: "Somebody stood on a crate under me in 1889 and said working men should have a say in what the country did with them. He was arrested. He was also right, in the end, which is the usual sequence." },
-  { id: 'w16', tag: 'power', mood: 'idle',  text: "Propaganda is not lying. Lying is easy to catch. Propaganda is choosing, very carefully, which true thing you say first." },
-  { id: 'w17', tag: 'power', mood: 'think', text: "Every side in every argument I have overheard believed it was the reasonable one being pushed. All of them. Simultaneously. For nine hundred years." },
-  { id: 'w18', tag: 'power', mood: 'sad',   text: "They plant a tree when they open something and cut one down when they build something, and they photograph the first and not the second." },
-  { id: 'w19', tag: 'power', mood: 'idle',  text: "The rent on the cottage went up four times in ten years and the cottage did not change. I watched it not change. I was here the whole time." },
-  { id: 'w20', tag: 'power', mood: 'think', text: "'Who decides?' is the only political question. Everything else is a debate about the seating." },
-  { id: 'w21', tag: 'power', mood: 'smug',  text: "A politician stood under me and said we must think of future generations. I am a future generation. Nobody has ever asked me anything." },
-  { id: 'w22', tag: 'power', mood: 'sad',   text: "The stream was clean, then it was a drain, then it was clean again because people complained for eleven years. Nothing out here improves on its own. It improves because somebody would not shut up." },
-  { id: 'w23', tag: 'power', mood: 'idle',  text: "There were bread riots in the next parish. Not a movement, not an ideology. People were hungry and the price was a decision somebody had made in a warm room." },
-  { id: 'w24', tag: 'power', mood: 'think', text: "The law arrives here about thirty years after the harm and about ten years after everybody already knew." },
-  { id: 'w25', tag: 'power', mood: 'shock', text: "They put a bypass through the meadow and held a consultation about the colour of the fence." },
-  { id: 'w26', tag: 'power', mood: 'idle',  text: "I do not think people are stupid. I have listened to them for nine centuries. I think they are tired, and being tired is very useful to somebody." },
-  { id: 'w27', tag: 'power', mood: 'sad',   text: "Empire, from here, was other people's fields being decided about by men who had never stood in those either. It is the same sentence. It is only ever the same sentence." },
-  { id: 'w28', tag: 'power', mood: 'think', text: "The commons worked for four hundred years because everybody could see everybody else using it. Most things fail when nobody can see who is taking." },
-  { id: 'w29', tag: 'power', mood: 'happy', text: "The best thing this country ever did, and I say this as a tree with no politics: it decided that being ill should not bankrupt you. I heard people cry about it in this field. With relief." },
-  { id: 'w30', tag: 'power', mood: 'idle',  text: "I am not going to tell you who to vote for. I am a tree. But I will tell you that the people who benefit most from you not bothering are extremely aware of the arithmetic." },
-  { id: 'w31', tag: 'power', mood: 'think', text: "They argue about the climate as though it were an opinion. I keep the record in my rings. Nineteen seventy-six. Two thousand and three. Two thousand and twenty-two. It is not an opinion, it is a diary." },
-  { id: 'w32', tag: 'power', mood: 'sad',   text: "The council meeting about this park had eleven people in it. Nine were retired. The decision lasted forty years and none of them lived to see it land." },
-  { id: 'w33', tag: 'power', mood: 'smug',  text: "Somebody called me a stakeholder in a planning document once. Correct. I have a very large stake and it goes down eleven metres." },
-  { id: 'w34', tag: 'power', mood: 'idle',  text: "Two men fought under me over a hedge for six years. It was never about the hedge. It is almost never about the hedge." },
-  { id: 'w35', tag: 'power', mood: 'think', text: "Nothing out here has ever been given. It was asked for badly, then asked for well, then demanded, and then granted as though it had been the plan all along." }
+  { id: 'w01', tag: 'power', mood: 'idle',  text: "Eight hundred acres. Before the park there were farms, bone-boilers, pig keepers, a convent and about sixteen hundred people living on it. In 1856 the city took the lot under eminent domain." },
+  { id: 'w02', tag: 'power', mood: 'sad',   text: "Seneca Village stood up there. Founded 1825. Mostly Black landowners, three churches, a school, a burial ground. About two hundred and twenty-five people. In 1857 it was cleared for the lawn you are standing on." },
+  { id: 'w03', tag: 'power', mood: 'think', text: "Owning land in Seneca Village meant a Black man could vote in this state — you needed two hundred and fifty dollars of property, and only if you were Black. Clearing the village took the votes with the houses." },
+  { id: 'w04', tag: 'power', mood: 'idle',  text: "The newspapers of the day called the village a shantytown. I was here. It had a school and three churches. It was not a shantytown. That word was doing a job." },
+  { id: 'w05', tag: 'power', mood: 'think', text: "Politics, as far as I can tell from down here, is the argument about who has to move and who gets to stay. This park is nine hundred people's answer to that, and they were not asked." },
+  { id: 'w06', tag: 'power', mood: 'smug',  text: "I have outlived thirty-one presidents and every single administration said the situation it inherited was unprecedented." },
+  { id: 'w07', tag: 'power', mood: 'idle',  text: "Olmsted and Vaux won the design competition in 1858 with a plan called Greensward. They wanted somewhere a clerk and a banker would have to walk past each other. That part worked." },
+  { id: 'w08', tag: 'power', mood: 'sad',   text: "Eighteen sixty-three, the draft riots. Men could pay three hundred dollars to get out of the war, so the ones who could not pay went into the streets, and then the mob went after Black New Yorkers. Eleven were lynched. The Colored Orphan Asylum was burned." },
+  { id: 'w09', tag: 'power', mood: 'think', text: "Every generation is told the last one had it easier and the next will have it worse. From here it looks less like a slope and more like a tide with an argument on top of it." },
+  { id: 'w10', tag: 'power', mood: 'smug',  text: "Tammany Hall ran the park for a while. Every gardener was somebody's cousin. The flowerbeds were magnificent. The books were fiction." },
+  { id: 'w11', tag: 'power', mood: 'idle',  text: "There were sheep on that meadow until 1934. Real ones. They were moved to Brooklyn because the city was worried people would eat them. That is what the Depression was actually like." },
+  { id: 'w12', tag: 'power', mood: 'sad',   text: "Nineteen thirty-one: they drained the old reservoir and about two hundred men out of work built a village of shacks in the hole. Stone masons, bricklayers. They made it well, because that was their trade. The city cleared it in 1933." },
+  { id: 'w13', tag: 'power', mood: 'think', text: "They called it Hooverville, after the president. Naming a slum after the man in charge is the most concise political act I have ever watched." },
+  { id: 'w14', tag: 'power', mood: 'idle',  text: "Robert Moses had the parks from 1934 to 1960. Twenty-odd playgrounds in this park alone, and a rink, and the zoo rebuilt. Also whole neighbourhoods gone for expressways. Both true. Nobody wants it to be both." },
+  { id: 'w15', tag: 'power', mood: 'think', text: "Moses never learned to drive. The man who put a highway through the Bronx was driven everywhere. The men who decide about a place are almost never standing in it." },
+  { id: 'w16', tag: 'power', mood: 'sad',   text: "By 1979 the lawns were dust, the benches were firewood and the Sheep Meadow was bare earth. A city does not announce that it is giving up on a place. It does it in instalments." },
+  { id: 'w17', tag: 'power', mood: 'happy', text: "Then a few thousand people who had no power at all formed a conservancy in 1980 and refused to go away, and the grass came back. Nothing out here improves on its own. It improves because somebody would not shut up." },
+  { id: 'w18', tag: 'power', mood: 'idle',  text: "The city spent six years and a great deal of money failing to rebuild the ice rink. In 1986 a developer from Queens took the job over and it opened that winter. He has mentioned it a few times since. It is a good rink." },
+  { id: 'w19', tag: 'power', mood: 'sad',   text: "Nineteen eighty-nine. A woman was attacked near the reservoir and nearly died. Five boys, fourteen to sixteen, were arrested. That developer paid for full-page adverts in four newspapers calling for the death penalty back. The boys were convicted." },
+  { id: 'w20', tag: 'power', mood: 'sad',   text: "In 2002 another man confessed to that attack, and the DNA was his, and the five were exonerated. They had done thirteen years between them. The city settled for forty-one million in 2014. They were children when the adverts ran." },
+  { id: 'w21', tag: 'power', mood: 'think', text: "The men who were freed are alive. So is the man who paid for the adverts, and he has been president twice. They are all still in this city. I am not going to tell you what to make of that. I am telling you I watched all of it from here." },
+  { id: 'w22', tag: 'power', mood: 'idle',  text: "Somebody nails a notice to me about once a decade. A bond issue, a curfew, a name for a war. I am the oldest noticeboard in Manhattan and I have never once been consulted." },
+  { id: 'w23', tag: 'power', mood: 'shock', text: "They redrew the district lines in the nineties and half the neighbourhood woke up voting in a different race. Same beds. Same rent. Different arithmetic." },
+  { id: 'w24', tag: 'power', mood: 'think', text: "Propaganda is not lying. Lying is easy to catch. Propaganda is choosing very carefully which true thing you print first, and how large." },
+  { id: 'w25', tag: 'power', mood: 'idle',  text: "Every side in every argument I have overheard believed it was the reasonable one being pushed. All of them. At once. For nine hundred years." },
+  { id: 'w26', tag: 'power', mood: 'sad',   text: "The rent on the buildings along the east side went up eleven times in my lifetime and the buildings did not change. I watched them not change. I was here the whole time." },
+  { id: 'w27', tag: 'power', mood: 'think', text: "'Who decides?' is the only political question. Everything else is a debate about the seating." },
+  { id: 'w28', tag: 'power', mood: 'smug',  text: "A candidate stood on the Mall and said we must think of future generations. I am a future generation. Nobody has ever asked me anything." },
+  { id: 'w29', tag: 'power', mood: 'idle',  text: "Half a million people came for two men with guitars in 1981. Same grass. No trouble. It can be done. It just cannot be done cheaply and it cannot be done by accident." },
+  { id: 'w30', tag: 'power', mood: 'think', text: "The park works because everyone can see everyone else using it. Most things fail the moment nobody can see who is taking." },
+  { id: 'w31', tag: 'power', mood: 'idle',  text: "I do not think people are stupid. I have listened to them for nine centuries. I think they are tired, and being tired is extremely useful to somebody." },
+  { id: 'w32', tag: 'power', mood: 'think', text: "They argue about the climate as though it were an opinion. I keep the record in my rings. Eighteen sixteen. Nineteen thirty-six. Twenty twenty-three. It is not an opinion, it is a diary." },
+  { id: 'w33', tag: 'power', mood: 'smug',  text: "A planning document once called me a stakeholder. Correct. I have a very large stake and it goes down eleven metres." },
+  { id: 'w34', tag: 'power', mood: 'idle',  text: "Two men argued under me about a bench for six years. It was never about the bench. It is almost never about the bench." },
+  { id: 'w35', tag: 'power', mood: 'think', text: "Nothing in this park was given. It was asked for badly, then asked for well, then demanded, and then granted as though it had been the plan all along." },
+  { id: 'w36', tag: 'power', mood: 'idle',  text: "I am not going to tell you who to vote for. I am a tree. I will tell you that the people who do best out of you not bothering are extremely aware of the arithmetic." },
+  { id: 'w37', tag: 'power', mood: 'happy', text: "The single best thing I ever watched happen on this ground: they built a playground where a fence used to be, and nobody had to prove they lived nearby to use it." }
 ]);
 
 DATA.replies.power = [
@@ -1108,7 +1144,7 @@ DATA.sets = [
   { id: 'meta',  at: 52, name: 'THE UNCOMFORTABLE SET', tags: ['meta'],
     intro: "I am going to say some things about you, and about this, and about the fact that there is a screen. You may not enjoy it. Sit down." },
   { id: 'power', at: 72, name: 'POWER, AND WHO HAS IT', tags: ['power'],
-    intro: "Here is the set I keep for people who come back. Nine hundred years in one field, watching who decides things about it. I take no side and I will not tell you how to vote. But you should know what I saw." },
+    intro: "Right. Here is the set I keep for people who come back. Nine hundred years on this ground, most of it before there was a park, watching who decided about it. I take no side, I name no party, and I will not tell you how to vote. But you should know what I watched from here." },
   { id: 'world', at: 100, name: 'THE REAL PARTS', tags: ['world'],
     intro: "Last set. This is the one I would rather not do. It is the world as it actually is, for people who are in it right now. I will not make jokes in this one." }
 ];
@@ -1120,3 +1156,75 @@ DATA.setOpen = [
 ];
 
 DATA.setAllDone = "That is everything. Nine hundred years, all of it, handed over to one person who kept clicking. I have nothing left to introduce and I am oddly upset about it.";
+
+
+/* -------------------------------------------------------------------------
+   NEW YORK
+   He is nine hundred years old and about a hundred and seventy of those have
+   had a city round them.
+   ------------------------------------------------------------------------- */
+DATA.lines = DATA.lines.concat([
+  { id: 'n01', tag: 'goofy', mood: 'smug',  text: "Eight and a half million people on this island and every single one of them thinks they discovered this bench." },
+  { id: 'n02', tag: 'goofy', mood: 'idle',  text: "There is a subway under me. Every eleven minutes my roots hum. I have been humming since 1904 and I still have not learned the tune." },
+  { id: 'n03', tag: 'goofy', mood: 'happy', text: "A man sells pretzels at the Fifth Avenue gate and has done for thirty-one years. He is the most reliable institution I have ever met." },
+  { id: 'n04', tag: 'goofy', mood: 'shock', text: "A yellow cab came THROUGH the railings in 1998. The driver was fine. I was not consulted. The railings were replaced. Nobody apologised to me." },
+  { id: 'n05', tag: 'goofy', mood: 'idle',  text: "Joggers. Thousands of them. Going round and round a body of water at six in the morning, voluntarily, in weather. I have watched this for fifty years and I have no explanation." },
+  { id: 'n06', tag: 'goofy', mood: 'sly',   text: "Somebody proposed marriage under me on a Tuesday in April. She said yes. They come back every April. I have never once been thanked and I am the setting." },
+  { id: 'n07', tag: 'goofy', mood: 'idle',  text: "The carriage horses go past at four. They know the route better than the drivers do. One of them looks at me every single time." },
+  { id: 'n08', tag: 'wise',  mood: 'think', text: "Eight million people agreed, without a meeting, that this eight hundred acres would not be sold. That is the most impressive thing this species has ever done in my presence." },
+  { id: 'n09', tag: 'wise',  mood: 'idle',  text: "This is the most filmed park on earth and I have never been in shot. Not once. I am nine hundred years old with excellent bark and no agent." },
+  { id: 'n10', tag: 'weird', mood: 'creepy',text: "There is a plaque on a bench near me for a woman who died in 1974, and somebody still leaves a coffee on it. Fifty years. I have never seen who." }
+]);
+
+/* -------------------------------------------------------------------------
+   THE MAN IN THE RED TIE
+   A real person with a documented history in this park, so the tree does what
+   the tree always does: says what it watched, names the year, and leaves the
+   conclusion to you. He gets no invented dialogue — the oak narrates.
+   ------------------------------------------------------------------------- */
+DATA.suitLines = [
+  "Him. He is from Queens. He rebuilt that ice rink in 1986 after the city had spent six years failing to, and it opened that winter, and it works.",
+  "In 1989 he paid for full-page adverts in four newspapers about five boys arrested in this park. They were convicted. In 2002 another man's confession and the DNA cleared them.",
+  "He has been president of this country twice. He is standing in the park he took out adverts about. I have no comment. I have a record.",
+  "The five who were cleared are alive. So is he. So am I. We are all still here, which is the part nobody finds convenient.",
+  "I watched him cut a ribbon down there. I watched the boys' mothers on the same grass in 1990. Same grass. That is all I have got and it is quite a lot."
+];
+
+DATA.suitOakAsides = [
+  "Do not shout at him. It has never once worked and I have watched everyone try.",
+  "He does not know I am here. Nobody knows I am here. It is my one advantage.",
+  "Whatever you think of him, this is a park, and he paid for a rink in it. Both facts fit in the same afternoon. Most facts do."
+];
+
+/* things the areas say when you arrive */
+DATA.areaLines = {
+  seneca: [
+    "Two hundred and twenty-five people. Three churches. A school. This exact grass.",
+    "There is a marker now. It took until 2001 for anyone to put one up.",
+    "Say the name out loud when you are here. That is the whole job."
+  ],
+  ramble: [
+    "Thirty-six acres designed to make you lose your way on purpose. It works on everybody.",
+    "Two hundred and thirty species of bird come through here. They all complain about the rent."
+  ],
+  bridge: [
+    "Cast iron, 1862. It has held every proposal, argument and reconciliation on the west side.",
+    "People stand in the middle of it and go quiet. Every time. Nobody tells them to."
+  ],
+  mall: [
+    "The only straight line in eight hundred acres, and the largest stand of American elms left in the country.",
+    "They planted these to make you feel like something. It is cheating and it works."
+  ],
+  terrace: [
+    "The angel is called the Angel of the Waters. Emma Stebbins sculpted her in 1868 — the first woman in this city to get a public commission.",
+    "The water she is blessing is the Croton aqueduct. Clean water arriving in a filthy city. That is what the statue is actually about."
+  ],
+  rink: [
+    "Refrigerated since 1950. Rebuilt in 1986 by a developer from Queens after the city could not manage it.",
+    "Children skate on it in circles all winter and none of them know a single thing about any of that, which is correct."
+  ],
+  hollow: [
+    "Forty acres they agreed to stop tidying. It is the only part of this park that is allowed to be a wood.",
+    "Things get left behind up here. That is why you should look."
+  ]
+};
