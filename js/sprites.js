@@ -347,7 +347,7 @@ function drawBackdrop(c, g) {
     let col = mix(SEASON[g.season].t1, bloom, fade);
     col = mix(col, '#0a1226', dk * 0.85);
     pellipse(c, t.x, base - t.h, t.r, t.h * 0.42, col);
-    px(c, t.x - 1, base - t.h * 0.6, 3, t.h * 0.6, mix('#4a3a2a', bloom, fade));
+    px(c, t.x - 1, base - t.h * 0.6, 3, t.h * 0.6, mix(mix('#4a3a2a', bloom, fade), '#0a1226', dk * 0.85));
   }
 
   // god rays slanting through
@@ -1017,13 +1017,25 @@ function drawCritters(c, g) {
         px(c, bx + 1, by + 3, 1, 2, shade('#c8892a'));
       }
     } else if (k.kind === 'butterfly') {
-      const w = 1 + Math.abs(Math.sin(g.t * 10 + k.ph)) * 2.4;
+      const w = (1 + Math.abs(Math.sin(g.t * 10 + k.ph)) * 2.4) * (k.credit ? 1.25 : 1);
+      // the bright one carries its own light, so it can be found at night
+      if (k.credit) {
+        glow(c, k.x, k.y - 1, 8 + Math.sin(g.t * 3) * 2, '#ffe9a0', 0.45);
+        const tw = (g.t * 1.6 + k.ph) % 2.4;
+        if (tw < 0.5) {
+          c.globalAlpha = 1 - tw / 0.5;
+          star(c, k.x + 5, k.y - 6, 3, '#fff6d8', '#ffffff');
+          c.globalAlpha = 1;
+        }
+      }
+      const wing = k.credit ? k.col : shade(k.col);
       px(c, k.x, k.y - 1, 1, 3, shade('#3a2a1a'));
       dot(c, k.x, k.y - 2, shade('#3a2a1a'));
       for (const d of [-1, 1]) {
-        px(c, k.x + d * 1, k.y - 2, d * w, 2, shade(k.col));                 // upper wing
-        px(c, k.x + d * 1, k.y, d * Math.max(1, w - 1), 2, shade(mix(k.col, '#000000', 0.25)));
-        dot(c, k.x + d * (w - 0.5), k.y - 2, shade('#ffffff'));
+        px(c, k.x + d * 1, k.y - 2, d * w, 2, wing);                          // upper wing
+        px(c, k.x + d * 1, k.y, d * Math.max(1, w - 1), 2, k.credit ? '#ff9a3a' : shade(mix(k.col, '#000000', 0.25)));
+        dot(c, k.x + d * (w - 0.5), k.y - 2, '#ffffff');
+        if (k.credit) dot(c, k.x + d * (w - 1.5), k.y, '#fff6d8');
       }
     } else if (k.kind === 'beetle') {
       pellipse(c, k.x, k.y, 3, 2, shade('#2a2a3a'));
@@ -1353,40 +1365,50 @@ function drawSnail(c, g, s) {
     pcircle(c, sx, sy - 1, 1.5, '#f6e2c8');
     dot(c, sx, sy - 1, INK);
   }
-  // the letter, held up proudly
-  const lx = x + dir * 9, ly = y - 6 + bob;
-  px(c, lx - 4, ly - 3, 9, 7, INK);
-  px(c, lx - 3, ly - 2, 7, 5, '#fdf6e3');
-  for (let i = 0; i < 3; i++) px(c, lx - 2 + i, ly - 1 + i, 1, 1, '#c9762e');
-  for (let i = 0; i < 3; i++) px(c, lx + 2 - i, ly - 1 + i, 1, 1, '#c9762e');
+  // the parcel: a rolled scroll strapped across the shell, sealed, unread
+  drawSnailParcel(c, g, s, x, y, bob, dir);
 }
 
-/* the message the snail is carrying, on an unrolled scroll */
-function drawSnailMessage(c, g, s) {
-  const lines = s.lines;
-  const w = s.w, h = 14 + lines.length * 9;
-  // the scroll rides above the snail but never leaves the frame
-  const cx = Math.max(w / 2 + 6, Math.min(W - w / 2 - 6, s.x));
-  const x = Math.round(cx - w / 2), y = Math.round(s.y - h - 16);
-  // string from the scroll down to the shell
-  for (let i = 0; i < 12; i++) dot(c, s.x, y + h + i * ((s.y - 10 - (y + h)) / 12), '#8a6a4a');
-  roundRect(c, x - 2, y - 2, w + 4, h + 4, 3, INK);
-  roundRect(c, x, y, w, h, 2, '#f6e7c4');
-  px(c, x, y, w, 2, '#e0cb9c');
-  px(c, x, y + h - 2, w, 2, '#e0cb9c');
-  // rolled ends
-  pellipse(c, x - 1, y + h / 2, 3, h / 2 + 2, '#c9a86a');
-  pellipse(c, x + w + 1, y + h / 2, 3, h / 2 + 2, '#c9a86a');
-  px(c, x - 3, y + h / 2 - 1, 3, 2, '#8a6a3a');
-  px(c, x + w, y + h / 2 - 1, 3, 2, '#8a6a3a');
+/* What the snail is actually carrying. It is not opened until you stop him,
+   so this has to say "there is news in here" without saying what the news is. */
+function drawSnailParcel(c, g, s, x, y, bob, dir) {
+  const px2 = Math.round(x - dir * 3), py = Math.round(y - 9 + bob);
+  const tier = s.kind === 'ending' ? 'end' : s.kind === 'chal' ? 'chal' : s.kind === 'goal' ? 'goal' : 'task';
+  const ribbon = tier === 'end' ? '#ffd24a' : tier === 'chal' ? '#b183e8' : tier === 'goal' ? '#ffd24a' : '#7cc44a';
+  const opened = s.opened;
 
-  F.drawTextCentered(c, x + w / 2, y + 4, s.head, '#a06a2a', 1);
-  for (let i = 0; i < lines.length; i++) {
-    F.drawTextCentered(c, x + w / 2, y + 13 + i * 9, lines[i], '#3a2410', 1);
+  // the rolled scroll, lying across the shell
+  px(c, px2 - 8, py - 3, 17, 6, INK);
+  px(c, px2 - 7, py - 2, 15, 4, '#f6e7c4');
+  px(c, px2 - 7, py - 2, 15, 1, '#fdf6e3');
+  px(c, px2 - 7, py + 1, 15, 1, '#e0cb9c');
+  // rolled ends
+  px(c, px2 - 9, py - 3, 2, 6, '#c9a86a');
+  px(c, px2 + 8, py - 3, 2, 6, '#c9a86a');
+  dot(c, px2 - 9, py, '#8a6a3a'); dot(c, px2 + 9, py, '#8a6a3a');
+
+  if (opened) {
+    // a broken seal and a tick, so you can see at a glance you have read it
+    px(c, px2 - 2, py - 1, 5, 1, '#8a7a5a');
+    px(c, px2 - 2, py, 3, 1, '#8a7a5a');
+  } else {
+    // ribbon and wax seal, still intact
+    px(c, px2 - 1, py - 3, 2, 6, ribbon);
+    pcircle(c, px2, py, 2.4, '#a83229');
+    pcircle(c, px2, py - 0.5, 1.6, '#c9453b');
+    // and it glints, because unopened post should ask to be opened
+    const tw = (g.t * 2 + s.x * 0.05) % 2;
+    if (tw < 0.55) {
+      c.globalAlpha = 1 - tw / 0.55;
+      star(c, px2 + 7, py - 6, 3, '#fff6d8', '#ffffff');
+      c.globalAlpha = 1;
+    }
+    // the trophy itself, tied on top in miniature, silhouetted so it reads as
+    // "something is in here" rather than spoiling which one
+    pcircle(c, px2 + 5, py - 5, 3, INK);
+    pcircle(c, px2 + 5, py - 5, 2.2, ribbon);
+    px(c, px2 + 4, py - 3, 3, 2, INK);
   }
-  // a wax seal
-  pcircle(c, x + 5, y + h - 4, 3, '#a83229');
-  pcircle(c, x + 5, y + h - 4, 2, '#c9453b');
 }
 
 /* the held tool, drawn at the pointer instead of a cursor */
@@ -1522,7 +1544,22 @@ function drawSquirrel(c, g) {
   px(c, x + 9 * s.dir, yy - 8, 2, 1, '#120a04');
   if (s.face === 1) px(c, x + 6 * s.dir, yy - 7, 3, 1, '#3a1c0c');
   px(c, x - 1, yy + 1, 2, 3, dark); px(c, x + 3, yy + 1, 2, 3, dark);
-  if (s.holding) drawItemIcon(c, x + 10 * s.dir, yy - 5, s.holding);
+  if (s.holding === 'gear') drawGear(c, g, x + 10 * s.dir, yy - 5, 5.5, shade('#8a8a96'), shade('#5a5a66'));
+  else if (s.holding) drawItemIcon(c, x + 10 * s.dir, yy - 5, s.holding);
+}
+
+/* a turning cog — the squirrel's entire new career */
+function drawGear(c, g, x, y, r, col, dark) {
+  const a0 = g.t * 0.9;
+  pcircle(c, x, y, r, dark);
+  pcircle(c, x, y, r - 1, col);
+  for (let i = 0; i < 8; i++) {
+    const A = a0 + i / 8 * 6.28;
+    const tx = x + Math.cos(A) * (r + 0.6), ty = y + Math.sin(A) * (r + 0.6);
+    px(c, tx - 1, ty - 1, 2, 2, dark);
+  }
+  pcircle(c, x, y, r - 2.6, dark);
+  pcircle(c, x - 0.5, y - 0.5, r - 3.4, col);
 }
 
 function drawLeafSprite(c, x, y, col, col2) {
@@ -2815,10 +2852,10 @@ window.SPR = {
   drawFireOnTree, drawFireGlow, drawPond, drawOverlay, drawHud, drawTools, tinyText, digits, drawCritters, drawUndergrowth,
   drawCottage, drawNoticeBoard, drawBench, drawFlowerbed, drawBirdbath, drawHive, drawLamp,
   drawVisitor, drawBoundary,
-  drawBalloon, drawPanel, drawSnail, drawSnailMessage, drawCursorTool, drawMoreArrow, roundRect, INK, drawAshScene, drawStump, drawItemIcon, drawLeafSprite,
+  drawBalloon, drawPanel, drawSnail, drawCursorTool, drawMoreArrow, roundRect, INK, drawAshScene, drawStump, drawItemIcon, drawLeafSprite,
   drawHall, drawTrophy, drawTrophyReflection, trophySprite, drawPlinth, drawHeaven, drawHeavenBackdrop, drawGhostTree, drawSoul,
   drawCloudTunnel, drawLetterbox, drawRays, drawGrowingTree, flame,
-  drawZzz, drawNoc, drawNocCamp, drawTravelArrow, travelArrowBox, drawAreaTitle, drawPickup,
+  drawZzz, drawGear, drawSnailParcel, drawNoc, drawNocCamp, drawTravelArrow, travelArrowBox, drawAreaTitle, drawPickup,
   drawCosyFoliage, drawFallenLog, drawStandingStone, drawVines, drawHedgerow, drawLaneRoad,
   drawBackpackSprite, drawBagButton
 };

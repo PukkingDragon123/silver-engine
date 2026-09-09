@@ -7,10 +7,15 @@ to run an unlicensed goods operation and has been put out of business by
 somebody being nice to people. There is a lighter lying in the grass in the
 lane, and nobody will stop you picking it up.
 
-The park is three places wide now. Signposts at the left and right edges of the
+**He is asleep when you arrive, and nothing wakes him but you.** The main menu
+is the wood itself at night, with him snoring in the middle of it; you walk in
+and poke him.
+
+The park is three places wide. Signposts at the left and right edges of the
 frame walk you **west to the lane**, where **Noc** keeps the lamp lit, and
-**east to the hollow**, where things get left behind. Noc does not sell
-anything. You type at him, in your own words, and the two of you make plans.
+**east to the hollow**, where things get left behind. **Nobody in this game
+sells anything.** You type at Noc and at the oak, in your own words, and what
+you get out of the park you get by doing jobs for the two of them.
 
 It is a joke game that is not entirely a joke. In between the bits about the
 woodpecker living in his elbow, the tree talks about Gaza, Sudan, Ukraine,
@@ -93,27 +98,75 @@ Six of them, all letterboxed and captioned, all skippable with a click.
 - **Reincarnation.** A dive back down through the clouds, a landing, and the
   tree growing from a seedling to full height in one continuous shot at dawn.
 
-## Noc, and talking in your own words
+## Talking in your own words
 
-Noc keeps the lamp at the west end of the lane. He used to run a shop; he gave
-it up because it made him boring. **Click him, or press `T`, and a talk box
-opens.** Type whatever you like. He answers.
+**Both of them will answer anything you type.** Click Noc, or press `T`, and a
+talk box opens on whoever is standing in front of you — Noc in the lane, the
+oak everywhere else. The oak also offers it as a reply option every time he
+speaks: *"let me say something myself"*.
 
-By default he thinks with a small associative brain built into the game — it
-reads your sentence for subject, mood and intent and answers out of his own
-vocabulary, and it works offline with no setup at all. If you want a real
-model behind him, type `/key sk-ant-...` into the talk box and his replies come
-from the Claude API instead, with the local brain still catching every failure
-so he never goes quiet. The key is kept in your browser's `localStorage` and is
-sent nowhere except Anthropic. `/nokey` clears it, `/model` switches model,
-`/forget` wipes the conversation, `/plans` lists what the two of you have
-agreed.
+They are not the same voice. Noc is quiet and consoling and turns what you say
+into plans. The oak is nine hundred years old, vain, and has never seen a
+single frame of television but will tell you about it anyway.
+
+By default each of them thinks with a small associative brain built into the
+game — it reads your sentence for subject, mood and intent and answers out of
+that character's own vocabulary, and it works offline with no setup at all. If
+you want real models behind them, add an Anthropic API key (in the squirrel's
+settings, or type `/key sk-ant-...` into the talk box) and their replies come
+from the Claude API instead, with the local brains still catching every failure
+so neither of them ever goes quiet. The key is kept in your browser's
+`localStorage` and is sent nowhere except Anthropic. `/nokey` clears it,
+`/model` switches model, `/forget` wipes that conversation, `/jobs` and
+`/plans` list what you have taken on.
 
 **Plans** are the thing he actually does. Say what you want — lights, a feast,
 the stars, an hour of quiet, the news, water, a grove — and he turns it into a
 plan with a cost and a condition. Agree to it, come back when you can afford
 it, and he does his half. Keeping a plan is how you get most of the things you
 own. Keep all seven and there is an ending in it.
+
+## The board
+
+There is no shop and nothing to buy. Everything in the park arrived because
+somebody asked you for something and you did it. The noticeboard is **the
+board**: 14 jobs, seven from the oak and seven from Noc, each one a thing you
+can only finish by playing — hear ten different things out of him, water him
+three times, plant two of his acorns, say hello to four living creatures, stay
+long enough to see all four seasons, get three visitors to sit down and leave
+happy. Take a job and the person who wanted it tells you why.
+
+Finishing one builds the park for you: a bench, a flowerbed, a lamp post, a
+bird bath, bees, a sapling, the good rake, the open gate, the painted sign, the
+compost heap, and three separate pushes of the hedge. The last job on the list
+asks you to stop building and **leave it nearly empty**, and finishing every
+job is its own ending.
+
+The keeper's cottage holds **the journal** — what the park is and what it
+makes, with no prices in it anywhere.
+
+## The post
+
+Achievements are not popups. They come by **snail**, and the snail does not
+read them out. He crawls in from the left with the parcel strapped across his
+shell — a rolled scroll, a ribbon in the tier's colour, an unbroken wax seal
+and the trophy tied on top in miniature — and if you want to know what is in
+it you have to **stop him and open it**. Then you get the full card: the carved
+trophy at proper size, the tier, the name and what you did.
+
+Miss him and he crawls off the far edge with it. It is not lost — unopened post
+piles up in your bag until you get round to it.
+
+## The settings, and the credits
+
+There is still no interface for either. **The squirrel** used to run an
+unlicensed goods operation out of a hollow; Noc put him out of business by
+being nice to people, so he carries a gear now and keeps the settings — sound,
+the API key, the trophy room, and the erase button. Click him.
+
+**The credits** belong to the one butterfly that is not like the others. It is
+brighter than the rest, it carries its own light so you can find it after dark,
+and it sparkles. Catch it.
 
 ## The backpack
 
@@ -132,25 +185,22 @@ and they are further apart, and the space between them has been filled with
 bushes, ferns, tall grass, mushroom rings, hanging vines and fireflies rather
 than with more things to click.
 
-**Build** at the noticeboard: saplings, flowerbeds, benches, a bird bath, a
-beehive, a lamp post. Everything you build produces leaves, forever, at its own
-rate — saplings grow and earn more as they age, and the lamp post is the only
-reason the park keeps earning after dark. Benches bring **visitors**, little
-pixel people who walk in, sit for a while, leave a tip and wander off happy.
+Everything in it produces leaves, forever, at its own rate — saplings grow and
+earn more as they age, and the lamp post is the only reason the park keeps
+earning after dark. Benches bring **visitors**, little pixel people who walk
+in, sit for a while, leave a tip and wander off happy. The rake makes the
+leaves gather themselves; the gate doubles the visitors; the sign and the
+compost heap multiply the lot.
 
-**Upgrade** at the keeper's cottage, where the ledger is kept: a rake so the
-leaves gather themselves, an open gate for twice the visitors, a painted sign
-for half again on everything, a compost heap that doubles the lot.
-
-**Expand** the park three times and the hedges get pushed back, the plot count
-grows, and eventually you can see all the way to the lane. He has not seen the
-lane since the war.
+None of it is for sale. All of it comes off the board. Leaves are still a
+currency, but the only person who takes them is Noc, and all he sells is a
+promise.
 
 ## The Hall of Trophies
 
 **You cannot get in until you die.** Death is not the end of the collection. In heaven there is a marble gallery
 under vaulted arches, with a red carpet running away into the light and a
-plinth for every one of the **87 achievements** — each with its own carved
+plinth for every one of the **96 achievements** — each with its own carved
 trophy on a gold mount: a stone tissue for the sneeze, a leaf vault for the
 hoarder, a lighter sinking into water for the one who threw it away, a film
 reel for the whole canon. Chandeliers burn overhead, a skylight throws shafts
@@ -164,7 +214,7 @@ Achievements arrive in Minecraft-style corner popups in three tiers — plain
 achievements, gold goals, and purple challenges. They are **delivered by a
 snail**, who crawls in from the left carrying an unrolled scroll with your news
 on it, leaves a slime trail across the grass, and eventually reaches the other
-side. Poke him and he hurries. There are **10 endings**, each with its own
+side. Poke him and he hurries. There are **11 endings**, each with its own
 card and a hint for the ones you haven't found.
 
 Endings include burning him down, throwing the lighter in the pond, hearing
@@ -181,13 +231,15 @@ to forget you.
 | --- | --- |
 | Click the tree | Talk (click again to skip the typing) |
 | Click a fallen leaf | Pick it up |
-| Click the noticeboard | Build something |
-| Click the cottage | The ledger, and upgrades |
+| Click the cottage | The journal — what the park is |
 | Press and hold the trunk | Hug him |
 | Drag an item onto him | Use it |
-| Click the squirrel | Chat (he has nothing to sell any more) |
+| Click the squirrel | The settings — he carries the gear now |
+| Click the bright butterfly | The credits |
+| Click a snail | Open the post it is carrying |
+| Click the noticeboard | The board — take a job |
 | Click a signpost, or `←` / `→` | Walk west to the lane or east to the hollow |
-| Click Noc, or `T` | Open the talk box and type at him |
+| Click Noc, or `T` | Open the talk box — Noc in the lane, the oak elsewhere |
 | Click the bag, or `B` | Open the backpack |
 | Click a thing lying in the grass | Put it in your bag |
 | `Space` | Talk / skip |

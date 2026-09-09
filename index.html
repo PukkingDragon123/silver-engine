@@ -20,11 +20,13 @@
 <!-- the title card -->
 <div id="title">
   <div class="tcard">
-    <canvas id="tlogo" width="264" height="180"></canvas>
-    <h1><span>THE</span><b>WISE OAK</b><span>TREE</span></h1>
-    <p class="tsub">nine hundred years old &middot; fast asleep<br>he has a great deal to say about it, once he is up</p>
-    <button id="tstart">tap to wake him</button>
-    <p class="tfoot">headphones recommended &middot; arrows walk you west and east &middot; noc is out there somewhere</p>
+    <div class="tscene">
+      <canvas id="tlogo" width="512" height="192"></canvas>
+      <h1><span>THE</span><b>WISE OAK</b><span>TREE</span></h1>
+    </div>
+    <p class="tsub">nine hundred years old &middot; asleep in the middle of the wood<br>go in and poke him &mdash; he has a great deal to say once he is up</p>
+    <button id="tstart">enter the wood</button>
+    <p class="tfoot">signposts walk you west and east &middot; the squirrel keeps the settings &middot; follow the bright butterfly</p>
   </div>
 </div>
 
@@ -44,14 +46,28 @@
 </div>
 
 <div id="chat" class="panel hidden">
-  <div class="paneltop">TALKING TO NOC <button id="chatclose">&times;</button></div>
+  <div class="paneltop"><span id="chatwho">TALKING TO NOC</span> <button id="chatclose">&times;</button></div>
   <div id="chatlog"></div>
   <div id="chatbar">
     <input id="chatinput" type="text" autocomplete="off" autocapitalize="sentences" spellcheck="false"
            placeholder="say something to Noc…" maxlength="400">
     <button id="chatsend">SAY</button>
   </div>
-  <div class="panelfoot">type anything &middot; /help for the odd commands</div>
+  <div class="panelfoot" id="chatfoot">type anything &middot; /help for the odd commands</div>
+</div>
+
+<div id="post" class="hidden">
+  <div class="postbox">
+    <div class="paneltop">SIGNED FOR <button id="postclose">&times;</button></div>
+    <div id="postbody"></div>
+    <div class="panelfoot">the snail is already halfway across the park</div>
+  </div>
+</div>
+
+<div id="settings" class="panel hidden">
+  <div class="paneltop">THE SQUIRREL'S SETTINGS <button id="setclose">&times;</button></div>
+  <div id="setbody"></div>
+  <div class="panelfoot">he kept the gear off a lawnmower in 1998</div>
 </div>
 
 <script src="js/font.js"></script>

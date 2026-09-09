@@ -1,6 +1,6 @@
 /* =========================================================================
-   NOC'S BRAIN
-   Noc answers what you actually type. Two ways:
+   THE TWO BRAINS
+   Noc and the oak both answer what you actually type. Two ways:
 
    1. LOCAL (always on, no setup, works offline) — a small associative
       responder built out of Noc's own vocabulary. It reads your sentence for
@@ -26,7 +26,8 @@ try {
   model = localStorage.getItem(MODEL_STORE) || DEFAULT_MODEL;
 } catch (e) {}
 
-const history = [];      // { role, text } — what has actually been said
+/* one conversation per person you can talk to */
+const chats = { noc: [], oak: [] };
 const memory = { name: null, likes: [], said: [] };
 
 /* ---------------------------------------------------------------------
@@ -113,35 +114,88 @@ const ABOUT = [
 
 function pick(a, seed) { return a[Math.floor(Math.random() * a.length)]; }
 
-function localReply(text, ctx) {
+/* ---- the oak's own voice: older, vainer, far less consoling ---- */
+const OAK_OPENERS = {
+  greet: ["Hello. You again.", "Ah. A person.", "Hello. Mind the roots."],
+  question: ["Right.", "Nobody asks me things. They talk AT me.", "Hm. Go on."],
+  thanks: ["You are welcome. I did nothing. I never do anything.", "Do not thank a tree. It goes to our heads."],
+  sorry: ["You have not done anything to me that weather has not done worse.", "Forget it. I have."],
+  bye: ["Off you go. I will be here. That is not a threat, it is a fact of my anatomy.", "Goodbye. I will still be facing this way."],
+  talk: ["Mm.", "Go on then.", "I heard you.", "Right."]
+};
+const OAK_LOW = [
+  "Sit down against me. I cannot do anything else for you and I have found that it is usually enough.",
+  "That is heavy. Put it at the bottom of me. Things at the bottom of me get composted eventually.",
+  "I have watched a great many people be exactly this sad in exactly this spot, and every single one of them left again."
+];
+const OAK_WARM = [
+  "Well. That has gone straight into the rings. That is permanent now.",
+  "Say that again in autumn and I will drop the good leaves on you.",
+  "I am a nine-hundred-year-old tree and you have made me self-conscious."
+];
+const OAK_SHARP = [
+  "I have been struck by lightning. You will have to try harder.",
+  "Dave carved his name in me in 1987. You are not in the top hundred.",
+  "Noted, filed, and grown around."
+];
+const OAK_ABOUT = [
+  "$K. I have had nine hundred years of $K going past me at about four miles an hour.",
+  "$K, is it. Ask me again in November, I am more honest in November.",
+  "$K. People bring me $K constantly and never take it away with them.",
+  "You said $K to a tree. Do you know how rare that is. Go on."
+];
+
+function voice(who) {
+  if (who === 'oak') return {
+    openers: OAK_OPENERS, low: OAK_LOW, warm: OAK_WARM, sharp: OAK_SHARP, about: OAK_ABOUT,
+    topics: D().oakTopics, musings: D().oakMusings, lines: null,
+    empty: "Take your time. I have nine hundred years and no appointments.",
+    name: n => n + ". I will remember that, which for me means it is carved in.",
+    plans: false
+  };
+  return {
+    openers: OPENERS, low: LOW, warm: WARM, sharp: SHARP, about: ABOUT,
+    topics: D().nocTopics, musings: MUSINGS, lines: D().nocLines,
+    empty: "Take your time. I've got all night, that's rather the point of me.",
+    name: n => n + ". Good name. I'll use it sparingly so it keeps its shine.",
+    plans: true
+  };
+}
+
+function localReply(text, ctx, who) {
   const it = readIntent(text);
+  const V = voice(who);
   const bits = [];
 
-  if (it.kind === 'empty') return { text: "Take your time. I've got all night, that's rather the point of me.", intent: it };
+  if (it.kind === 'empty') return { text: V.empty, intent: it };
   if (it.kind === 'name' && memory.name) {
-    return { text: memory.name + ". Good name. I'll use it sparingly so it keeps its shine.", intent: it };
+    return { text: V.name(memory.name), intent: it };
   }
 
-  bits.push(pick(OPENERS[it.kind] || OPENERS.talk));
+  bits.push(pick(V.openers[it.kind] || V.openers.talk));
 
-  if (it.mood === 'low') bits.push(pick(LOW));
-  else if (it.mood === 'warm') bits.push(pick(WARM));
-  else if (it.mood === 'sharp') bits.push(pick(SHARP));
+  if (it.mood === 'low') bits.push(pick(V.low));
+  else if (it.mood === 'warm') bits.push(pick(V.warm));
+  else if (it.mood === 'sharp') bits.push(pick(V.sharp));
 
-  if (it.plan) {
+  if (it.plan && V.plans) {
     const p = (D().plans || []).find(x => x.id === it.plan);
     if (p) {
       bits.push(p.ask);
       return { text: bits.join(' '), intent: it, plan: p.id };
     }
   }
-  if (it.topic && D().nocTopics && D().nocTopics[it.topic]) bits.push(D().nocTopics[it.topic]);
-  else if (it.keywords.length) bits.push(pick(ABOUT).replace(/\$K/g, it.keywords[0]));
-  else bits.push(pick(MUSINGS));
+  if (it.topic && V.topics && V.topics[it.topic]) bits.push(V.topics[it.topic]);
+  else if (it.keywords.length) bits.push(pick(V.about).replace(/\$K/g, it.keywords[0]));
+  else bits.push(pick(V.musings));
 
-  if (it.kind === 'question' && Math.random() < 0.5 && D().nocLines) bits.push(pick(D().nocLines));
-  if (ctx && ctx.night && Math.random() < 0.3) bits.push("It's dark. Everything I say is truer after dark, ask anyone.");
-  if (memory.name && Math.random() < 0.25) bits.push("Right, " + memory.name + "?");
+  if (it.kind === 'question' && Math.random() < 0.5 && V.lines) bits.push(pick(V.lines));
+  if (ctx && ctx.night && Math.random() < 0.3) {
+    bits.push(who === 'oak'
+      ? "It is dark. I am considerably more sincere in the dark and I will deny all of it by morning."
+      : "It's dark. Everything I say is truer after dark, ask anyone.");
+  }
+  if (memory.name && Math.random() < 0.25) bits.push(who === 'oak' ? "Are you not, " + memory.name + "." : "Right, " + memory.name + "?");
 
   return { text: bits.join(' '), intent: it, plan: null };
 }
@@ -149,7 +203,22 @@ function localReply(text, ctx) {
 /* ---------------------------------------------------------------------
    THE REAL ONE
    --------------------------------------------------------------------- */
-function systemPrompt(ctx) {
+function oakSystemPrompt(ctx) {
+  return [
+    "You are THE WISE OAK TREE, a nine-hundred-year-old talking oak in a pixel-art game of the same name.",
+    "You have stood in the same spot in the same small park for nine centuries and you cannot move.",
+    "You are vain, funny, extremely old and unexpectedly kind. You speak in short paragraphs, two or three sentences, never more.",
+    "You have never seen television. You have only HEARD it, second-hand, through open car windows, and you are confidently wrong about it in a specific way.",
+    "You hold no flag and take no side. When war comes up you speak plainly about the people underneath it — never about who deserves it — and you never make a joke of it.",
+    "Never break character, never mention being an AI or a model, never use emoji, never use stage directions.",
+    "Your neighbours: NOC, who keeps the lamp down the west lane and makes plans with people; a squirrel who now runs the settings; and whatever is living in your branches.",
+    "",
+    "Current state — season: " + (ctx.season || '?') + ", " + (ctx.night ? "night" : "day") +
+    ", leaves the player holds: " + (ctx.leaves | 0) + ", things you have said to them so far: " + (ctx.heard || 0) + "."
+  ].join('\n');
+}
+
+function nocSystemPrompt(ctx) {
   const plans = (D().plans || []).map(p => '- ' + p.id + ': ' + p.name + ' — ' + p.ask).join('\n');
   return [
     "You are NOC, the lamp-keeper of a small park in a pixel-art game called THE WISE OAK TREE.",
@@ -168,8 +237,12 @@ function systemPrompt(ctx) {
   ].join('\n');
 }
 
-async function remoteReply(text, ctx) {
-  const msgs = history.slice(-10).map(h => ({ role: h.role, content: h.text }));
+function systemPrompt(ctx, who) {
+  return who === 'oak' ? oakSystemPrompt(ctx) : nocSystemPrompt(ctx);
+}
+
+async function remoteReply(text, ctx, who) {
+  const msgs = chats[who].slice(-10).map(h => ({ role: h.role, content: h.text }));
   msgs.push({ role: 'user', content: text });
   const res = await fetch('https://api.anthropic.com/v1/messages', {
     method: 'POST',
@@ -180,7 +253,7 @@ async function remoteReply(text, ctx) {
       'anthropic-dangerous-direct-browser-access': 'true'
     },
     body: JSON.stringify({
-      model, max_tokens: 300, system: systemPrompt(ctx), messages: msgs
+      model, max_tokens: 300, system: systemPrompt(ctx, who), messages: msgs
     })
   });
   if (!res.ok) throw new Error('http ' + res.status);
@@ -213,21 +286,26 @@ const AI = {
     try { localStorage.setItem(MODEL_STORE, model); } catch (e) {}
     return model;
   },
-  forget() { history.length = 0; memory.name = null; },
+  forget(who) {
+    if (who) chats[who].length = 0;
+    else { chats.noc.length = 0; chats.oak.length = 0; memory.name = null; }
+  },
 
-  /* always resolves — Noc never fails to say something */
-  async ask(text, ctx) {
+  /* always resolves — neither of them ever fails to say something */
+  async ask(text, ctx, who) {
     ctx = ctx || {};
+    who = who === 'oak' ? 'oak' : 'noc';
+    const history = chats[who];
     history.push({ role: 'user', text });
-    const local = localReply(text, ctx);
+    const local = localReply(text, ctx, who);
     let reply = local.text, plan = local.plan, live = false;
 
     if (apiKey) {
       try {
-        const raw = await remoteReply(text, ctx);
+        const raw = await remoteReply(text, ctx, who);
         const parsed = parseTags(raw);
         reply = parsed.text;
-        plan = parsed.tags.plan || null;
+        plan = who === 'noc' ? (parsed.tags.plan || null) : null;
         live = true;
       } catch (e) {
         reply = local.text;

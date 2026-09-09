@@ -263,6 +263,16 @@ DATA.shop = [
    Unlocked by the engine via ACH('id').
    ------------------------------------------------------------------------- */
 DATA.achievements = [
+  // the post, the settings squirrel, the credits butterfly
+  { id: 'openpost',    kind: 'task', icon: 'paper',   name: 'Signed For It',         desc: "Stop a snail and read what it is carrying." },
+  { id: 'allpost',     kind: 'goal', icon: 'paper',   name: 'Nothing Left Unread',   desc: "Open every piece of post before it crawls off the edge." },
+  { id: 'gear',        kind: 'task', icon: 'nut',     name: 'He Runs The Settings',  desc: "Find out what the squirrel does for a living now." },
+  { id: 'credits',     kind: 'task', icon: 'bird',    name: 'Follow The Bright One', desc: "Catch the butterfly that is not like the others." },
+  { id: 'oakchat',     kind: 'task', icon: 'mouth',   name: 'Said It Out Loud',      desc: "Type something to the oak instead of picking an answer." },
+  { id: 'oakchat20',   kind: 'goal', icon: 'mouth',   name: 'An Actual Conversation',desc: "Say twenty things to the oak in your own words." },
+  { id: 'quest1',      kind: 'task', icon: 'reach',   name: 'Something To Do',       desc: "Take on a job from the board." },
+  { id: 'questdone',   kind: 'goal', icon: 'reach',   name: 'Job Done',              desc: "Finish a job for him." },
+  { id: 'questall',    kind: 'chal', icon: 'book',    name: 'The Whole List',        desc: "Finish every job on the board." },
   // the wider world
   { id: 'lane',        kind: 'task', icon: 'reach',   name: 'West of Everything',    desc: "Walk down the lane and find out who keeps the lamp." },
   { id: 'hollow',      kind: 'task', icon: 'reach',   name: 'The East Hollow',       desc: "Walk east until the moss gets serious." },
@@ -293,8 +303,8 @@ DATA.achievements = [
 
   // squirrel
   { id: 'squirrel',    kind: 'task', icon: 'nut',     name: 'Shady Business',        desc: "Meet the squirrel." },
-  { id: 'trade1',      kind: 'task', icon: 'nut',     name: 'Free Market',           desc: "Trade with the squirrel." },
-  { id: 'tradeall',    kind: 'goal', icon: 'nut',     name: 'Cleaned Him Out',       desc: "Buy every single item." },
+  { id: 'trade1',      kind: 'task', icon: 'nut',     name: 'First Thing Given',     desc: "Be handed something by somebody who wanted nothing back." },
+  { id: 'tradeall',    kind: 'goal', icon: 'nut',     name: 'Everything Carried',    desc: "End up with every item in the game, without buying one of them." },
   { id: 'sqchat',      kind: 'task', icon: 'nut',     name: 'Rodent Confidant',      desc: "Talk to the squirrel 15 times." },
   { id: 'diary',       kind: 'chal', icon: 'diary',   name: 'You Read The Diary',    desc: "You were told not to. Twice." },
 
@@ -383,6 +393,15 @@ DATA.achievements = [
    ENDINGS
    ------------------------------------------------------------------------- */
 DATA.endings = [
+  {
+    id: 'gardener', name: 'THE KEEPER', icon: 'leaf',
+    title: "You finished every job on the board.",
+    body: "A bench, a flowerbed, a lamp, a bird bath, bees, a sapling doing very well for itself, " +
+          "and a meadow with almost nothing in it, which was the last thing he asked for and the " +
+          "hardest one to give him. Noc wrote your name in the journal. The oak said the park was " +
+          "finished and then immediately thought of one more thing.",
+    hint: "Take every job off the board. Then actually do them."
+  },
   {
     id: 'together', name: 'THE LAMP AND THE TREE', icon: 'heart',
     title: "You kept every promise you made out here.",
@@ -820,4 +839,141 @@ DATA.nocPlanNudge = [
   "Say what you want out loud. I'm good at out loud.",
   "Plans, then. What are we doing about all this?",
   "Give me a word and I'll give you a plan."
+];
+
+
+/* =========================================================================
+   THE BOARD
+   Nothing in the park is for sale any more. Everything on it was earned by
+   doing something for somebody, and every job comes from a conversation.
+   ------------------------------------------------------------------------- */
+DATA.quests = [
+  { id: 'hello',  from: 'oak',  name: 'SAY HELLO PROPERLY', need: { heard: 10 },
+    desc: "Hear ten different things out of him.",
+    ask: "Here is a job. Listen to me. Properly, ten different things, not the same one twice. I will know.",
+    done: "Ten. You have heard ten things nobody else has stood still long enough for.",
+    reward: { prop: 'bench', line: "There is a bench now. I do not know where it came from. Sit on it." } },
+
+  { id: 'thirst', from: 'oak',  name: 'THE THIRST',         need: { waters: 3 },
+    desc: "Water him three times.",
+    ask: "I have not had a proper drink since the reservoir went in. Three cans. Take your time.",
+    done: "Three. I can feel it in my top branches, which is where I keep the important thoughts.",
+    reward: { prop: 'flowers', line: "Something has flowered at my feet out of sheer relief." } },
+
+  { id: 'sweep',  from: 'noc',  name: 'SWEEP THE LANE',     need: { leavesTotal: 25 },
+    desc: "Gather twenty-five leaves off the ground.",
+    ask: "The lane's knee-deep in his shedding. Twenty-five leaves and I'll call it swept.",
+    done: "Swept. You can see the ruts again.",
+    reward: { prop: 'lamp', line: "Noc has put a lamp post at the edge of the park. It stays lit." } },
+
+  { id: 'family', from: 'oak',  name: 'FAMILY',             need: { plants: 2 },
+    desc: "Plant two of his acorns.",
+    ask: "Plant two of mine. I will not watch. I will absolutely watch.",
+    done: "Two. There are two of them. Do not tell me their names, I will get attached.",
+    reward: { prop: 'sapling', line: "One of them has taken. It is doing very well and it knows it." } },
+
+  { id: 'sit',    from: 'noc',  name: 'SIT WITH HIM',       need: { hugs: 5 },
+    desc: "Put your arms round him five times.",
+    ask: "He will never ask for this, so I am asking on his behalf. Five times. Go on.",
+    done: "He has gone quiet in the way he goes quiet when something has worked.",
+    reward: { prop: 'bath', line: "A bird bath, from Noc, with no note. There is a note. It says 'thank you'." } },
+
+  { id: 'neigh',  from: 'oak',  name: 'THE NEIGHBOURS',     need: { critters: 4 },
+    desc: "Say hello to four living things in the park.",
+    ask: "Four of my tenants. Say hello to four of them. They are shy and they are terrible about rent.",
+    done: "Four. They have all told me about it separately. It was the highlight of their year.",
+    reward: { prop: 'hive', line: "The bees have moved in properly, with paperwork." } },
+
+  { id: 'year',   from: 'noc',  name: 'A WHOLE YEAR',       need: { seasons: 4 },
+    desc: "Stay long enough to see all four seasons.",
+    ask: "Stay a year. Not a visit. A year. Then tell me what you think of him.",
+    done: "A whole year. Most people manage an afternoon.",
+    reward: { expand: 1, line: "Noc has pushed the hedge back. There is more park than there was." } },
+
+  { id: 'rake',   from: 'noc',  name: 'THE GOOD RAKE',      need: { leavesTotal: 120 },
+    desc: "Gather a hundred and twenty leaves in all.",
+    ask: "Do it long enough and I will find you the good rake. Then they gather themselves.",
+    done: "Here. The good rake. It has been behind the crate since 1974.",
+    reward: { upgrade: 'rake', line: "The leaves gather themselves now. You will never click another one." } },
+
+  { id: 'gate',   from: 'noc',  name: 'OPEN THE GATE',      need: { visitors: 3 },
+    desc: "Let three visitors sit in the park and leave happy.",
+    ask: "People walk past the gate because it looks shut. Get three of them to sit down and I will open it properly.",
+    done: "Three. Word travels. Word is the only thing out here that travels.",
+    reward: { upgrade: 'gate', line: "The gate stands open. Twice as many people find their way in." } },
+
+  { id: 'sign',   from: 'oak',  name: 'A PAINTED SIGN',     need: { heard: 60 },
+    desc: "Hear sixty different things out of him.",
+    ask: "Sixty. If you last sixty I will let them put my name on a sign, which I have refused since the Georgians.",
+    done: "Sixty things. You are the longest conversation of my life and I have had some long ones.",
+    reward: { upgrade: 'sign', line: "There is a painted sign at the gate with his name on it. He is unbearable about it." } },
+
+  { id: 'compost',from: 'noc',  name: 'THE COMPOST HEAP',   need: { plans: 4 },
+    desc: "Keep four of the plans you made with Noc.",
+    ask: "Keep four promises and I will show you where everything that dies here goes, and what it turns into.",
+    done: "Four kept. That is a rarer thing than you think.",
+    reward: { upgrade: 'compost', line: "The heap is turning. Everything the park makes, it now makes twice." } },
+
+  { id: 'wall',   from: 'noc',  name: 'THE OLD WALL',       need: { leavesTotal: 400 },
+    desc: "Gather four hundred leaves in all.",
+    ask: "There is a wall under all that ivy. Four hundred leaves' worth of work and it comes down.",
+    done: "Down it comes. Nobody has seen past it since the enclosure.",
+    reward: { expand: 1, line: "The old wall is down. The park runs further than it did." } },
+
+  { id: 'meadow', from: 'oak',  name: 'THE WHOLE MEADOW',   need: { heard: 120, plans: 6 },
+    desc: "Hear a hundred and twenty things, and keep six plans.",
+    ask: "If you are still here after all that, the meadow is yours. All of it, right down to the lane.",
+    done: "The meadow. I have not seen the lane since the war and now I can see the lane.",
+    reward: { expand: 1, line: "The park is the whole meadow now. There is almost nothing in it, and that is the point." } },
+
+  { id: 'quiet',  from: 'oak',  name: 'LEAVE IT EMPTY',     need: { propsMax: 6, heard: 40 },
+    desc: "Hear forty things while keeping six things or fewer in the park.",
+    ask: "Everyone who loves this place tries to fill it. Do not. Keep it nearly empty and stay anyway.",
+    done: "Nearly empty, and you stayed. Nobody has ever done that. They always bring a bandstand.",
+    reward: { leaves: 60, line: "He has shaken sixty leaves down on you, on purpose, which is the most he can do." } }
+];
+
+/* what the board says when there is nothing on it */
+DATA.boardEmpty = "Nothing on the board. Go and talk to somebody until there is.";
+
+/* the squirrel's new career */
+DATA.squirrelSettingLines = [
+  "i don't sell things any more. i do SETTINGS. i have a gear. look at my gear.",
+  "sound, saves, the lot. i turn the knobs. it's honest work and i hate it.",
+  "noc took my customers by being NICE to them. so now i'm technical support.",
+  "you want the volume, the wipe, or noc's brain? i can do all three. badly.",
+  "i kept the gear off a lawnmower in 1998. nobody has asked for it back."
+];
+
+DATA.creditLines = [
+  "That one is not like the others. Follow it if you like. It knows the way out.",
+  "The bright butterfly. It has been here longer than the park has.",
+  "It only comes out when somebody has been paying attention."
+];
+
+/* the oak, when you type at him instead of picking an answer */
+DATA.oakTopics = {
+  war:    "I am a tree. I hold no flag. I only notice who is standing under me and who has stopped coming.",
+  death:  "I have died once already, in a manner of speaking, and the paperwork was worse than the dying.",
+  time:   "You measure it in weeks. I measure it in the thickness of a ring. Neither of us is right.",
+  love:   "Two teenagers kissed under me last spring and I have not stopped thinking about it. That is my entire romantic life.",
+  noc:    "Noc. He keeps the lamp and he keeps his mouth shut, which are the two hardest jobs out here.",
+  tv:     "I have never seen a single frame of anything. I hear it, second-hand, through open car windows. I am still confident about it.",
+  god:    "There is a shift manager. I have met him. He was very apologetic and very tired.",
+  leaves: "Forty thousand of them, every year, and I complain about each one individually.",
+  me:     "You want to know about me. Nine hundred years, one spot, no cardio, extremely good shade.",
+  park:   "It is emptier than it was and it is better for it. Room is the thing people actually come for."
+};
+
+DATA.oakOpeners = [
+  "Mm.", "Go on then.", "Right.", "Say that again, slower, I am nine hundred.",
+  "I heard you.", "Interesting.", "Hah."
+];
+
+DATA.oakMusings = [
+  "I have had nine hundred years to think about that and I have got about halfway.",
+  "You are the first person to ask me that. That is not a compliment to you, it is an accusation about everyone else.",
+  "I will still be thinking about that in a hundred years, long after you have stopped.",
+  "That is the sort of thing people say to me in November and then never come back to explain.",
+  "I cannot move, so everything you tell me stays exactly where you put it."
 ];

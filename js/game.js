@@ -16,7 +16,8 @@ const SAVE_KEY = 'wiseoak.save.v3';
 const defaultSave = () => ({
   ach: {}, endings: {}, heard: {}, muted: false, sessions: 0,
   park: { props: [], upgrades: {}, expansions: 0, earned: 0 },
-  bag: false, items: {}, taken: {}, plans: {}, planDone: {}, metNoc: false,
+  bag: false, items: {}, taken: {}, plans: {}, planDone: {},
+  quests: {}, questDone: {}, unread: [], metNoc: false,
   stats: { leavesTotal: 0, sneezes: 0, hugs: 0, waters: 0, plants: 0, trades: 0,
            sqChats: 0, rebirths: 0, flicks: 0, seasons: {}, boughtAll: false }
 });
@@ -31,6 +32,8 @@ try {
     save.park = Object.assign(defaultSave().park, p.park || {});
     save.items = p.items || {}; save.taken = p.taken || {};
     save.plans = p.plans || {}; save.planDone = p.planDone || {};
+    save.quests = p.quests || {}; save.questDone = p.questDone || {};
+    save.unread = Array.isArray(p.unread) ? p.unread : [];
   }
 } catch (e) { /* corrupt save: start fresh, no drama */ }
 
@@ -65,7 +68,7 @@ const G = {
   noc: { x: 0, y: GROUND_Y + 8, look: 0, talking: 0, thinking: 0 },
   asleep: false, wakeT: 0,
   hasBag: false, bagOpen: false, bagHover: false, bagBadge: 0,
-  activePlan: null,
+  activePlan: null, chatWho: null,
   hintText: '', hintShown: false, hintCine: false,
   sessionTime: 0, sinceTreeClick: 0, spamCount: 0, spamTimer: 0,
   sneezeTimer: 14 + Math.random() * 18,
@@ -129,6 +132,9 @@ dc.imageSmoothingEnabled = false;
 
 const elBag = $('bag'), elBagBody = $('bagbody');
 const elChat = $('chat'), elChatLog = $('chatlog'), elChatInput = $('chatinput');
+const elChatWho = $('chatwho'), elChatFoot = $('chatfoot');
+const elPost = $('post'), elPostBody = $('postbody');
+const elSet = $('settings'), elSetBody = $('setbody');
 const elModal = $('modal'), elModalBody = $('modalbody'), elModalTitle = $('modaltitle');
 const elEndingCard = $('endingcard');
 const elTitle = $('title');
@@ -149,25 +155,84 @@ let started = false;
 /* the little oak on the title card, drawn with the real renderer */
 const logoCv = $('tlogo'), lctx = logoCv.getContext('2d');
 lctx.imageSmoothingEnabled = false;
+/* -------------------------------------------------------------------------
+   THE MAIN MENU
+   Not a logo on a gradient: the actual forest, at night, with him asleep in
+   the middle of it. Drawn with the same renderer the game uses, so what you
+   see on the card is exactly the place you are about to walk into.
+   ------------------------------------------------------------------------- */
 const titleG = {
-  t: 0, season: 'summer', timeOfDay: 0.66, mood: 'asleep', asleep: true, talking: false,
-  blink: 0, blinkTimer: 1.6, look: { x: 0, y: 0.2 }, stare: 0, shake: 0,
-  burn: 0, dead: false, flags: { hatOn: false }, watchers: 0
+  t: 0, season: 'summer', timeOfDay: 0.74, mood: 'asleep', asleep: true, talking: false,
+  blink: 1, blinkTimer: 999, look: { x: 0, y: 0.2 }, stare: 0, shake: 0,
+  burn: 0, dead: false, flags: { hatOn: false }, watchers: 0,
+  areaNow: 'oak', groundLeaves: [], saplings: [], critters: [], particles: [],
+  parkMotes: [], visitors: [], raining: 0, muted: false,
+  squirrel: { active: false }, inv: { leaves: 0, items: {} }, tools: []
 };
+
+function seedTitleCritters() {
+  titleG.critters = [];
+  const cols = ['#ffd24a', '#e88ac0', '#8ac8f0', '#b8e86a', '#c8a0f0'];
+  for (let i = 0; i < 7; i++) {
+    titleG.critters.push({ kind: 'butterfly', x: 20 + Math.random() * (SPR.W - 40),
+                           y: 80 + Math.random() * 60, col: cols[i % cols.length],
+                           ph: Math.random() * 6.28, sp: 0.5 + Math.random() * 0.7 });
+  }
+  titleG.critters.push({ kind: 'butterfly', credit: true, x: SPR.CX + 46, y: 92,
+                         col: '#ffd24a', ph: 0.7, sp: 0.6 });
+  titleG.critters.push({ kind: 'rabbit', x: 40, y: GROUND_Y + 22, dir: 1, moving: false, t: 2, ph: 0 });
+}
+
+function fitTitleScene() {
+  if (!logoCv) return;
+  logoCv.width = SPR.W;
+  logoCv.height = H;
+  lctx.imageSmoothingEnabled = false;
+  seedTitleCritters();
+}
+
 function drawTitleLogo(dt) {
   titleG.t += dt;
-  // he is asleep on the title card. He breathes, and that is all.
-  titleG.look.x = Math.sin(titleG.t * 0.25) * 0.2;
-  titleG.shake = 0;
-  const k = 0.95;
-  lctx.setTransform(1, 0, 0, 1, 0, 0);
-  lctx.clearRect(0, 0, logoCv.width, logoCv.height);
-  lctx.save();
-  lctx.translate(logoCv.width / 2 - CX() * k, logoCv.height - (GROUND_Y + 8) * k);
-  lctx.scale(k, k);
-  SPR.drawTree(lctx, titleG);
-  SPR.drawZzz(lctx, titleG, CX() + 30, 76, 1.8);
-  lctx.restore();
+  // he does not blink; he is asleep. Everything else in the wood moves.
+  for (const k of titleG.critters) {
+    if (k.kind === 'butterfly') {
+      const sp = k.sp || 1;
+      k.x += (Math.sin(titleG.t * 0.7 * sp + k.ph) * 16 + 6) * sp * dt;
+      k.y += Math.sin(titleG.t * 1.9 * sp + k.ph) * 12 * dt;
+      if (k.x > SPR.W - 10) k.x = 10;
+      k.y = Math.max(66, Math.min(GROUND_Y + 18, k.y));
+    } else if (k.kind === 'rabbit') {
+      k.t -= dt;
+      if (k.moving) {
+        k.x += k.dir * 22 * dt;
+        if (k.t <= 0) { k.moving = false; k.t = 3 + Math.random() * 6; }
+        if (k.x < 14 || k.x > SPR.W - 14) k.dir *= -1;
+      } else if (k.t <= 0) {
+        k.moving = true; k.t = 0.8 + Math.random() * 1.2;
+        k.dir = Math.random() > 0.5 ? 1 : -1;
+      }
+    }
+  }
+
+  const c = lctx;
+  c.setTransform(1, 0, 0, 1, 0, 0);
+  c.clearRect(0, 0, logoCv.width, logoCv.height);
+  SPR.drawBackdrop(c, titleG);
+  SPR.drawGround(c, titleG);
+  SPR.drawCosyFoliage(c, titleG, 404, 0.7);
+
+  const L = SPR.layerBegin();
+  SPR.drawTree(L, titleG);
+  SPR.drawCritters(L, titleG);
+  SPR.layerEnd(c, '#1a0f08');
+
+  SPR.drawZzz(c, titleG, SPR.CX + 34, 84, 1.4);
+  SPR.drawUndergrowth(c, titleG);
+  SPR.drawForeground(c, titleG);
+  SPR.drawVines(c, titleG, 51);
+  SPR.drawFrameFoliage(c, titleG);
+  SPR.drawBokeh(c, titleG);
+  SPR.drawOverlay(c, titleG);
 }
 
 /* ---------------------------------------------------------------------
@@ -185,6 +250,7 @@ function fit() {
   dc.imageSmoothingEnabled = false;
   cv.style.width = (logicalW * SCALE) + 'px';
   cv.style.height = (H * SCALE) + 'px';
+  if (!started) fitTitleScene();
 }
 
 /* The slice of the world the camera is currently showing. Input, the speech
@@ -341,6 +407,7 @@ function choiceAt(x, y) {
 
 function pickReply(ch) {
   DLG.choices = null; DLG.rects = [];
+  if (ch.type) { hideBubble(); openChat('oak'); return; }
   save.stats.replies = (save.stats.replies || 0) + 1;
   save.stats.tones = save.stats.tones || {};
   save.stats.tones[ch.tone] = (save.stats.tones[ch.tone] || 0) + 1;
@@ -365,6 +432,7 @@ function repliesFor(tag) {
     out.push(pool.splice(Math.floor(Math.random() * pool.length), 1)[0]);
   }
   out.push(DATA.replyMore);
+  out.push({ tone: 'type', text: 'let me say something myself', type: true });
   return out;
 }
 
@@ -380,7 +448,7 @@ function ACH(id) {
   save.ach[id] = Date.now();
   G.hall.unlocked[id] = true;
   const a = ACH_BY_ID[id];
-  pushNote(a.kind, a.name, a.desc, a.icon);
+  pushNote(a.kind, a.name, a.desc, a.icon, a.id);
   persist();
   checkMetaAchievements();
   return true;
@@ -400,30 +468,78 @@ function checkMetaAchievements() {
    --------------------------------------------------------------------- */
 let snails = [];
 
-function pushNote(kind, title, desc, icon) {
-  toastQueue.push({ kind, name: title, desc, icon });
+function pushNote(kind, title, desc, icon, id) {
+  toastQueue.push({ kind, name: title, desc, icon, id });
 }
 
+/* Post arrives sealed. The snail carries it across the park with the trophy
+   tied on top and does not read it out; you stop him and open it yourself. */
 function updateToasts(dt) {
-  if (toastQueue.length && snails.length < 2 && (!snails.length || snails[snails.length - 1].x > 90)) {
+  if (toastQueue.length && snails.length < 2 && (!snails.length || snails[snails.length - 1].x > 96)) {
     const n = toastQueue.shift();
-    const head = n.kind === 'ending' ? 'A LETTER FOR YOU' :
-                 n.kind === 'chal' ? 'REGISTERED POST' : 'SPECIAL DELIVERY';
-    const lines = [n.name].concat(F.wrapText(n.desc || '', 104, 1).slice(0, 3));
     snails.push({
-      x: -26, y: H - 14, dir: 1, speed: 30, head, lines,
-      w: Math.max(88, Math.min(148, Math.max(...lines.map(l => F.textWidth(l, 1)), F.textWidth(head, 1)) + 14)),
-      kind: n.kind, life: 0
+      x: -26, y: H - 14, dir: 1, speed: 22, note: n, kind: n.kind,
+      opened: false, life: 0, hint: 0
     });
+    save.stats.postSent = (save.stats.postSent || 0) + 1;
     SFX.note();
   }
   for (let i = snails.length - 1; i >= 0; i--) {
     const sn = snails[i];
     sn.life += dt;
     sn.x += sn.speed * dt;
-    if (sn.x > W() + 50) snails.splice(i, 1);
+    // a nudge upward when he first appears, so you know to stop him
+    if (!sn.opened && sn.life > 0.6 && sn.life < 4.2) sn.hint = Math.min(1, sn.hint + dt * 2);
+    else sn.hint = Math.max(0, sn.hint - dt * 2);
+    if (sn.x > W() + 50) {
+      if (!sn.opened) {
+        // he got away with it. It goes in the bag as unopened post.
+        save.unread = save.unread || [];
+        if (!save.unread.some(u => u.id === sn.note.id)) save.unread.push(sn.note);
+        G.bagBadge = 1;
+        persist();
+        if (G.bagOpen) renderBag();
+      }
+      snails.splice(i, 1);
+    }
   }
 }
+
+/* opening the parcel */
+function openPost(note, fromBag) {
+  if (!note) return;
+  SFX.page(); ACH('openpost');
+  const head = note.kind === 'ending' ? 'AN ENDING' :
+               note.kind === 'chal' ? 'A CHALLENGE' :
+               note.kind === 'goal' ? 'A GOAL' : 'AN ACHIEVEMENT';
+  elPostBody.innerHTML =
+    '<div class="pcard ' + note.kind + '">' +
+      '<canvas class="ptro" width="64" height="64"></canvas>' +
+      '<p class="ptier">' + head + '</p>' +
+      '<h2 class="pname"></h2>' +
+      '<p class="pdesc"></p>' +
+    '</div>';
+  elPostBody.querySelector('.pname').textContent = note.name;
+  elPostBody.querySelector('.pdesc').textContent = note.desc || '';
+  const cvs = elPostBody.querySelector('.ptro');
+  const cc = cvs.getContext('2d');
+  cc.imageSmoothingEnabled = false;
+  try {
+    cc.drawImage(SPR.trophySprite(note.id || note.icon || 'end1'), 0, 0);
+  } catch (e) {
+    drawIcon(cc, note.icon || 'leaf', 16);
+  }
+  elPost.classList.remove('hidden');
+  // remove it from the unopened pile
+  if (save.unread) {
+    save.unread = save.unread.filter(u => u.id !== note.id);
+    persist();
+  }
+  if (!fromBag && G.bagOpen) renderBag();
+  if ((save.stats.postSent || 0) >= 6 && !(save.unread || []).length) ACH('allpost');
+}
+
+function closePost() { elPost.classList.add('hidden'); if (G.bagOpen) renderBag(); }
 
 /* a poke makes him hurry along */
 function snailAt(x, y) {
@@ -436,7 +552,13 @@ function snailAt(x, y) {
 function drawPost(c) {
   for (const sn of snails) {
     SPR.drawSnail(c, G, sn);
-    SPR.drawSnailMessage(c, G, sn);
+    if (sn.hint > 0 && !sn.opened) {
+      // one word, once, so the first parcel is not missed
+      c.globalAlpha = sn.hint;
+      const hw = F.textWidth('POST \u2014 TAP IT', 1) / 2 + 4;
+      F.drawTextCentered(c, Math.max(hw, Math.min(W() - hw, sn.x)), sn.y - 22, 'POST \u2014 TAP IT', '#ffe9b0', 1, '#000000');
+      c.globalAlpha = 1;
+    }
   }
 }
 
@@ -676,6 +798,7 @@ function totalCount(tag) {
 /* World-line progress is checked after every conversation, not only when the
    line that came up happened to be a serious one. */
 function checkWorldProgress() {
+  checkQuests();
   if (heardCount('world') >= 10) ACH('world10');
   if (heardCount('world') >= totalCount('world')) { ACH('worldall'); reachEnding('witness'); }
 }
@@ -937,6 +1060,7 @@ function maybeSpawnSquirrel() {
   const s = G.squirrel;
   if (s.active || s.spawned) return;
   s.spawned = true; s.active = true;
+  s.holding = 'gear';
   s.dir = Math.random() < 0.5 ? 1 : -1;
   s.x = s.dir === 1 ? -14 : W() + 14;
   s.targetX = s.dir === 1 ? 186 : 70;
@@ -948,16 +1072,81 @@ function maybeSpawnSquirrel() {
   }, 1600);
 }
 
+/* He carries a gear. The gear is the settings. This is his whole life now. */
 function clickSquirrel() {
   const s = G.squirrel;
   s.clicks++; s.clickT = 0;
-  if (s.clicks >= 3) { ACH('poke'); SFX.squeak(); s.face = 0; say('SQUIRREL', "OW. HEY. i am a WILD ANIMAL. i have RIGHTS. (i do not have rights)", null); s.clicks = 0; return; }
+  if (s.clicks >= 4) { ACH('poke'); SFX.squeak(); s.face = 0; say('SQUIRREL', "OW. HEY. i am a WILD ANIMAL. i have RIGHTS. (i do not have rights)", null); s.clicks = 0; return; }
   SFX.squeak();
   save.stats.sqChats++; persist();
   if (save.stats.sqChats >= 15) ACH('sqchat');
-  let pool = DATA.squirrelLines;
+  let pool = DATA.squirrelSettingLines;
   if (has('lighter') && !G.flags.lighterGone) pool = pool.concat(DATA.squirrelWarnLines);
   say('SQUIRREL', pool[Math.floor(Math.random() * pool.length)], null, 'squirrel');
+  openSettings();
+}
+
+/* ---------------------------------------------------------------------
+   SETTINGS — kept by a squirrel, in a panel, because knobs need labels
+   --------------------------------------------------------------------- */
+function openSettings() {
+  ACH('gear');
+  elSet.classList.remove('hidden');
+  renderSettings();
+}
+function closeSettings() { elSet.classList.add('hidden'); }
+
+function renderSettings() {
+  if (!elSetBody) return;
+  const live = NOC_AI.live;
+  elSetBody.innerHTML =
+    '<div class="setrow"><div><b>Sound</b><span>' + (save.muted ? 'muted' : 'on') + '</span></div>' +
+      '<button class="act" id="setsound">' + (save.muted ? 'TURN ON' : 'MUTE') + '</button></div>' +
+    '<div class="setrow"><div><b>Real model for the voices</b><span>' +
+      (live ? 'on \u00b7 ' + NOC_AI.model : 'off \u2014 they are using the brains they were born with') +
+      '</span></div><button class="act" id="setai">' + (live ? 'TURN OFF' : 'ADD A KEY') + '</button></div>' +
+    '<div class="setrow"><div><b>The Trophy Room</b><span>everything you have earned so far</span></div>' +
+      '<button class="act" id="settro">OPEN</button></div>' +
+    '<div class="setrow"><div><b>Credits</b><span>or follow the bright butterfly</span></div>' +
+      '<button class="act" id="setcred">READ</button></div>' +
+    '<div class="setrow bad"><div><b>Erase everything</b><span>he will not remember you</span></div>' +
+      '<button class="act bad" id="setwipe">ERASE</button></div>';
+
+  $('setsound').onclick = () => { toggleMute(); renderSettings(); };
+  $('setai').onclick = () => {
+    if (NOC_AI.live) { NOC_AI.setKey(''); renderSettings(); return; }
+    const k = prompt("Paste an Anthropic API key.\n\nIt is kept in this browser only and is sent nowhere except Anthropic. Leave it blank to cancel.");
+    if (k && k.trim()) { NOC_AI.setKey(k.trim()); ACH('realai'); }
+    renderSettings();
+  };
+  $('settro').onclick = () => { closeSettings(); openTrophies(); };
+  $('setcred').onclick = () => { closeSettings(); openCredits(); };
+  $('setwipe').onclick = () => { closeSettings(); eraseEverything(); };
+}
+
+/* ---------------------------------------------------------------------
+   CREDITS — carried by the one butterfly that is not like the others
+   --------------------------------------------------------------------- */
+function openCredits() {
+  ACH('credits');
+  openModal('CREDITS', [
+    '<p class="small">THE WISE OAK TREE</p>',
+    '<p>A nine-hundred-year-old oak, a lamp-keeper called Noc, a squirrel who ' +
+      'gave up retail for technical support, and one butterfly that would not ' +
+      'stay in the background.</p>',
+    '<p class="small">Every pixel in this game is drawn at runtime on one canvas: ' +
+      'the tree, the forest, the weather, the trophies, and all ' + DATA.lines.length +
+      ' things he has to say. The font is a 5x7 bitmap written for it. ' +
+      'There are no images and no dependencies.</p>',
+    '<p class="small">' + DATA.achievements.length + ' achievements \u00b7 ' +
+      DATA.endings.length + ' endings \u00b7 ' + DATA.quests.length + ' jobs \u00b7 ' +
+      DATA.plans.length + ' plans</p>',
+    '<p class="small">Noc and the oak will both answer anything you type. ' +
+      'Their default brains run offline, inside the page. Add a key in the ' +
+      "squirrel's settings and a real model answers instead.</p>",
+    '<p class="small">Thank you for standing still long enough to read this. ' +
+      'He noticed. He notices everything.</p>'
+  ].join(''));
 }
 
 /* =========================================================================
@@ -1023,14 +1212,16 @@ function takePickup(p) {
   if (p.id === 'backpack') {
     save.bag = true; G.hasBag = true; G.bagBadge = 1;
     ACH('backpack');
-    pushNote('goal', 'YOU HAVE A BAG', 'Everything you find goes in it. Tap the bag, bottom left.', 'reach');
+    pushNote('goal', 'YOU HAVE A BAG', 'Everything you find goes in it. Tap the bag, bottom left.', 'reach', 'backpack');
     nudge('your bag is in the bottom left corner', 10);
     say('YOU', "A backpack. Somebody's. Yours now.", null, 'serious');
   } else {
     G.inv.items[p.id] = true;
     save.items[p.id] = 1;
     G.bagBadge = 1;
-    pushNote('goal', p.name, 'It went into your bag.', p.id === 'lighter' ? 'flame' : 'reach');
+    ACH('trade1');
+    if (DATA.shop.every(it => has(it.id))) ACH('tradeall');
+    pushNote('goal', p.name, 'It went into your bag.', p.id === 'lighter' ? 'flame' : 'reach', 'item:' + p.id);
     if (p.id === 'lighter') {
       ACH('lighter');
       persist(); seedPickups(); refreshHUD();
@@ -1083,7 +1274,7 @@ function agreePlan(id) {
     save.plans[id] = 1; persist();
     ACH('plan1');
     chatLine('noc', "Agreed, then. " + p.ask);
-    pushNote('goal', 'PLAN: ' + p.name, 'Agreed with Noc. Come back when it can be done.', 'reach');
+    pushNote('goal', 'PLAN: ' + p.name, 'Agreed with Noc. Come back when it can be done.', 'reach', 'plan:' + p.id);
     return;
   }
   const blocker = planBlocker(p);
@@ -1101,13 +1292,16 @@ function completePlan(p) {
   let gift = '';
   if (p.give.item) {
     G.inv.items[p.give.item] = true; save.items[p.give.item] = 1; G.bagBadge = 1;
+    ACH('trade1');
+    if (DATA.shop.every(it => has(it.id))) ACH('tradeall');
     gift = 'It is in your bag now.';
   }
   if (p.give.leaves) { G.inv.leaves += p.give.leaves; save.stats.leavesTotal += p.give.leaves; gift = p.give.leaves + ' leaves, for your trouble.'; }
   if (p.give.upgrade) { save.park.upgrades[p.give.upgrade] = 1; gift = 'The lane keeps the lights.'; }
   if (gift) chatLine('noc', gift);
-  pushNote('chal', 'PLAN DONE: ' + p.name, p.done, 'reach');
+  pushNote('chal', 'PLAN DONE: ' + p.name, p.done, 'reach', 'plandone:' + p.id);
   ACH('plandone');
+  checkQuests();
   if (plansDone() >= 3) ACH('plan3');
   if (plansDone() >= DATA.plans.length) { ACH('planall'); reachEnding('together'); }
   persist(); refreshHUD(); seedPickups();
@@ -1118,27 +1312,49 @@ function completePlan(p) {
    --------------------------------------------------------------------- */
 let chatBusy = false;
 
-function openChat() {
+const CHAT_LOGS = { noc: null, oak: null };
+
+/* One panel, two people. Each keeps their own transcript, swapped in and out. */
+function openChat(who) {
   if (G.cine) return;
+  who = who === 'oak' ? 'oak' : 'noc';
+  if (G.chatWho && G.chatWho !== who) CHAT_LOGS[G.chatWho] = elChatLog.innerHTML;
+  G.chatWho = who;
   elChat.classList.remove('hidden');
+  elChat.classList.toggle('oak', who === 'oak');
+  elChatWho.textContent = who === 'oak' ? 'TALKING TO THE OAK' : 'TALKING TO NOC';
+  elChatInput.placeholder = who === 'oak' ? 'say something to him\u2026' : 'say something to Noc\u2026';
+  elChatLog.innerHTML = CHAT_LOGS[who] || '';
+
   if (!elChatLog.childElementCount) {
     chatLine('sys', NOC_AI.live
-      ? 'Noc is listening for real. (model: ' + NOC_AI.model + ')'
-      : 'Type anything. Noc answers in his own words. · /help for the odd commands.');
-    chatLine('noc', save.metNoc ? DATA.nocLines[Math.floor(Math.random() * DATA.nocLines.length)] : DATA.nocIntro[0]);
+      ? 'Answering with a real model. (' + NOC_AI.model + ')'
+      : 'Type anything \u2014 he answers in his own words. \u00b7 /help for the odd commands.');
+    if (who === 'oak') {
+      chatLine('them', "Oh. You are going to TALK to me. Nobody talks to me. They click me and take what they are given. Go on, then.");
+    } else {
+      chatLine('them', save.metNoc ? DATA.nocLines[Math.floor(Math.random() * DATA.nocLines.length)] : DATA.nocIntro[0]);
+    }
   }
   setTimeout(() => elChatInput.focus(), 30);
-  ACH('talknoc');
+  ACH(who === 'oak' ? 'oakchat' : 'talknoc');
 }
 
-function closeChat() { elChat.classList.add('hidden'); }
+function closeChat() {
+  if (G.chatWho) CHAT_LOGS[G.chatWho] = elChatLog.innerHTML;
+  elChat.classList.add('hidden');
+}
+
+/* whoever is standing in front of you */
+function chatPartner() { return areaId() === 'lane' ? 'noc' : 'oak'; }
 
 function chatLine(who, text, actions) {
   const row = document.createElement('div');
-  row.className = 'cline ' + who;
+  const them = who === 'them' || who === 'noc';
+  row.className = 'cline ' + (them ? 'them' : who);
   if (who !== 'sys') {
     const tag = document.createElement('b');
-    tag.textContent = who === 'noc' ? 'NOC' : 'YOU';
+    tag.textContent = them ? (G.chatWho === 'oak' ? 'THE OAK' : 'NOC') : 'YOU';
     row.appendChild(tag);
   }
   const sp = document.createElement('span');
@@ -1158,7 +1374,7 @@ function chatLine(who, text, actions) {
   }
   elChatLog.appendChild(row);
   elChatLog.scrollTop = elChatLog.scrollHeight;
-  if (who === 'noc') { G.noc.talking = 2; SFX.click(); }
+  if (them) { G.noc.talking = 2; SFX.click(); }
   return row;
 }
 
@@ -1167,12 +1383,12 @@ function chatCommand(text) {
   const arg = rest.join(' ').trim();
   switch (cmd.toLowerCase()) {
     case 'help':
-      chatLine('sys', '/key <anthropic api key> — let Noc answer with a real model · /model <id> · /nokey · /plans · /forget');
+      chatLine('sys', '/key <anthropic api key> \u2014 answer with a real model \u00b7 /model <id> \u00b7 /nokey \u00b7 /jobs \u00b7 /plans \u00b7 /forget');
       return true;
     case 'key':
       if (!arg) { chatLine('sys', 'Paste the key after /key. It is stored in this browser only and never leaves it except to Anthropic.'); return true; }
       NOC_AI.setKey(arg);
-      chatLine('sys', 'Right. Noc is thinking with a real model now (' + NOC_AI.model + '). Local brain stays as the backup.');
+      chatLine('sys', 'Right. They are both thinking with a real model now (' + NOC_AI.model + '). The local brains stay as the backup.');
       ACH('realai');
       return true;
     case 'nokey':
@@ -1183,8 +1399,15 @@ function chatCommand(text) {
       chatLine('sys', 'Model: ' + NOC_AI.setModel(arg));
       return true;
     case 'forget':
-      NOC_AI.forget(); elChatLog.innerHTML = '';
+      NOC_AI.forget(G.chatWho); elChatLog.innerHTML = '';
       chatLine('sys', 'He has forgotten the conversation. He has not forgotten you.');
+      return true;
+    case 'jobs':
+      for (const q of DATA.quests) {
+        const st = questStatus(q);
+        chatLine('sys', (st === 'done' ? '\u2713 ' : st === 'open' ? '\u00b7 ' : '  ') + q.name + ' \u2014 ' +
+                        (st === 'done' ? 'done' : st === 'open' ? questProgress(q) : q.desc));
+      }
       return true;
     case 'plans':
       for (const p of DATA.plans) {
@@ -1203,35 +1426,45 @@ async function sendChat() {
   elChatInput.value = '';
   if (text[0] === '/') { if (chatCommand(text)) return; }
 
+  const who = G.chatWho || 'noc';
   chatLine('you', text);
-  save.stats.nocChats = (save.stats.nocChats || 0) + 1;
-  if (save.stats.nocChats >= 12) ACH('nocchat');
+  if (who === 'oak') {
+    save.stats.oakChats = (save.stats.oakChats || 0) + 1;
+    if (save.stats.oakChats >= 20) ACH('oakchat20');
+  } else {
+    save.stats.nocChats = (save.stats.nocChats || 0) + 1;
+    if (save.stats.nocChats >= 12) ACH('nocchat');
+  }
   persist();
 
   chatBusy = true;
   G.noc.thinking = 1;
-  const dots = chatLine('noc', '…');
+  if (who === 'oak') { G.talking = true; G.mood = 'think'; }
+  const dots = chatLine('them', '\u2026');
   const ctx = {
     season: G.season, night: SPR.isNight(G.timeOfDay), leaves: G.inv.leaves,
-    plansDone: plansDone(), backpack: !!save.bag
+    plansDone: plansDone(), backpack: !!save.bag, heard: heardCount()
   };
   let res;
-  try { res = await NOC_AI.ask(text, ctx); }
+  try { res = await NOC_AI.ask(text, ctx, who); }
   catch (e) { res = { text: "Sorry. Lost my thread. Say it again?", plan: null }; }
   dots.remove();
   G.noc.thinking = 0;
   chatBusy = false;
+  if (who === 'oak') { G.talking = false; G.mood = 'chill'; G.moodTimer = 4; G.sinceTreeClick = 0; }
 
-  const p = res.plan ? planById(res.plan) : null;
+  const p = res.plan && who === 'noc' ? planById(res.plan) : null;
   const acts = [];
   if (p && !save.planDone[p.id]) {
     acts.push([save.plans[p.id] ? 'DO IT NOW' : 'AGREE TO IT', () => agreePlan(p.id)]);
-    acts.push(['NOT YET', () => chatLine('noc', "Fine. It'll keep. Everything out here keeps.")]);
+    acts.push(['NOT YET', () => chatLine('them', "Fine. It'll keep. Everything out here keeps.")]);
   }
-  chatLine('noc', res.text, acts);
-  // the balloon is for when the talk box is shut; two of them at once is noise
-  if (elChat.classList.contains('hidden')) nocSay(res.text.length > 150 ? res.text.slice(0, 148) + '…' : res.text);
-  else G.noc.talking = 2.5;
+  chatLine('them', res.text, acts);
+  // the balloon is for when the talk box is shut; two at once is noise
+  const short = res.text.length > 150 ? res.text.slice(0, 148) + '\u2026' : res.text;
+  if (elChat.classList.contains('hidden')) {
+    if (who === 'oak') sayTree(short, 'chill'); else nocSay(short);
+  } else G.noc.talking = 2.5;
 }
 
 /* =========================================================================
@@ -1254,7 +1487,8 @@ function renderBag() {
   head.className = 'bagtop';
   head.innerHTML = '<span class="leaves">☘ ' + G.inv.leaves + ' leaves</span>' +
                    '<span class="dim">' + Object.keys(G.inv.items).length + ' things · ' +
-                   plansDone() + '/' + DATA.plans.length + ' plans kept</span>';
+                   DATA.quests.filter(q => save.questDone[q.id]).length + '/' + DATA.quests.length + ' jobs · ' +
+                   plansDone() + '/' + DATA.plans.length + ' plans</span>';
   elBagBody.appendChild(head);
 
   const owned = DATA.shop.filter(it => has(it.id));
@@ -1279,6 +1513,41 @@ function renderBag() {
     btn.onclick = (e) => { e.stopPropagation(); holdFromBag(it.id); };
     row.appendChild(c); row.appendChild(info); row.appendChild(btn);
     elBagBody.appendChild(row);
+  }
+
+  const unread = save.unread || [];
+  if (unread.length) {
+    const h = document.createElement('div');
+    h.className = 'bagsec';
+    h.textContent = 'UNOPENED POST (' + unread.length + ')';
+    elBagBody.appendChild(h);
+    for (const n of unread) {
+      const d = document.createElement('div');
+      d.className = 'bagrow';
+      const info = document.createElement('div');
+      info.className = 'shopinfo';
+      info.innerHTML = '<b>A sealed parcel</b><span>the snail got past you</span>';
+      const btn = document.createElement('button');
+      btn.className = 'buy';
+      btn.textContent = 'OPEN IT';
+      btn.onclick = (e) => { e.stopPropagation(); openPost(n, true); renderBag(); };
+      d.appendChild(info); d.appendChild(btn);
+      elBagBody.appendChild(d);
+    }
+  }
+
+  const jobs = DATA.quests.filter(q => save.quests[q.id]);
+  if (jobs.length) {
+    const h = document.createElement('div');
+    h.className = 'bagsec';
+    h.textContent = 'JOBS IN HAND';
+    elBagBody.appendChild(h);
+    for (const q of jobs) {
+      const d = document.createElement('div');
+      d.className = 'planrow';
+      d.innerHTML = '<b>' + q.name + '</b><span>' + questProgress(q) + '</span>';
+      elBagBody.appendChild(d);
+    }
   }
 
   const open = DATA.plans.filter(p => save.plans[p.id]);
@@ -1395,7 +1664,7 @@ function checkCompletionist() {
 
 function showEndingCard(e) {
   SFX.ending();
-  pushNote('ending', e.name, e.title, e.icon);
+  pushNote('ending', e.name, e.title, e.icon, e.id);
   const c = document.createElement('canvas');
   c.width = 16; c.height = 16;
   drawIcon(c.getContext('2d'), e.icon, 16);
@@ -1529,7 +1798,7 @@ function playCine(name, stages, onDone) {
   G.cine = { name, stages, i: 0, t: 0, done: onDone || null };
   G.scene = 'cine';
   hideBubble();
-  closeBag(); closeChat();
+  closeBag(); closeChat(); closePost(); closeSettings();
   refreshActions();
   enterStage();
 }
@@ -1618,23 +1887,14 @@ function startIntroCine() {
   playCine('intro', [
     { id: 'wide', dur: 3.4, cam: [-18, -4, 1.28], snap: true, caption: 'There is a tree in this park. It is asleep.' },
     { id: 'near', dur: 3.2, cam: [0, 8, 1.35], caption: 'Nobody remembers planting it. Nobody alive, anyway.' },
-    { id: 'wake', dur: 3.6, cam: [0, 18, 1.75], caption: '',
-      enter: () => { G.mood = 'asleep'; G.asleep = true; },
-      tick: (p) => {
-        G.blink = p < 0.45 ? 1 : 0;
-        if (p > 0.45 && G.asleep) {
-          G.asleep = false; G.mood = 'shock'; SFX.pickup(); G.shake = 3;
-          for (let i = 0; i < 6; i++) dropLeaf(90 + Math.random() * 76, 40 + Math.random() * 40, i < 2);
-        }
-        if (p > 0.7) G.mood = 'chill';
-      } },
-    { id: 'settle', dur: 2.4, cam: [0, 5, 1.09], caption: 'Oh. You are new.' }
+    { id: 'wake', dur: 3.2, cam: [0, 18, 1.75], caption: 'He has been asleep for a very long time.',
+      enter: () => { G.mood = 'asleep'; G.asleep = true; G.blink = 1; } },
+    { id: 'settle', dur: 2.2, cam: [0, 5, 1.09], caption: 'Go on. Poke him.' }
   ], () => {
-    G.blinkTimer = 2; G.asleep = false;
     G.scene = 'game';
+    G.asleep = true; G.mood = 'asleep'; G.blink = 1; G.blinkTimer = 999;
     refreshHUD(); refreshActions();
-    say('THE WISE OAK TREE', "Hello. I am an oak tree. I am nine hundred years old. Click me and I will say things. That is the entire product.", 'happy');
-    setTimeout(() => { if (!save.ach.lane && !save.ach.hollow) nudge('the signposts at the edges walk you west and east', 12); }, 9000);
+    nudge('poke him', 30);
   });
 }
 
@@ -1896,7 +2156,7 @@ function parkMargin() {
 
 /* Fewer plots than there used to be, and further apart. An empty park with
    three good things in it beats a full one with ten. */
-function plotCount() { return 3 + save.park.expansions * 2; }
+function plotCount() { return 2 + save.park.expansions * 2; }
 
 /* evenly spaced building plots along the grass, skipping the tree */
 function plotPos(i) {
@@ -1941,7 +2201,7 @@ function updatePark(dt) {
     if (save.park.upgrades.rake) {
       G.inv.leaves++; save.stats.leavesTotal++;
       G.parkMotes.push({ x: plotPos(Math.floor(Math.random() * plotCount())).x, y: GROUND_Y + 4, t: 1 });
-    } else if (G.groundLeaves.length < 18) {
+    } else if (G.groundLeaves.length < 10) {
       const src = save.park.props[Math.floor(Math.random() * save.park.props.length)];
       const pos = plotPos(src.plot);
       const c = ['#8fd95a', '#5fae3c'];
@@ -1974,7 +2234,7 @@ function checkParkAchievements() {
 function updateVisitors(dt) {
   const benches = save.park.props.filter(p => p.type === 'bench');
   G.visitorTimer -= dt;
-  const wanted = benches.length ? (save.park.upgrades.gate ? 3 : 2) : 0;
+  const wanted = benches.length ? (save.park.upgrades.gate ? 2 : 1) : 0;
   if (G.visitorTimer <= 0 && G.visitors.length < wanted) {
     G.visitorTimer = 14 + Math.random() * 20;
     const b = benches[Math.floor(Math.random() * benches.length)];
@@ -2001,7 +2261,8 @@ function updateVisitors(dt) {
         v.happy = 2;
         const tip = 2 + Math.floor(Math.random() * 4 * incomeMultiplier());
         G.inv.leaves += tip; save.stats.leavesTotal += tip; save.park.earned += tip;
-        ACH('visitor');
+        save.stats.visitorsSat = (save.stats.visitorsSat || 0) + 1;
+        ACH('visitor'); checkQuests();
         G.parkMotes.push({ x: v.x, y: GROUND_Y + 10, t: 1.2 });
         SFX.pickup();
       }
@@ -2012,85 +2273,168 @@ function updateVisitors(dt) {
   }
 }
 
-/* ---- building ---- */
+/* Leaves are still a currency, but the only thing they buy is a promise:
+   Noc's plans cost leaves. Nothing in the park has a price any more. */
 function canAfford(n) { return G.inv.leaves >= n; }
-
-function buyBuild(id) {
-  const b = BUILD_BY_ID[id];
-  if (!b) return;
-  if (!canAfford(b.cost)) { SFX.deny(); sayTree("Not enough leaves. The park does not run on enthusiasm.", 'smug'); return; }
-  const free = [];
-  for (let i = 0; i < plotCount(); i++) if (!propAtPlot(i)) free.push(i);
-  if (!free.length) { SFX.deny(); sayTree("There is nowhere to put it. Push the hedge back first.", 'think'); return; }
-  G.inv.leaves -= b.cost;
-  const plot = free[0];
-  save.park.props.push({ type: id, plot, age: 0 });
-  persist();
-  SFX.plant();
-  spawnParticles('star', plotPos(plot).x, GROUND_Y + 4, 8);
-  checkParkAchievements();
-  refreshHUD();
-  sayTree("A " + b.name.toLowerCase() + ". Look at us. We are a DESTINATION.", 'happy');
-}
-
-function buyUpgrade(id) {
-  const u = DATA.upgrades.find(x => x.id === id);
-  if (!u || save.park.upgrades[id]) return;
-  if (!canAfford(u.cost)) { SFX.deny(); sayTree("Not yet. Come back with more leaves.", 'smug'); return; }
-  G.inv.leaves -= u.cost;
-  save.park.upgrades[id] = 1;
-  persist(); SFX.ach();
-  checkParkAchievements();
-  refreshHUD();
-  sayTree(u.name + ". Money well spent, and I say that as a tree with no concept of money.", 'happy');
-}
-
-function buyExpansion() {
-  const tier = save.park.expansions;
-  const e = DATA.expansions[tier];
-  if (!e) { sayTree("There is no more park to have. This is all of it. It is enough.", 'happy'); return; }
-  if (!canAfford(e.cost)) { SFX.deny(); sayTree("The hedge stays where it is until you can afford otherwise.", 'smug'); return; }
-  G.inv.leaves -= e.cost;
-  save.park.expansions++;
-  persist(); SFX.ach(); G.flash = 0.7;
-  checkParkAchievements();
-  refreshHUD();
-  sayTree(e.desc + " I can see the lane from here now. I have not seen the lane since the war.", 'shock');
-}
 
 function sayTree(text, mood) { say('THE WISE OAK TREE', text, mood || 'idle', ''); }
 
 /* ---------------------------------------------------------------------
    MENUS — wooden panels nailed up in the park, not interface
    --------------------------------------------------------------------- */
-function openBuildMenu() {
-  const rows = DATA.build.map(b => {
-    const owned = save.park.props.filter(p => p.type === b.id).length;
-    return {
-      label: b.name + (owned ? ' x' + owned : ''),
-      sub: b.desc,
-      cost: b.cost,
-      act: () => buyBuild(b.id)
-    };
-  });
-  const tier = save.park.expansions;
-  if (DATA.expansions[tier]) {
-    rows.push({ label: 'Expand The Park', sub: DATA.expansions[tier].desc, cost: DATA.expansions[tier].cost, act: buyExpansion });
+/* =========================================================================
+   THE BOARD
+   Nothing here has a price. Everything on the board is a job somebody asked
+   you to do, and the park gets built out of the jobs you finish.
+   ========================================================================= */
+function questById(id) { return DATA.quests.find(q => q.id === id); }
+
+function questStatus(q) {
+  if (save.questDone[q.id]) return 'done';
+  if (save.quests[q.id]) return 'open';
+  return 'new';
+}
+
+/* a job is only on the board once the person who wants it has met you */
+function questOffered(q) { return q.from === 'oak' ? true : !!save.metNoc; }
+
+function questCount(key) {
+  switch (key) {
+    case 'heard':       return heardCount();
+    case 'waters':      return save.stats.waters || 0;
+    case 'hugs':        return save.stats.hugs || 0;
+    case 'plants':      return save.stats.plants || 0;
+    case 'leavesTotal': return save.stats.leavesTotal || 0;
+    case 'visitors':    return save.stats.visitorsSat || 0;
+    case 'plans':       return plansDone();
+    case 'critters':    return Object.keys(save.stats.crittersMet || {}).length;
+    case 'seasons':     return Object.keys(save.stats.seasons || {}).length;
+    case 'propsMax':    return save.park.props.length;
+    default:            return 0;
   }
-  G.menu = { kind: 'build', title: 'THE NOTICEBOARD', rows, sel: -1 };
+}
+
+function questMet(q) {
+  for (const key in q.need) {
+    const want = q.need[key], got = questCount(key);
+    if (key === 'propsMax') { if (got > want) return false; }
+    else if (got < want) return false;
+  }
+  return true;
+}
+
+function questProgress(q) {
+  const bits = [];
+  for (const key in q.need) {
+    const want = q.need[key], got = questCount(key);
+    if (key === 'propsMax') bits.push(got + '/' + want + ' things in the park' + (got > want ? ' — too many' : ''));
+    else bits.push(Math.min(got, want) + '/' + want + ' ' + QUEST_UNITS[key]);
+  }
+  return bits.join(' · ');
+}
+
+const QUEST_UNITS = {
+  heard: 'heard', waters: 'waterings', hugs: 'hugs', plants: 'planted',
+  leavesTotal: 'leaves', visitors: 'visitors', plans: 'plans kept',
+  critters: 'creatures', seasons: 'seasons'
+};
+
+function acceptQuest(id) {
+  const q = questById(id);
+  if (!q || save.quests[id] || save.questDone[id]) return;
+  save.quests[id] = 1; persist();
+  ACH('quest1');
+  SFX.page();
+  const voice = q.from === 'oak' ? sayTree : nocSay;
+  voice(q.ask, 'think');
+  pushNote('goal', 'JOB: ' + q.name, q.desc, 'reach', 'quest:' + id);
+}
+
+/* checked after anything that could move a counter */
+function checkQuests() {
+  for (const q of DATA.quests) {
+    if (!save.quests[q.id] || save.questDone[q.id]) continue;
+    if (questMet(q)) finishQuest(q);
+  }
+}
+
+function finishQuest(q) {
+  save.questDone[q.id] = 1;
+  delete save.quests[q.id];
+  SFX.ach(); G.flash = 0.4;
+  spawnParticles('star', CX(), 110, 12);
+  ACH('questdone');
+  if (DATA.quests.every(x => save.questDone[x.id])) { ACH('questall'); reachEnding('gardener'); }
+
+  const r = q.reward || {};
+  if (r.prop) grantProp(r.prop);
+  if (r.upgrade) { save.park.upgrades[r.upgrade] = 1; }
+  if (r.expand) { save.park.expansions = Math.min(3, save.park.expansions + r.expand); }
+  if (r.leaves) { G.inv.leaves += r.leaves; save.stats.leavesTotal += r.leaves; }
+
+  persist();
+  checkParkAchievements();
+  refreshHUD();
+  const voice = q.from === 'oak' ? sayTree : nocSay;
+  voice(q.done, 'happy');
+  pushNote('chal', 'JOB DONE: ' + q.name, (r.line || '') + ' ' + q.done, 'reach', 'questdone:' + q.id);
+}
+
+/* a thing appears in the park, free, because you earned it */
+function grantProp(type) {
+  const free = [];
+  for (let i = 0; i < plotCount(); i++) if (!propAtPlot(i)) free.push(i);
+  if (!free.length) return false;
+  const plot = free[Math.floor(Math.random() * free.length)];
+  save.park.props.push({ type, plot, age: 0 });
+  SFX.plant();
+  spawnParticles('star', plotPos(plot).x, GROUND_Y + 4, 8);
+  return true;
+}
+
+/* ---- the board itself: a list of jobs, not a list of prices ---- */
+function openQuestBoard() {
+  const rows = [];
+  for (const q of DATA.quests) {
+    if (!questOffered(q)) continue;
+    const st = questStatus(q);
+    rows.push({
+      label: (st === 'done' ? '✓ ' : '') + q.name,
+      sub: st === 'open' ? questProgress(q) : q.desc,
+      right: st === 'done' ? 'DONE' : st === 'open' ? 'TAKEN' : 'TAKE IT',
+      dim: st === 'done',
+      act: st === 'new' ? () => acceptQuest(q.id)
+         : () => { const v = q.from === 'oak' ? sayTree : nocSay;
+                   v(st === 'done' ? q.done : q.ask, st === 'done' ? 'happy' : 'think'); closeMenu(); }
+    });
+  }
+  const open = DATA.quests.filter(q => save.quests[q.id]).length;
+  const done = DATA.quests.filter(q => save.questDone[q.id]).length;
+  G.menu = {
+    kind: 'board', title: 'THE BOARD', rows, sel: -1,
+    note: rows.length ? (done + ' done  ·  ' + open + ' in hand') : DATA.boardEmpty
+  };
   SFX.page();
 }
 
-function openLedger() {
-  const rows = DATA.upgrades.map(u => ({
-    label: u.name, sub: u.desc, cost: u.cost,
-    owned: !!save.park.upgrades[u.id],
-    act: () => buyUpgrade(u.id)
-  }));
-  const inc = parkIncome();
+/* ---- the cottage: what the park is, not what it costs ---- */
+function openJournal() {
+  const rows = [];
+  const counts = {};
+  for (const p of save.park.props) counts[p.type] = (counts[p.type] || 0) + 1;
+  for (const b of DATA.build) {
+    if (!counts[b.id]) continue;
+    rows.push({ label: b.name + (counts[b.id] > 1 ? ' x' + counts[b.id] : ''), sub: b.desc, right: 'IN THE PARK' });
+  }
+  for (const u of DATA.upgrades) {
+    if (!save.park.upgrades[u.id]) continue;
+    rows.push({ label: u.name, sub: u.desc, right: 'EARNED', dim: true });
+  }
+  if (!rows.length) rows.push({ label: 'Nothing yet', sub: 'The park is one tree and a great deal of room.', right: '' });
   G.menu = {
-    kind: 'ledger', title: "THE KEEPER'S LEDGER", rows, sel: -1,
-    note: inc.toFixed(2) + ' leaves a second  ·  ' + save.park.earned + ' earned'
+    kind: 'journal', title: "THE KEEPER'S JOURNAL", rows, sel: -1,
+    note: parkIncome().toFixed(2) + ' leaves a second  ·  ' + save.park.earned + ' earned  ·  ' +
+          save.park.props.length + '/' + plotCount() + ' plots used'
   };
   SFX.page();
 }
@@ -2128,7 +2472,7 @@ function drawMenu(c) {
   if (!m) return;
   const b = menuBox();
   SPR.drawPanel(c, b.x, b.y, b.w, b.h, m.title);
-  // leaf purse, top right
+  // leaf purse, top right — the only currency left, and only Noc takes it
   F.drawText(c, b.x + b.w - 34, b.y + 3, String(G.inv.leaves), '#ffe9b0', 1);
   SPR.drawLeafSprite(c, b.x + b.w - 44, b.y + 3, '#8fd95a', '#3a7a28');
   // close
@@ -2140,16 +2484,16 @@ function drawMenu(c) {
   for (let i = 0; i < m.rows.length; i++) {
     const r = m.rows[i];
     const y = top + i * 17;
-    const afford = G.inv.leaves >= r.cost && !r.owned;
     const hot = m.sel === i;
     if (hot) SPR.roundRect(c, b.x + 3, y, b.w - 6, 16, 2, '#e8c98a');
-    const priceW = F.textWidth(r.owned ? 'HAVE IT' : String(r.cost), 1) + 22;
-    F.drawText(c, b.x + 7, y + 1, fitText(r.label, b.w - 14 - priceW), r.owned ? '#6b8a4a' : '#3a2410', 1);
-    F.drawText(c, b.x + 7, y + 9, fitText(r.sub, b.w - 14), '#7a6248', 1);
-    const price = r.owned ? 'HAVE IT' : String(r.cost);
-    const pw = F.textWidth(price, 1);
-    F.drawText(c, b.x + b.w - 9 - pw, y + 4, price, r.owned ? '#6b8a4a' : afford ? '#2d6b1f' : '#a05a4a', 1);
-    if (!r.owned) SPR.drawLeafSprite(c, b.x + b.w - 17 - pw, y + 4, afford ? '#8fd95a' : '#b0a08a', '#3a7a28');
+    const right = r.right || '';
+    const rw = right ? F.textWidth(right, 1) : 0;
+    F.drawText(c, b.x + 7, y + 1, fitText(r.label, b.w - 18 - rw), r.dim ? '#6b8a4a' : '#3a2410', 1);
+    F.drawText(c, b.x + 7, y + 9, fitText(r.sub || '', b.w - 18 - rw), '#7a6248', 1);
+    if (right) {
+      const col = right === 'DONE' ? '#6b8a4a' : right === 'TAKEN' ? '#a07a3a' : right === 'TAKE IT' ? '#2d6b1f' : '#7a6248';
+      F.drawText(c, b.x + b.w - 9 - rw, y + 4, right, col, 1);
+    }
   }
 }
 
@@ -2174,10 +2518,15 @@ function seedCritters() {
     G.critters.push({ kind: 'bird', x: p.x, y: p.y, hx: p.x, hy: p.y, col: BIRD_COLS[i % BIRD_COLS.length],
                       ph: Math.random() * 6.28, flying: false, t: 3 + Math.random() * 8, vx: 0, vy: 0 });
   }
-  for (let i = 0; i < 3; i++) {
-    G.critters.push({ kind: 'butterfly', x: inset() + Math.random() * (W() - inset() * 2), y: 100 + Math.random() * 50,
-                      col: ['#ffd24a', '#e88ac0', '#8ac8f0'][i % 3], ph: Math.random() * 6.28, t: 0 });
+  const wingCols = ['#ffd24a', '#e88ac0', '#8ac8f0', '#b8e86a', '#e8a05a', '#c8a0f0', '#f0e0a0'];
+  for (let i = 0; i < 10; i++) {
+    G.critters.push({ kind: 'butterfly', x: inset() + Math.random() * (W() - inset() * 2), y: 84 + Math.random() * 62,
+                      col: wingCols[i % wingCols.length], ph: Math.random() * 6.28, t: 0,
+                      sp: 0.6 + Math.random() * 0.9 });
   }
+  // the bright one. It is the credits, and it knows it.
+  G.critters.push({ kind: 'butterfly', credit: true, x: CX() + 40, y: 96,
+                    col: '#ffd24a', ph: 1.4, t: 0, sp: 0.7 });
   G.critters.push({ kind: 'beetle', x: CX() - 20, y: 130, ph: 0, dir: 1, t: 0 });
   G.critters.push({ kind: 'rabbit', x: insetX(46), y: GROUND_Y + 22, dir: 1, moving: false, t: 2, ph: 0 });
 }
@@ -2211,10 +2560,11 @@ function updateCritters(dt) {
         k.vy = -14 - Math.random() * 12;
       }
     } else if (k.kind === 'butterfly') {
-      k.x += Math.sin(G.t * 0.7 + k.ph) * 16 * dt + 6 * dt;
-      k.y += Math.sin(G.t * 1.9 + k.ph) * 12 * dt;
+      const sp = k.sp || 1;
+      k.x += (Math.sin(G.t * 0.7 * sp + k.ph) * 16 + 6) * sp * dt;
+      k.y += Math.sin(G.t * 1.9 * sp + k.ph) * 12 * dt;
       if (k.x > W() - inset()) k.x = inset();
-      k.y = Math.max(70, Math.min(GROUND_Y + 20, k.y));
+      k.y = Math.max(66, Math.min(GROUND_Y + 22, k.y));
     } else if (k.kind === 'beetle') {
       k.x += k.dir * 5 * dt;
       k.y += Math.sin(G.t * 0.6) * 3 * dt;
@@ -2236,17 +2586,27 @@ function updateCritters(dt) {
 
 function critterAt(x, y) {
   for (const k of G.critters) {
-    const r = k.kind === 'rabbit' ? 10 : k.kind === 'beetle' ? 5 : 7;
+    const r = k.credit ? 10 : k.kind === 'rabbit' ? 10 : k.kind === 'beetle' ? 5 : 7;
     if (Math.abs(x - k.x) < r && Math.abs(y - k.y) < r + 2) return k;
   }
   return null;
 }
 
 function touchCritter(k) {
+  if (k.credit) {
+    SFX.ach();
+    spawnParticles('star', k.x, k.y, 10);
+    say('THE WISE OAK TREE', DATA.creditLines[Math.floor(Math.random() * DATA.creditLines.length)], 'happy');
+    setTimeout(openCredits, 900);
+    return;
+  }
   const lines = DATA.critterLines[k.kind];
   if (k.kind === 'bird' && !k.flying) { k.flying = true; k.t = 2.4; k.vx = (Math.random() > .5 ? 1 : -1) * 44; k.vy = -18; }
   if (k.kind === 'rabbit') { k.moving = true; k.t = 1.4; k.dir = k.x < CX() ? -1 : 1; }
   ACH('critter');
+  save.stats.crittersMet = save.stats.crittersMet || {};
+  save.stats.crittersMet[k.kind] = 1;
+  persist();
   SFX.squeak();
   say('THE WISE OAK TREE', lines[Math.floor(Math.random() * lines.length)], 'happy');
 }
@@ -2299,7 +2659,7 @@ function drawWorld(opts) {
   SPR.drawGround(dc, G);
   SPR.drawPond(dc, G);
   SPR.drawBoundary(dc, G, parkMargin());
-  SPR.drawCosyFoliage(dc, G, 404, 0.9);
+  SPR.drawCosyFoliage(dc, G, 404, 0.7);
   SPR.drawFireGlow(dc, G);
 
   // everything solid in the foreground shares one dark contour
@@ -2849,7 +3209,9 @@ function onPress(ev) {
       const row = G.menu.rows[r];
       const kind = G.menu.kind;
       row.act();
-      if (kind === 'build') openBuildMenu(); else openLedger();
+      if (!G.menu) return;
+      if (kind === 'board') openQuestBoard();
+      else if (kind === 'journal') openJournal();
       return;
     }
     closeMenu();
@@ -2871,9 +3233,13 @@ function onPress(ev) {
     const ci = choiceAt(fr.x, fr.y);
     if (ci >= 0) { SFX.click(); pickReply(DLG.choices[ci]); return; }
   }
-  // hurry the postman along
+  // stop the postman and open what he is carrying
   const sn = snailAt(fr.x, fr.y);
-  if (sn) { sn.speed = 150; SFX.squeak(); return; }
+  if (sn) {
+    if (sn.opened) { sn.speed = 150; SFX.squeak(); }
+    else { sn.opened = true; sn.speed = 8; openPost(sn.note); }
+    return;
+  }
 
   if (G.cine) { skipStage(); return; }
   const p = toLogical(ev);
@@ -2930,7 +3296,7 @@ function onPress(ev) {
   }
   if (h.kind === 'leaf') { collectLeaf(h.i); return; }
   if (h.kind === 'pickup') { takePickup(h.p); return; }
-  if (h.kind === 'noc') { SFX.click(); openChat(); return; }
+  if (h.kind === 'noc') { SFX.click(); openChat('noc'); return; }
   if (h.kind === 'squirrel') { clickSquirrel(); return; }
   if (h.kind === 'part') {
     grab = { x: p.x, lastX: p.x, moved: 0, t: 0 };
@@ -2941,7 +3307,7 @@ function onPress(ev) {
   if (h.kind === 'moon' || h.kind === 'sun') { touchSky(h.kind); return; }
   if (h.kind === 'house') {
     ACH('house');
-    openLedger();
+    openJournal();
     if (Math.random() < 0.5) return;
     say('THE WISE OAK TREE', DATA.houseLines[Math.floor(Math.random() * DATA.houseLines.length)], 'idle');
     return;
@@ -2956,7 +3322,7 @@ function onPress(ev) {
     return;
   }
   if (h.kind === 'board') {
-    openBuildMenu();
+    openQuestBoard();
     if (Math.random() < 0.4) say('THE WISE OAK TREE', DATA.boardLines[Math.floor(Math.random() * DATA.boardLines.length)], 'happy');
     return;
   }
@@ -3002,6 +3368,9 @@ elChatInput.addEventListener('keydown', e => {
 });
 $('bagclose').onclick = (e) => { e.stopPropagation(); SFX.click(); closeBag(); };
 $('chatclose').onclick = (e) => { e.stopPropagation(); SFX.click(); closeChat(); };
+$('postclose').onclick = (e) => { e.stopPropagation(); SFX.click(); closePost(); };
+$('setclose').onclick = (e) => { e.stopPropagation(); SFX.click(); closeSettings(); };
+elPost.addEventListener('mousedown', e => { if (e.target === elPost) closePost(); });
 elModal.addEventListener('mousedown', e => { if (e.target === elModal && !G.flags.confirming) closeModal(); });
 
 document.addEventListener('keydown', e => {
@@ -3016,12 +3385,12 @@ document.addEventListener('keydown', e => {
     if (e.key === 'Escape') closeHall();
     return;
   }
-  if (e.key === 'Escape') { if (G.menu) closeMenu(); closeModal(); closeBag(); closeChat(); }
+  if (e.key === 'Escape') { if (G.menu) closeMenu(); closeModal(); closeBag(); closeChat(); closePost(); closeSettings(); }
   if (e.key === ' ') { e.preventDefault(); if (!skipType() && G.scene === 'game') talkToTree(); }
   if (e.key === 'ArrowLeft') travel(-1);
   if (e.key === 'ArrowRight') travel(1);
   if (e.key.toLowerCase() === 'b') toggleBag();
-  if (e.key.toLowerCase() === 't' && areaId() === 'lane') openChat();
+  if (e.key.toLowerCase() === 't' && !G.asleep) openChat(chatPartner());
   if (e.key.toLowerCase() === 'm') toggleMute();
   if (e.key.toLowerCase() === 'r' && e.shiftKey) eraseEverything();
   if (e.key.toLowerCase() === 'e' && G.scene === 'heaven') openEndings();
@@ -3055,9 +3424,9 @@ function beginGame() {
   elTitle.classList.add('out');
   setTimeout(() => elTitle.classList.add('hidden'), 520);
   // he was asleep on the card, so he is asleep in the world too
-  G.asleep = true; G.mood = 'asleep';
+  G.asleep = true; G.mood = 'asleep'; G.blink = 1; G.blinkTimer = 999;
   if (hadSave) {
-    setTimeout(wakeHim, 1100);
+    setTimeout(() => { if (G.asleep) nudge('he is asleep \u2014 poke him', 30); }, 900);
   } else {
     startIntroCine();
   }
@@ -3066,8 +3435,10 @@ function beginGame() {
 /* the actual waking: a shudder, a blink, and nine hundred years of opinions */
 function wakeHim() {
   if (!G.asleep) return;
-  G.asleep = false; G.wakeT = 0;
-  G.blink = 0.45; G.shake = 3.2; G.mood = 'shock'; G.moodTimer = 5;
+  G.asleep = false; G.wakeT = 0; G.blinkTimer = 2;
+  elHint.className = 'hidden';
+  ACH('hello');
+  G.blink = 0.45; G.shake = 3.6; G.mood = 'shock'; G.moodTimer = 5;
   SFX.sneeze();
   for (let i = 0; i < 7; i++) dropLeaf(90 + Math.random() * 76, 40 + Math.random() * 40, i < 2);
   spawnParticles('star', CX(), 96, 6);
@@ -3078,8 +3449,8 @@ function wakeHim() {
       ? "Mm. You again. I had got all the way to sleep, which for me takes about a decade. Sit down. I'll be awake in a minute."
       : "Nnh. Someone is standing under me. Right. Give me a moment. Nine hundred years is a long nap to come out of.",
       'sleepy');
-    if (!save.ach.lane && !save.ach.hollow) setTimeout(() => nudge('the signposts at the edges walk you west and east', 12), 7000);
-    else if (!save.bag) setTimeout(() => nudge('there is a bag somewhere east of here', 10), 7000);
+    if (!save.ach.lane && !save.ach.hollow) setTimeout(() => nudge('the signposts at the edges walk you west and east', 12), 8000);
+    else if (!save.bag) setTimeout(() => nudge('there is a bag somewhere east of here', 10), 8000);
   }, 700);
 }
 $('tstart').onclick = beginGame;
@@ -3092,9 +3463,11 @@ if (/[?&]debug/.test(location.search)) {
   window.OAK = { G, save, ACH, reachEnding, startBurning, goHeaven, reincarnate,
                  refreshHUD, dropLeaf, triggerSneeze, maybeSpawnSquirrel, persist,
                  skipAll: () => { if (G.cine) { G.cine.i = G.cine.stages.length - 1; skipStage(); } },
-                 parkMargin, parkIncome, menuBox, closeMenu, openBuildMenu, openLedger, plotPos, hitTest,
+                 parkMargin, parkIncome, menuBox, closeMenu, openQuestBoard, openJournal, acceptQuest, checkQuests, questStatus, plotPos, hitTest,
                  travel, takePickup, seedPickups, openChat, closeChat, sendChat, openBag, closeBag,
                  agreePlan, completePlan, planById, areaId, wakeHim, AREAS,
+                 openPost, closePost, openSettings, openCredits, finishQuest, questById, questProgress,
+                 snailNotes: () => snails.map(s => ({ id: s.note && s.note.id, opened: s.opened })),
                  signLabels: () => signs.map(s => s.label), signFor: (l) => signs.find(s => s.label === l),
                  dlgText: () => DLG.text, DLG, snails: () => snails.length, toastQueue };
 }
