@@ -263,6 +263,18 @@ DATA.shop = [
    Unlocked by the engine via ACH('id').
    ------------------------------------------------------------------------- */
 DATA.achievements = [
+  // talking, which is the game
+  { id: 'topics',      kind: 'task', icon: 'book',    name: 'The Running Order',     desc: "Look up what he still has to talk about." },
+  { id: 'set1',        kind: 'task', icon: 'mouth',   name: 'He Has More',           desc: "Listen long enough that he opens a second subject." },
+  { id: 'set2',        kind: 'task', icon: 'mouth',   name: 'The Odd Business',      desc: "Get him on to the things he does not mention on a first afternoon." },
+  { id: 'set3',        kind: 'goal', icon: 'reel',    name: 'Never Seen A Frame',     desc: "Get him talking about television." },
+  { id: 'set4',        kind: 'goal', icon: 'eye',     name: 'The Uncomfortable Set', desc: "Let him talk about you." },
+  { id: 'set5',        kind: 'goal', icon: 'ledger',  name: 'Who Decides',           desc: "Reach the set he keeps for people who come back." },
+  { id: 'set6',        kind: 'chal', icon: 'globe',   name: 'The Real Parts',        desc: "Reach the last set. He stops joking in that one." },
+  { id: 'setall',      kind: 'chal', icon: 'book',    name: 'Everything He Opens',   desc: "Have him open every set of subjects he has." },
+  { id: 'power1',      kind: 'task', icon: 'ledger',  name: 'Nine Hundred Years Of It', desc: "Hear him on power for the first time." },
+  { id: 'power15',     kind: 'goal', icon: 'ledger',  name: 'The Long View',         desc: "Hear fifteen things he watched happen to this field." },
+  { id: 'powerall',    kind: 'chal', icon: 'ledger',  name: 'The Whole Enclosure',   desc: "Hear everything he has to say about who decides." },
   { id: 'garden',      kind: 'task', icon: 'leaf',    name: 'The Snail Garden',      desc: "Find where heaven keeps the postal service." },
   { id: 'snails12',    kind: 'goal', icon: 'paper',   name: 'A Full Round',          desc: "Have twelve different snails deliver to you." },
   // the post, the settings squirrel, the credits butterfly
@@ -395,6 +407,16 @@ DATA.achievements = [
    ENDINGS
    ------------------------------------------------------------------------- */
 DATA.endings = [
+  {
+    id: 'commons', name: 'THE COMMONS', icon: 'ledger',
+    title: "You let a tree tell you who has been deciding things.",
+    body: "Nine hundred years in one field: the common land, the fence, the document nobody voted on, " +
+          "the mill, the boy on the crate who was arrested and right, the eleven people in the council " +
+          "meeting, the stream that got clean again because somebody would not shut up. " +
+          "He took no side and he named nobody. He just kept the record, the way a tree keeps a record, " +
+          "and then he handed it to you and said: you are a future generation. Nobody ever asks us anything.",
+    hint: "Keep talking to him until he opens the set about power, then hear all of it."
+  },
   {
     id: 'gardener', name: 'THE KEEPER', icon: 'leaf',
     title: "You finished every job on the board.",
@@ -1012,3 +1034,89 @@ DATA.gardenLines = [
   "They do not mind being dead. They were never in a hurry to begin with.",
   "Bigger post, bigger snail. That is the whole system. Nobody designed it."
 ];
+
+
+/* =========================================================================
+   POWER
+   He has stood in one field through the commons, the enclosures, the poor
+   laws, the mills, the wars, the welfare state and whatever this is. He takes
+   no side and endorses nobody: he reports what he watched happen to the people
+   standing under him, and who was in the room when it was decided.
+   ========================================================================= */
+DATA.lines = DATA.lines.concat([
+  { id: 'w01', tag: 'power', mood: 'idle',  text: "This field was common land. Everyone's cows, everyone's firewood, everyone's mushrooms. Then it was fenced, and it was one man's. Nobody voted. There was a document." },
+  { id: 'w02', tag: 'power', mood: 'smug',  text: "I have outlived nineteen governments and every single one of them said the situation they inherited was unprecedented." },
+  { id: 'w03', tag: 'power', mood: 'think', text: "Politics, as far as I can tell from down here, is the argument about who has to move and who gets to stay." },
+  { id: 'w04', tag: 'power', mood: 'sad',   text: "They enclosed the commons and called it improvement. It probably was, for the soil. Nobody asked the people who had been eating off it." },
+  { id: 'w05', tag: 'power', mood: 'idle',  text: "Every so often somebody nails a notice to me. A tax, a law, a name for a war. I am the oldest noticeboard in the parish and I have never once agreed to it." },
+  { id: 'w06', tag: 'power', mood: 'think', text: "The men who decided about this field never stood in it. That is the single most consistent thing I have observed in nine hundred years." },
+  { id: 'w07', tag: 'power', mood: 'shock', text: "They moved the parish boundary in 1743 and half the village woke up in a different jurisdiction with different rights. Same beds. Same mud. Different rules." },
+  { id: 'w08', tag: 'power', mood: 'idle',  text: "A border is a decision that hardens. Give it two generations and people will tell you it is geography." },
+  { id: 'w09', tag: 'power', mood: 'sad',   text: "The mill came, and the wages came, and the children went into the mill. Both things were true at once. That is usually how it goes and nobody wants to hear it." },
+  { id: 'w10', tag: 'power', mood: 'smug',  text: "I have heard 'there is no alternative' in four different accents across three centuries. There was, each time. It was just expensive for somebody specific." },
+  { id: 'w11', tag: 'power', mood: 'think', text: "Voting is a strange, thin, magnificent thing. A whole afternoon of power, once every few years, and then back to the mill. I would still queue for it." },
+  { id: 'w12', tag: 'power', mood: 'idle',  text: "They came round canvassing last spring. Both of them promised the same three things in a different order and neither of them mentioned the water." },
+  { id: 'w13', tag: 'power', mood: 'sad',   text: "The village had a hall, a surgery, a bus and a library. It has one of them left. Nobody announced the closing of a village. It was done in instalments." },
+  { id: 'w14', tag: 'power', mood: 'think', text: "Every generation is told the previous one had it easier and the next one will have it worse. From here it looks less like a slope and more like a tide with an argument on top of it." },
+  { id: 'w15', tag: 'power', mood: 'shock', text: "Somebody stood on a crate under me in 1889 and said working men should have a say in what the country did with them. He was arrested. He was also right, in the end, which is the usual sequence." },
+  { id: 'w16', tag: 'power', mood: 'idle',  text: "Propaganda is not lying. Lying is easy to catch. Propaganda is choosing, very carefully, which true thing you say first." },
+  { id: 'w17', tag: 'power', mood: 'think', text: "Every side in every argument I have overheard believed it was the reasonable one being pushed. All of them. Simultaneously. For nine hundred years." },
+  { id: 'w18', tag: 'power', mood: 'sad',   text: "They plant a tree when they open something and cut one down when they build something, and they photograph the first and not the second." },
+  { id: 'w19', tag: 'power', mood: 'idle',  text: "The rent on the cottage went up four times in ten years and the cottage did not change. I watched it not change. I was here the whole time." },
+  { id: 'w20', tag: 'power', mood: 'think', text: "'Who decides?' is the only political question. Everything else is a debate about the seating." },
+  { id: 'w21', tag: 'power', mood: 'smug',  text: "A politician stood under me and said we must think of future generations. I am a future generation. Nobody has ever asked me anything." },
+  { id: 'w22', tag: 'power', mood: 'sad',   text: "The stream was clean, then it was a drain, then it was clean again because people complained for eleven years. Nothing out here improves on its own. It improves because somebody would not shut up." },
+  { id: 'w23', tag: 'power', mood: 'idle',  text: "There were bread riots in the next parish. Not a movement, not an ideology. People were hungry and the price was a decision somebody had made in a warm room." },
+  { id: 'w24', tag: 'power', mood: 'think', text: "The law arrives here about thirty years after the harm and about ten years after everybody already knew." },
+  { id: 'w25', tag: 'power', mood: 'shock', text: "They put a bypass through the meadow and held a consultation about the colour of the fence." },
+  { id: 'w26', tag: 'power', mood: 'idle',  text: "I do not think people are stupid. I have listened to them for nine centuries. I think they are tired, and being tired is very useful to somebody." },
+  { id: 'w27', tag: 'power', mood: 'sad',   text: "Empire, from here, was other people's fields being decided about by men who had never stood in those either. It is the same sentence. It is only ever the same sentence." },
+  { id: 'w28', tag: 'power', mood: 'think', text: "The commons worked for four hundred years because everybody could see everybody else using it. Most things fail when nobody can see who is taking." },
+  { id: 'w29', tag: 'power', mood: 'happy', text: "The best thing this country ever did, and I say this as a tree with no politics: it decided that being ill should not bankrupt you. I heard people cry about it in this field. With relief." },
+  { id: 'w30', tag: 'power', mood: 'idle',  text: "I am not going to tell you who to vote for. I am a tree. But I will tell you that the people who benefit most from you not bothering are extremely aware of the arithmetic." },
+  { id: 'w31', tag: 'power', mood: 'think', text: "They argue about the climate as though it were an opinion. I keep the record in my rings. Nineteen seventy-six. Two thousand and three. Two thousand and twenty-two. It is not an opinion, it is a diary." },
+  { id: 'w32', tag: 'power', mood: 'sad',   text: "The council meeting about this park had eleven people in it. Nine were retired. The decision lasted forty years and none of them lived to see it land." },
+  { id: 'w33', tag: 'power', mood: 'smug',  text: "Somebody called me a stakeholder in a planning document once. Correct. I have a very large stake and it goes down eleven metres." },
+  { id: 'w34', tag: 'power', mood: 'idle',  text: "Two men fought under me over a hedge for six years. It was never about the hedge. It is almost never about the hedge." },
+  { id: 'w35', tag: 'power', mood: 'think', text: "Nothing out here has ever been given. It was asked for badly, then asked for well, then demanded, and then granted as though it had been the plan all along." }
+]);
+
+DATA.replies.power = [
+  { tone: 'kind',    text: "That must have been hard to watch.", follow: "It was slow. Everything cruel out here is slow, which is how it gets through. Nobody stops a thing that takes forty years." },
+  { tone: 'curious', text: "So what actually changes anything?", follow: "People who will not go away. Every single time. Not the speeches — the ones who came back to the eleventh meeting when there were four of them left in the room." },
+  { tone: 'curious', text: "Whose side are you on?", follow: "Nobody's. I am a tree. I do not have a side, I have a view, and the view is that it is nearly always the same people who have to move." },
+  { tone: 'rude',    text: "Keep politics out of it.", follow: "I would love to. Somebody decided who owns the ground I am standing in, whether you can walk here, and whether I get cut down for a road. It is not a topic to me. It is the soil." },
+  { tone: 'joke',    text: "You should run for office.", follow: "I have excellent name recognition, a fixed address and nine hundred years of unblemished public service. My weakness is that I cannot attend anything." },
+  { tone: 'kind',    text: "I'll pay more attention.", follow: "That is all of it. That is the entire ask. Attention is the only thing anybody out here has ever actually needed from a person like you." },
+  { tone: 'curious', text: "Does it ever get better?", follow: "Yes. Slowly, unevenly, and never permanently. The stream is clean again. Children are not in the mill. It got better because people were annoying about it for a very long time." }
+];
+
+/* =========================================================================
+   THE SETS
+   He does not hand over everything at once. Keep talking and he opens a new
+   subject, and says so.
+   ========================================================================= */
+DATA.sets = [
+  { id: 'goofy', at: 0,  name: 'THE USUAL NONSENSE', tags: ['goofy'],
+    intro: null },
+  { id: 'wise',  at: 8,  name: 'THINGS HE HAS WORKED OUT', tags: ['wise'],
+    intro: "Right. You have stayed longer than most. I have some things I have actually worked out, as opposed to the material. Do you want them?" },
+  { id: 'weird', at: 20, name: 'THE ODD BUSINESS', tags: ['weird'],
+    intro: "There is a category of thing I do not usually mention on a first afternoon. You have earned the odd business. Do not tell the squirrel." },
+  { id: 'pop',   at: 34, name: 'TELEVISION HE HAS NEVER SEEN', tags: ['pop'],
+    intro: "Now. I have never watched a single frame of anything, but I hear it through car windows, and I have OPINIONS. Brace yourself." },
+  { id: 'meta',  at: 52, name: 'THE UNCOMFORTABLE SET', tags: ['meta'],
+    intro: "I am going to say some things about you, and about this, and about the fact that there is a screen. You may not enjoy it. Sit down." },
+  { id: 'power', at: 72, name: 'POWER, AND WHO HAS IT', tags: ['power'],
+    intro: "Here is the set I keep for people who come back. Nine hundred years in one field, watching who decides things about it. I take no side and I will not tell you how to vote. But you should know what I saw." },
+  { id: 'world', at: 100, name: 'THE REAL PARTS', tags: ['world'],
+    intro: "Last set. This is the one I would rather not do. It is the world as it actually is, for people who are in it right now. I will not make jokes in this one." }
+];
+
+DATA.setOpen = [
+  "A new set. Ask again.",
+  "There. Something else to talk about.",
+  "Right, that is unlocked. Go on."
+];
+
+DATA.setAllDone = "That is everything. Nine hundred years, all of it, handed over to one person who kept clicking. I have nothing left to introduce and I am oddly upset about it.";

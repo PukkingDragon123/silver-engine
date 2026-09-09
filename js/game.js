@@ -17,7 +17,7 @@ const defaultSave = () => ({
   ach: {}, endings: {}, heard: {}, muted: false, sessions: 0,
   park: { props: [], upgrades: {}, expansions: 0, earned: 0 },
   bag: false, items: {}, taken: {}, plans: {}, planDone: {},
-  quests: {}, questDone: {}, unread: [], snails: {}, metNoc: false,
+  quests: {}, questDone: {}, unread: [], snails: {}, setSeen: {}, metNoc: false,
   stats: { leavesTotal: 0, sneezes: 0, hugs: 0, waters: 0, plants: 0, trades: 0,
            sqChats: 0, rebirths: 0, flicks: 0, seasons: {}, boughtAll: false }
 });
@@ -35,6 +35,7 @@ try {
     save.quests = p.quests || {}; save.questDone = p.questDone || {};
     save.unread = Array.isArray(p.unread) ? p.unread : [];
     save.snails = p.snails || {};
+    save.setSeen = p.setSeen || {};
   }
 } catch (e) { /* corrupt save: start fresh, no drama */ }
 
@@ -69,7 +70,7 @@ const G = {
   noc: { x: 0, y: GROUND_Y + 8, look: 0, talking: 0, thinking: 0 },
   asleep: false, wakeT: 0, squash: 0, squashV: 0,
   boardPop: 0, cottagePop: 0,
-  hasBag: false, bagOpen: false, bagHover: false, bagBadge: 0,
+  hasBag: false, bagOpen: false, bagHover: false, bagBadge: 0, talkHover: false,
   activePlan: null, chatWho: null, veil: 0,
   hintText: '', hintShown: false, hintCine: false,
   sessionTime: 0, sinceTreeClick: 0, spamCount: 0, spamTimer: 0,
@@ -109,14 +110,74 @@ function buildHall() {
   }
 }
 
-/* dialogue bag: never the same line twice until the bag is empty */
+/* =========================================================================
+   THE SETS
+   Talking is the game. He does not hand over nine hundred years at once: each
+   set of subjects opens when you have listened to enough of the last one, and
+   he tells you when it happens.
+   ========================================================================= */
+function heardTotal() { return Object.keys(save.heard).length; }
+
+function openSets() { return DATA.sets.filter(st => heardTotal() >= st.at); }
+
+function unlockedTags() {
+  const tags = {};
+  for (const st of openSets()) for (const tg of st.tags) tags[tg] = 1;
+  return tags;
+}
+
+function nextSet() { return DATA.sets.find(st => heardTotal() < st.at) || null; }
+
+function setById(id) { return DATA.sets.find(st => st.id === id); }
+
+/* how much of a set he has actually got through with you */
+function setHeard(st) {
+  return DATA.lines.filter(l => st.tags.includes(l.tag) && save.heard[l.id]).length;
+}
+function setTotal(st) {
+  return DATA.lines.filter(l => st.tags.includes(l.tag)).length;
+}
+
+/* dialogue bag: never the same line twice, and never a line from a subject
+   he has not opened yet */
 let bag = [];
 function refillBag() {
-  bag = DATA.lines.map((l, i) => i);
-  for (let i = bag.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [bag[i], bag[j]] = [bag[j], bag[i]];
+  const tags = unlockedTags();
+  const pool = [];
+  for (let i = 0; i < DATA.lines.length; i++) {
+    const l = DATA.lines[i];
+    if (!tags[l.tag]) continue;
+    if (!save.heard[l.id]) pool.push(i);            // unheard first, always
   }
+  if (!pool.length) {
+    for (let i = 0; i < DATA.lines.length; i++) if (tags[DATA.lines[i].tag]) pool.push(i);
+  }
+  for (let i = pool.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [pool[i], pool[j]] = [pool[j], pool[i]];
+  }
+  bag = pool;
+}
+
+/* crossing a threshold: he stops and introduces the new subject himself */
+function checkSets() {
+  const open = openSets();
+  const next = open.find(st => !save.setSeen[st.id]);
+  if (!next) return false;
+  save.setSeen[next.id] = 1; persist();
+  const idx = DATA.sets.indexOf(next);
+  if (idx > 0) ACH('set' + Math.min(6, idx));
+  if (DATA.sets.every(st => save.setSeen[st.id])) ACH('setall');
+  if (!next.intro) return false;
+  refillBag();
+  SFX.ach(); G.flash = 0.35;
+  squash(-0.3);
+  ring(CX(), 108, '#fff6d8', 1.4);
+  pop('NEW SET', CX(), 82, '#b8e86a');
+  spawnParticles('star', CX(), 96, 10);
+  say('THE WISE OAK TREE', next.intro, 'think', next.id === 'world' || next.id === 'power' ? 'serious' : '');
+  pushNote('goal', next.name, 'A new set of things he will talk about. Keep him going.', 'mouth', 'set:' + next.id);
+  return true;
 }
 refillBag();
 
@@ -293,17 +354,28 @@ function drawTitleFrame(dt) {
    width follows the window's aspect so there are never any bars.
    --------------------------------------------------------------------- */
 let SCALE = 4;
+const MIN_LOGICAL_W = 224;              // the narrowest the world may be
+
 function fit() {
-  const winW = window.innerWidth, winH = window.innerHeight;
-  SCALE = winH / H;
+  // On a phone in portrait, height/192 gives a scale so large that the
+  // narrowest permitted world is wider than the screen, and the canvas gets
+  // cut off. So the scale has to satisfy BOTH dimensions, and the picture
+  // sits as a band in the middle of a tall screen rather than overflowing it.
+  const vv = window.visualViewport;
+  const winW = Math.round((vv && vv.width) || window.innerWidth);
+  const winH = Math.round((vv && vv.height) || window.innerHeight);
+  SCALE = Math.min(winH / H, winW / MIN_LOGICAL_W);
+  if (!(SCALE > 0)) SCALE = 1;
   const logicalW = SPR.setLogicalWidth(winW / SCALE);
   cv.width = logicalW; cv.height = H;
   buf.width = logicalW; buf.height = H;
   ctx.imageSmoothingEnabled = false;
   dc.imageSmoothingEnabled = false;
-  cv.style.width = (logicalW * SCALE) + 'px';
-  cv.style.height = (H * SCALE) + 'px';
+  cv.style.width = Math.floor(logicalW * SCALE) + 'px';
+  cv.style.height = Math.floor(H * SCALE) + 'px';
   if (!started) fitTitleScene();
+  refreshArrows();
+  if (panelOpen()) layoutPanel();
 }
 
 /* The slice of the world the camera is currently showing. Input, the speech
@@ -437,15 +509,15 @@ function drawMoreHint(c, b) {
 function drawChoices(c) {
   DLG.rects = [];
   const list = DLG.choices;
-  const w = Math.min(212, W() - 24);
-  const lh = 11;
-  let y = H - 10 - list.length * (lh + 4);
+  const w = Math.min(212, W() - 20);
+  const lh = 14;
+  let y = H - 30 - list.length * (lh + 4);
   for (let i = 0; i < list.length; i++) {
     const x = Math.round(W() / 2 - w / 2);
     const hovered = DLG.hover === i;
     SPR.drawBalloon(c, x, y, w, lh, null, { fill: hovered ? '#ffe06a' : '#ffffff', radius: 4 });
-    F.drawText(c, x + 5, y + 2, '\u203a', '#a06a2a', 1);
-    F.drawText(c, x + 12, y + 2, list[i].text, '#2b1c10', 1);
+    F.drawText(c, x + 5, y + 4, '\u203a', '#a06a2a', 1);
+    F.drawText(c, x + 12, y + 4, fitText(list[i].text, w - 18), '#2b1c10', 1);
     DLG.rects.push({ x, y, w, h: lh, i });
     y += lh + 4;
   }
@@ -453,7 +525,8 @@ function drawChoices(c) {
 
 function choiceAt(x, y) {
   for (const r of DLG.rects) {
-    if (x >= r.x - 2 && x <= r.x + r.w + 2 && y >= r.y - 2 && y <= r.y + r.h + 2) return r.i;
+    // generous slop: a fingertip is a great deal wider than a pixel
+    if (x >= r.x - 4 && x <= r.x + r.w + 4 && y >= r.y - 4 && y <= r.y + r.h + 4) return r.i;
   }
   return -1;
 }
@@ -635,7 +708,7 @@ function measureItem(it, w) {
       it._lines = F.wrapText(it.s, inner - 8, 1);
       return (it.who === 'sys' ? 0 : LINE_H) + it._lines.length * LINE_H + 4;
     }
-    case 'input': return 15;
+    case 'input': return 18;
     case 'snail': return 30;
     default: return 10;
   }
@@ -849,7 +922,8 @@ function drawPanelItem(c, it, x, y, w, i) {
     }
 
     case 'input': {
-      SPR.px(c, x + pad, y + 11, inner, 1, PAP.deep);
+      SPR.px(c, x + pad, y + 13, inner, 1, PAP.deep);
+      PANEL.rects.push({ i, x: x + 2, y: y - 1, w: w - 4, h: 18 });
       const maxW = inner - 8;
       let vis = typedText();
       while (F.textWidth(vis, 1) > maxW) vis = vis.slice(1);      // the view follows the caret
@@ -908,6 +982,7 @@ function panelPress(fx, fy) {
   const hit = panelHitAt(fx, fy);
   if (!hit) return true;
   const it = PANEL.items[hit.i];
+  if (it.t === 'input') { if (elTyping) elTyping.focus(); return true; }
   if (it.t === 'btns') { const b2 = it.items[hit.sub]; if (b2 && b2.act) { SFX.click(); b2.act(); } return true; }
   if (it.act) { SFX.click(); it.act(); }
   return true;
@@ -982,6 +1057,11 @@ function bagItems() {
   const out = [{ t: 'title', s: 'YOUR BACKPACK' }];
   out.push({ t: 'row', label: G.inv.leaves + ' leaves', sub: 'the only currency, and only Noc takes it',
              icon: 'leaf', right: '', dim: false });
+  const nx = nextSet();
+  out.push({ t: 'row', icon: 'mouth', label: 'What he will talk about',
+             sub: nx ? (nx.at - heardTotal()) + ' more things and a new set opens'
+                     : 'every set open \u00b7 ' + heardTotal() + '/' + DATA.lines.length + ' heard',
+             right: 'READ', act: openTopics });
   const jobsDone = DATA.quests.filter(q => save.questDone[q.id]).length;
   out.push({ t: 'text', s: Object.keys(G.inv.items).length + ' things  ·  ' + jobsDone + '/' + DATA.quests.length +
                           ' jobs  ·  ' + plansDone() + '/' + DATA.plans.length + ' plans', col: SPR.PAPER.ink3, align: 'center' });
@@ -1021,6 +1101,38 @@ function bagItems() {
   return out;
 }
 
+/* ---- what he will talk about ---- */
+function openTopics() {
+  ACH('topics');
+  openPanel({
+    id: 'topics', anchor: 'mid', wide: true, maxH: H - 30,
+    build: () => {
+      const out = [{ t: 'title', s: 'WHAT HE WILL TALK ABOUT' }];
+      const total = DATA.lines.length;
+      out.push({ t: 'text', s: heardTotal() + ' of ' + total + ' things heard', col: SPR.PAPER.ink3, align: 'center' });
+      out.push({ t: 'rule' });
+      for (const st of DATA.sets) {
+        const open = heardTotal() >= st.at;
+        const got = setHeard(st), all = setTotal(st);
+        out.push({
+          t: 'row', dim: open && got >= all,
+          label: open ? st.name : '???',
+          sub: open ? (got >= all ? 'you have heard all of it' : got + ' of ' + all + ' heard')
+                    : 'opens once he has told you ' + st.at + ' things',
+          right: open ? (got >= all ? 'DONE' : got + '/' + all) : 'SHUT'
+        });
+      }
+      const nx = nextSet();
+      out.push({ t: 'rule' });
+      out.push({ t: 'text', align: 'center', col: SPR.PAPER.ink2,
+                 s: nx ? 'Keep him talking. ' + (nx.at - heardTotal()) + ' more and he opens something new.'
+                       : DATA.setAllDone });
+      out.push({ t: 'gap', h: 4 });
+      return out;
+    }
+  });
+}
+
 /* ---- the squirrel's settings ---- */
 function openSettings() {
   ACH('gear');
@@ -1037,6 +1149,8 @@ function settingsItems() {
     { t: 'row', label: 'A real mind',
       sub: live ? 'on \u00b7 ' + NOC_AI.model : 'off \u2014 local brains only',
       icon: 'book', right: live ? 'TURN OFF' : 'ADD KEY', act: askForKey },
+    { t: 'row', label: 'What he will talk about', sub: 'the sets he has opened so far', icon: 'mouth',
+      right: 'READ', act: openTopics },
     { t: 'row', label: 'The Trophy Room', sub: 'everything you have earned', icon: 'crown',
       right: 'OPEN', act: openTrophies },
     { t: 'row', label: 'Credits', sub: 'or follow the bright butterfly', icon: 'star',
@@ -1232,7 +1346,8 @@ function drawPost(c) {
       // one word, once, so the first parcel is not missed
       c.globalAlpha = sn.hint;
       const hw = F.textWidth('POST \u2014 TAP IT', 1) / 2 + 4;
-      F.drawTextCentered(c, Math.max(hw, Math.min(W() - hw, sn.x)), sn.y - 22, 'POST \u2014 TAP IT', '#ffe9b0', 1, '#000000');
+      const hy = talkSignShown() ? sn.y - 46 : sn.y - 22;
+      F.drawTextCentered(c, Math.max(hw, Math.min(W() - hw, sn.x)), hy, 'POST \u2014 TAP IT', '#ffe9b0', 1, '#000000');
       c.globalAlpha = 1;
     }
   }
@@ -1428,7 +1543,7 @@ function drawHint(c) {
   if (G.hintCine) {
     F.drawText(c, W() - w - 8, 8, G.hintText, '#c8b89a', 1, '#000000');
   } else {
-    const y = signs.length ? H - 34 : H - 14;
+    const y = signs.length ? H - 34 : (talkSignShown() ? H - 32 : H - 14);
     const pulse = 0.72 + 0.28 * Math.sin(G.t * 2.4);
     c.globalAlpha = pulse;
     F.drawTextCentered(c, W() / 2, y, G.hintText, '#f4ead6', 1, '#000000');
@@ -1447,7 +1562,7 @@ function drawSigns(c) {
 }
 
 function signAt(x, y) {
-  for (const s of signs) if (x >= s.x - 2 && x <= s.x + s.w + 2 && y >= s.y - 2 && y <= s.y + s.h + 2) return s;
+  for (const s of signs) if (x >= s.x - 5 && x <= s.x + s.w + 5 && y >= s.y - 5 && y <= s.y + s.h + 5) return s;
   return null;
 }
 
@@ -1539,18 +1654,37 @@ function talkToTree() {
   }
 
   ACH('hello');
+  // a set opening takes priority over the next line
+  if (checkSets()) return;
+
   if (!bag.length) refillBag();
   const line = DATA.lines[bag.pop()];
+  const fresh = !save.heard[line.id];
   save.heard[line.id] = 1; persist();
-  say('THE WISE OAK TREE', line.text, line.mood, line.tag === 'world' ? 'serious' : '', repliesFor(line.tag));
+  say('THE WISE OAK TREE', line.text, line.mood,
+      line.tag === 'world' || line.tag === 'power' ? 'serious' : '', repliesFor(line.tag));
 
-  const hc = Object.keys(save.heard).length;
+  // listening is how you earn: every new thing he says shakes a leaf loose
+  if (fresh) {
+    G.inv.leaves++;
+    save.stats.leavesTotal = (save.stats.leavesTotal || 0) + 1;
+    G.parkMotes.push({ x: CX() + (Math.random() * 2 - 1) * 30, y: 108, t: 1 });
+    spawnParticles('spark', CX() + (Math.random() * 2 - 1) * 24, 104, 2);
+    checkQuests();
+  }
+
+  const hc = heardTotal();
   if (hc >= 10) ACH('chat10');
   if (hc >= 30) ACH('chat30');
   if (hc >= 60) ACH('chat60');
   if (heardCount() >= totalCount()) { ACH('chatall'); reachEnding('listener'); }
   if (line.tag === 'world') ACH('world1');
   if (line.tag === 'pop') ACH('pop1');
+  if (line.tag === 'power') {
+    ACH('power1');
+    if (heardCount('power') >= 15) ACH('power15');
+    if (heardCount('power') >= totalCount('power')) { ACH('powerall'); reachEnding('commons'); }
+  }
   checkWorldProgress();
   if (heardCount('pop') >= 20) ACH('pop20');
   if (heardCount('pop') >= totalCount('pop')) { ACH('popall'); reachEnding('canon'); }
@@ -2050,7 +2184,7 @@ function openChat(who) {
     onClose: () => { if (elTyping) elTyping.blur(); }
   });
   PANEL.target = panelMaxScroll();          // start at the newest line
-  if (elTyping) { elTyping.value = ''; setTimeout(() => elTyping.focus(), 30); }
+  if (elTyping) { elTyping.value = ''; try { elTyping.focus(); } catch (e) {} }
   ACH(who === 'oak' ? 'oakchat' : 'talknoc');
 }
 
@@ -3325,6 +3459,73 @@ function drawArrows(c) {
   for (const a of G.arrows) SPR.drawTravelArrow(c, G, a.dir, a.label, a.hover);
 }
 
+/* Talking is the whole game, and on a phone the middle of him is all face.
+   So there is one obvious, thumb-sized thing to press. */
+function talkSignShown() {
+  return G.scene === 'game' && !G.cine && !G.dead && !panelOpen() && !G.holding;
+}
+
+function talkSignBox() {
+  const label = talkLabel();
+  const w = Math.max(74, F.textWidth(label, 1) + 24);
+  return { x: Math.round(W() / 2 - w / 2), y: H - 25, w, h: 19 };
+}
+
+function talkLabel() {
+  if (G.asleep) return 'POKE HIM';
+  if (areaId() === 'lane') return 'TALK TO NOC';
+  if (!atOak()) return 'LOOK AROUND';
+  if (DLG.choices && dialogueDone()) return 'TELL ME ANOTHER';
+  return DLG.on ? 'GO ON' : 'TALK TO HIM';
+}
+
+function drawTalkSign(c) {
+  if (!talkSignShown()) return;
+  const b = talkSignBox();
+  const hot = G.talkHover;
+  const bob = Math.sin(G.t * 2.4) * (hot ? 1.4 : 0.7);
+  const y = Math.round(b.y + bob);
+  // two posts into the grass
+  SPR.px(c, b.x + 8, y + b.h, 2, 6, '#5a3a1e');
+  SPR.px(c, b.x + b.w - 10, y + b.h, 2, 6, '#5a3a1e');
+  SPR.roundRect(c, b.x - 2, y - 2, b.w + 4, b.h + 4, 3, SPR.INK);
+  SPR.roundRect(c, b.x, y, b.w, b.h, 2, hot ? '#c39a63' : '#a0703c');
+  SPR.px(c, b.x + 2, y + 2, b.w - 4, 1, '#c9a06a');
+  F.drawTextCentered(c, b.x + b.w / 2, y + 6, talkLabel(), hot ? '#2b1c10' : '#ffe9b0', 1);
+  // how much he still has to say, in leaves-green, under the sign
+  if (atOak() && !G.asleep) {
+    const nx = nextSet();
+    const left = DATA.lines.length - heardTotal();
+    if (left > 0) {
+      const s2 = nx ? (nx.at - heardTotal()) + ' to a new set' : left + ' things left';
+      c.globalAlpha = 0.75;
+      F.drawTextCentered(c, W() / 2, y - 9, s2, '#d8f0a0', 1, '#000000');
+      c.globalAlpha = 1;
+    }
+  }
+}
+
+function overTalkSign(x, y) {
+  if (!talkSignShown()) return false;
+  const b = talkSignBox();
+  return x >= b.x - 6 && x <= b.x + b.w + 6 && y >= b.y - 12 && y <= b.y + b.h + 8;
+}
+
+function pressTalkSign() {
+  if (G.asleep) { wakeHim(); return; }
+  if (areaId() === 'lane') { SFX.click(); openChat('noc'); return; }
+  if (!atOak()) { SFX.click(); say('YOU', 'Quiet out here. He is back up the lane.', null, 'serious'); return; }
+  // while replies are on offer this is the "keep going" one, so the whole
+  // conversation can be had with a single thumb
+  if (DLG.choices && dialogueDone()) {
+    const more = DLG.choices.find(ch => !ch.follow && !ch.type) || DLG.choices[DLG.choices.length - 1];
+    SFX.click();
+    pickReply(more);
+    return;
+  }
+  talkToTree();
+}
+
 function bagButtonBox() { return { x: 4, y: H - 26, w: 26, h: 26 }; }
 function overBagButton(x, y) {
   const b = bagButtonBox();
@@ -3427,7 +3628,7 @@ function render() {
 
   if (G.flash > 0) { ctx.globalAlpha = Math.min(1, G.flash); SPR.px(ctx, 0, 0, W(), H, '#ffffff'); ctx.globalAlpha = 1; }
   if (G.veil > 0) { ctx.globalAlpha = Math.min(1, G.veil); SPR.px(ctx, 0, 0, W(), H, '#05080c'); ctx.globalAlpha = 1; }
-  if (!G.cine && G.scene === 'game') { drawArrows(ctx); SPR.drawHud(ctx, G); }
+  if (!G.cine && G.scene === 'game') { drawArrows(ctx); drawTalkSign(ctx); SPR.drawHud(ctx, G); }
   if (G.areaTitle > 0 && !G.cine) SPR.drawAreaTitle(ctx, G, AREAS[G.area].name, AREAS[G.area].sub, Math.min(1, G.areaTitle));
   if (!G.cine && G.scene === 'game') drawPost(ctx);
   drawHint(ctx);
@@ -3541,8 +3742,8 @@ function hitTest(x, y) {
     const fx = x - CX(), fy = y;
     if (Math.abs(fx) < 34 && fy > 84 && fy < 152) {
       if (fy > 96 && fy < 112 && Math.abs(Math.abs(fx) - 13) < 9) return { kind: 'part', part: 'eye', i: -1 };
-      if (fy >= 100 && fy < CX() && Math.abs(fx) < 9) return { kind: 'part', part: 'nose', i: -1 };
-      if (fy >= CX() && fy < 145 && Math.abs(fx) < 20) return { kind: 'part', part: 'mouth', i: -1 };
+      if (fy >= 100 && fy < 126 && Math.abs(fx) < 9) return { kind: 'part', part: 'nose', i: -1 };
+      if (fy >= 126 && fy < 145 && Math.abs(fx) < 20) return { kind: 'part', part: 'mouth', i: -1 };
       if (fy >= 145 && Math.abs(fx) < 26) return { kind: 'part', part: 'beard', i: -1 };
     }
     if (y > GROUND_Y - 6 && y < GROUND_Y + 12 && Math.abs(x - CX()) > 24 && Math.abs(x - CX()) < 56)
@@ -3613,7 +3814,8 @@ function onMove(ev) {
   const ar = arrowAt(fr.x, fr.y);
   for (const a of G.arrows) a.hover = a === ar;
   G.bagHover = overBagButton(fr.x, fr.y);
-  if (onSign || ar || G.bagHover) { cv.style.cursor = 'pointer'; return; }
+  G.talkHover = overTalkSign(fr.x, fr.y);
+  if (onSign || ar || G.bagHover || G.talkHover) { cv.style.cursor = 'pointer'; return; }
   DLG.hover = DLG.choices && dialogueDone() ? choiceAt(fr.x, fr.y) : -1;
   cv.style.cursor = DLG.hover >= 0 ? 'pointer' : (G.holding ? 'none' : cv.style.cursor);
 
@@ -3760,6 +3962,7 @@ function onPress(ev) {
 
   // the signposts at the edges, and the bag in the corner
   if (!G.cine && G.scene === 'game') {
+    if (overTalkSign(fr.x, fr.y)) { pressTalkSign(); return; }
     const ar = arrowAt(fr.x, fr.y);
     if (ar) { travel(ar.dir); return; }
     if (overBagButton(fr.x, fr.y)) { SFX.click(); toggleBag(); return; }
@@ -4034,7 +4237,8 @@ if (/[?&]debug/.test(location.search)) {
   window.OAK = { G, save, ACH, reachEnding, startBurning, goHeaven, reincarnate,
                  refreshHUD, dropLeaf, triggerSneeze, maybeSpawnSquirrel, persist,
                  skipAll: () => { if (G.cine) { G.cine.i = G.cine.stages.length - 1; skipStage(); } },
-                 parkMargin, parkIncome, parkFill, boardHere, cottageHere, puff, ring, pop, squash, PANEL, openPanel, closePanel, panelIs, panelOpen, openQuestBoard, openJournal, acceptQuest, checkQuests, questStatus, plotPos, hitTest,
+                 parkMargin, parkIncome, parkFill, talkSignBox, pressTalkSign, heardTotal, openSets, nextSet, openTopics,
+                 unlockedTags, setHeard, setTotal, checkSets, talkToTree, boardHere, cottageHere, puff, ring, pop, squash, PANEL, openPanel, closePanel, panelIs, panelOpen, openQuestBoard, openJournal, acceptQuest, checkQuests, questStatus, plotPos, hitTest,
                  travel, takePickup, seedPickups, openChat, closeChat, sendChat, openBag, closeBag,
                  agreePlan, completePlan, planById, areaId, wakeHim, AREAS,
                  openPost, closePost, openSettings, openCredits, openTrophies, openEndings, openGarden, closeGarden, buildGarden, snailName, finishQuest, questById, questProgress,
@@ -4066,5 +4270,10 @@ window.addEventListener('beforeunload', persist);
 
 window.addEventListener('resize', () => fit());
 window.addEventListener('orientationchange', () => setTimeout(fit, 200));
+// a phone keyboard changes the usable height without firing resize on iOS
+if (window.visualViewport) {
+  window.visualViewport.addEventListener('resize', () => fit());
+  window.visualViewport.addEventListener('scroll', () => fit());
+}
 
 })();

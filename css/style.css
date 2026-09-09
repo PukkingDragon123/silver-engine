@@ -70,11 +70,14 @@ html, body {
    seen: the text it holds is redrawn on the canvas in the bitmap font.
    -------------------------------------------------------------------------- */
 #typing {
-  position: fixed; left: 50%; bottom: 14px; transform: translateX(-50%);
-  width: 40vw; height: 22px;
+  position: fixed; left: 50%; bottom: 8px; transform: translateX(-50%);
+  width: 60vw; height: 20px;
   opacity: 0; border: 0; padding: 0; margin: 0;
   font-size: 16px;                    /* stops iOS zooming when it focuses */
   color: transparent; background: transparent; caret-color: transparent;
+  /* it is focused in code, never touched, so it must not eat taps meant for
+     the world behind it */
+  pointer-events: none;
   z-index: 5;
 }
 #typing:focus { outline: none; }

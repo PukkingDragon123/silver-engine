@@ -32,8 +32,16 @@ famine, displacement, the fires, and the water — plainly, without taking a
 side, and always centred on the people it happens to. He is a tree. He holds
 no flag. He just notices.
 
-**Play it:** open `index.html` in any browser. It fills the window. No build
-step, no dependencies, no server required.
+**Play it:** open `index.html` in any browser. No build step, no dependencies,
+no server required.
+
+**It works on a phone.** The world is 192 logical pixels tall, and the scale is
+now chosen to satisfy both dimensions, so on a tall screen the picture sits as a
+band in the middle instead of overflowing the sides. Touch is wired for taps,
+drags and panning; tap targets have finger-sized slop; the talk sign is big
+enough to use one-handed; and the keyboard for typing at him is raised by the
+tap itself, with the usable height tracked through `visualViewport` so the panel
+does not end up behind it.
 
 Almost nothing is interface. Every word in the world — his dialogue, your
 replies, the menus, the signposts, the trophy plaques — is drawn on the canvas
@@ -41,6 +49,53 @@ in a 5x7 bitmap font written for it. There is no leaf tally in the corner any
 more; the only permanent things on screen are the sound switch and, once you
 have found it, your bag. The two exceptions are the talk box you type into and
 the backpack panel, because both of them need real text you can select.
+
+## Talking is the game
+
+**Everything else in the park is a side effect of keeping him talking.** There
+is one thumb-sized wooden sign under him and it always says the thing you can
+do next — POKE HIM, TALK TO HIM, GO ON, TELL ME ANOTHER — so the whole
+conversation can be had with a single thumb on a phone. Above it he keeps a
+running count of how much further it is to the next subject.
+
+**He does not hand over nine hundred years at once.** There are seven **sets**
+of things he will talk about, and he opens them himself, one at a time, when
+you have listened to enough of the last one:
+
+| | Set | Opens at |
+| --- | --- | --- |
+| 1 | The usual nonsense | from the start |
+| 2 | Things he has worked out | 8 things heard |
+| 3 | The odd business | 20 |
+| 4 | Television he has never seen | 34 |
+| 5 | The uncomfortable set — about you, and the screen | 52 |
+| 6 | **Power, and who has it** | 72 |
+| 7 | The real parts | 100 |
+
+He stops mid-conversation to introduce each one, a snail brings the news, and
+the pool of things he can say grows. Nothing from a set he has not opened will
+ever come up. **Every new thing he tells you shakes a leaf loose** — listening
+is how you earn, so the currency comes out of the conversation rather than out
+of the park.
+
+You can look up the running order any time — what he has opened, how far
+through each set you are, and how many more things until the next one — from
+the backpack or the squirrel's settings.
+
+## Power, and who has it
+
+The sixth set is the political one, and it is the one only a nine-hundred-year-old
+tree could do: he has stood in the same field through the commons, the fence
+and the document nobody voted on, the poor laws, the mill, the boy on the crate
+who was arrested and turned out to be right, the parish boundary that moved
+overnight, the bypass consultation about the colour of the fence, the eleven
+people in the council meeting, and the stream that got clean again because
+somebody would not shut up for eleven years.
+
+**He takes no side and he endorses nobody.** He names no party and no
+politician, he will not tell you how to vote, and he says so out loud. What he
+does is keep the record: who was in the room when it was decided, and who had
+to move afterwards. Hearing all of it is its own ending.
 
 ## Talking to him
 
@@ -54,7 +109,7 @@ are being.
 ## What you do
 
 - **Click the tree.** He never repeats himself — every line is drawn from a
-  shuffled bag, so you hear all 186 of them before you hear any of them twice.
+  shuffled bag of the subjects he has opened, so you hear all 221 of them before you hear any of them twice.
   45 of those are war and politics — Gaza, Sudan, Ukraine, famine, displacement,
   ceasefires, aid convoys, press freedom, the arithmetic nobody should be doing
   — and another 66 are pop-culture references picked up by eavesdropping on the bench —
@@ -264,7 +319,7 @@ promise.
 
 **You cannot get in until you die.** Death is not the end of the collection. In heaven there is a marble gallery
 under vaulted arches, with a red carpet running away into the light and a
-plinth for every one of the **98 achievements** — each with its own carved
+plinth for every one of the **109 achievements** — each with its own carved
 trophy on a gold mount: a stone tissue for the sneeze, a leaf vault for the
 hoarder, a lighter sinking into water for the one who threw it away, a film
 reel for the whole canon. Chandeliers burn overhead, a skylight throws shafts
@@ -278,7 +333,7 @@ Achievements arrive in Minecraft-style corner popups in three tiers — plain
 achievements, gold goals, and purple challenges. They are **delivered by a
 snail**, who crawls in from the left carrying an unrolled scroll with your news
 on it, leaves a slime trail across the grass, and eventually reaches the other
-side. Poke him and he hurries. There are **11 endings**, each with its own
+side. Poke him and he hurries. There are **12 endings**, each with its own
 card and a hint for the ones you haven't found.
 
 Endings include burning him down, throwing the lighter in the pond, hearing

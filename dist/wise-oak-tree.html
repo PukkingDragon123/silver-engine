@@ -72,11 +72,14 @@ html, body {
    seen: the text it holds is redrawn on the canvas in the bitmap font.
    -------------------------------------------------------------------------- */
 #typing {
-  position: fixed; left: 50%; bottom: 14px; transform: translateX(-50%);
-  width: 40vw; height: 22px;
+  position: fixed; left: 50%; bottom: 8px; transform: translateX(-50%);
+  width: 60vw; height: 20px;
   opacity: 0; border: 0; padding: 0; margin: 0;
   font-size: 16px;                    /* stops iOS zooming when it focuses */
   color: transparent; background: transparent; caret-color: transparent;
+  /* it is focused in code, never touched, so it must not eat taps meant for
+     the world behind it */
+  pointer-events: none;
   z-index: 5;
 }
 #typing:focus { outline: none; }
@@ -533,6 +536,18 @@ DATA.shop = [
    Unlocked by the engine via ACH('id').
    ------------------------------------------------------------------------- */
 DATA.achievements = [
+  // talking, which is the game
+  { id: 'topics',      kind: 'task', icon: 'book',    name: 'The Running Order',     desc: "Look up what he still has to talk about." },
+  { id: 'set1',        kind: 'task', icon: 'mouth',   name: 'He Has More',           desc: "Listen long enough that he opens a second subject." },
+  { id: 'set2',        kind: 'task', icon: 'mouth',   name: 'The Odd Business',      desc: "Get him on to the things he does not mention on a first afternoon." },
+  { id: 'set3',        kind: 'goal', icon: 'reel',    name: 'Never Seen A Frame',     desc: "Get him talking about television." },
+  { id: 'set4',        kind: 'goal', icon: 'eye',     name: 'The Uncomfortable Set', desc: "Let him talk about you." },
+  { id: 'set5',        kind: 'goal', icon: 'ledger',  name: 'Who Decides',           desc: "Reach the set he keeps for people who come back." },
+  { id: 'set6',        kind: 'chal', icon: 'globe',   name: 'The Real Parts',        desc: "Reach the last set. He stops joking in that one." },
+  { id: 'setall',      kind: 'chal', icon: 'book',    name: 'Everything He Opens',   desc: "Have him open every set of subjects he has." },
+  { id: 'power1',      kind: 'task', icon: 'ledger',  name: 'Nine Hundred Years Of It', desc: "Hear him on power for the first time." },
+  { id: 'power15',     kind: 'goal', icon: 'ledger',  name: 'The Long View',         desc: "Hear fifteen things he watched happen to this field." },
+  { id: 'powerall',    kind: 'chal', icon: 'ledger',  name: 'The Whole Enclosure',   desc: "Hear everything he has to say about who decides." },
   { id: 'garden',      kind: 'task', icon: 'leaf',    name: 'The Snail Garden',      desc: "Find where heaven keeps the postal service." },
   { id: 'snails12',    kind: 'goal', icon: 'paper',   name: 'A Full Round',          desc: "Have twelve different snails deliver to you." },
   // the post, the settings squirrel, the credits butterfly
@@ -665,6 +680,16 @@ DATA.achievements = [
    ENDINGS
    ------------------------------------------------------------------------- */
 DATA.endings = [
+  {
+    id: 'commons', name: 'THE COMMONS', icon: 'ledger',
+    title: "You let a tree tell you who has been deciding things.",
+    body: "Nine hundred years in one field: the common land, the fence, the document nobody voted on, " +
+          "the mill, the boy on the crate who was arrested and right, the eleven people in the council " +
+          "meeting, the stream that got clean again because somebody would not shut up. " +
+          "He took no side and he named nobody. He just kept the record, the way a tree keeps a record, " +
+          "and then he handed it to you and said: you are a future generation. Nobody ever asks us anything.",
+    hint: "Keep talking to him until he opens the set about power, then hear all of it."
+  },
   {
     id: 'gardener', name: 'THE KEEPER', icon: 'leaf',
     title: "You finished every job on the board.",
@@ -1282,6 +1307,92 @@ DATA.gardenLines = [
   "They do not mind being dead. They were never in a hurry to begin with.",
   "Bigger post, bigger snail. That is the whole system. Nobody designed it."
 ];
+
+
+/* =========================================================================
+   POWER
+   He has stood in one field through the commons, the enclosures, the poor
+   laws, the mills, the wars, the welfare state and whatever this is. He takes
+   no side and endorses nobody: he reports what he watched happen to the people
+   standing under him, and who was in the room when it was decided.
+   ========================================================================= */
+DATA.lines = DATA.lines.concat([
+  { id: 'w01', tag: 'power', mood: 'idle',  text: "This field was common land. Everyone's cows, everyone's firewood, everyone's mushrooms. Then it was fenced, and it was one man's. Nobody voted. There was a document." },
+  { id: 'w02', tag: 'power', mood: 'smug',  text: "I have outlived nineteen governments and every single one of them said the situation they inherited was unprecedented." },
+  { id: 'w03', tag: 'power', mood: 'think', text: "Politics, as far as I can tell from down here, is the argument about who has to move and who gets to stay." },
+  { id: 'w04', tag: 'power', mood: 'sad',   text: "They enclosed the commons and called it improvement. It probably was, for the soil. Nobody asked the people who had been eating off it." },
+  { id: 'w05', tag: 'power', mood: 'idle',  text: "Every so often somebody nails a notice to me. A tax, a law, a name for a war. I am the oldest noticeboard in the parish and I have never once agreed to it." },
+  { id: 'w06', tag: 'power', mood: 'think', text: "The men who decided about this field never stood in it. That is the single most consistent thing I have observed in nine hundred years." },
+  { id: 'w07', tag: 'power', mood: 'shock', text: "They moved the parish boundary in 1743 and half the village woke up in a different jurisdiction with different rights. Same beds. Same mud. Different rules." },
+  { id: 'w08', tag: 'power', mood: 'idle',  text: "A border is a decision that hardens. Give it two generations and people will tell you it is geography." },
+  { id: 'w09', tag: 'power', mood: 'sad',   text: "The mill came, and the wages came, and the children went into the mill. Both things were true at once. That is usually how it goes and nobody wants to hear it." },
+  { id: 'w10', tag: 'power', mood: 'smug',  text: "I have heard 'there is no alternative' in four different accents across three centuries. There was, each time. It was just expensive for somebody specific." },
+  { id: 'w11', tag: 'power', mood: 'think', text: "Voting is a strange, thin, magnificent thing. A whole afternoon of power, once every few years, and then back to the mill. I would still queue for it." },
+  { id: 'w12', tag: 'power', mood: 'idle',  text: "They came round canvassing last spring. Both of them promised the same three things in a different order and neither of them mentioned the water." },
+  { id: 'w13', tag: 'power', mood: 'sad',   text: "The village had a hall, a surgery, a bus and a library. It has one of them left. Nobody announced the closing of a village. It was done in instalments." },
+  { id: 'w14', tag: 'power', mood: 'think', text: "Every generation is told the previous one had it easier and the next one will have it worse. From here it looks less like a slope and more like a tide with an argument on top of it." },
+  { id: 'w15', tag: 'power', mood: 'shock', text: "Somebody stood on a crate under me in 1889 and said working men should have a say in what the country did with them. He was arrested. He was also right, in the end, which is the usual sequence." },
+  { id: 'w16', tag: 'power', mood: 'idle',  text: "Propaganda is not lying. Lying is easy to catch. Propaganda is choosing, very carefully, which true thing you say first." },
+  { id: 'w17', tag: 'power', mood: 'think', text: "Every side in every argument I have overheard believed it was the reasonable one being pushed. All of them. Simultaneously. For nine hundred years." },
+  { id: 'w18', tag: 'power', mood: 'sad',   text: "They plant a tree when they open something and cut one down when they build something, and they photograph the first and not the second." },
+  { id: 'w19', tag: 'power', mood: 'idle',  text: "The rent on the cottage went up four times in ten years and the cottage did not change. I watched it not change. I was here the whole time." },
+  { id: 'w20', tag: 'power', mood: 'think', text: "'Who decides?' is the only political question. Everything else is a debate about the seating." },
+  { id: 'w21', tag: 'power', mood: 'smug',  text: "A politician stood under me and said we must think of future generations. I am a future generation. Nobody has ever asked me anything." },
+  { id: 'w22', tag: 'power', mood: 'sad',   text: "The stream was clean, then it was a drain, then it was clean again because people complained for eleven years. Nothing out here improves on its own. It improves because somebody would not shut up." },
+  { id: 'w23', tag: 'power', mood: 'idle',  text: "There were bread riots in the next parish. Not a movement, not an ideology. People were hungry and the price was a decision somebody had made in a warm room." },
+  { id: 'w24', tag: 'power', mood: 'think', text: "The law arrives here about thirty years after the harm and about ten years after everybody already knew." },
+  { id: 'w25', tag: 'power', mood: 'shock', text: "They put a bypass through the meadow and held a consultation about the colour of the fence." },
+  { id: 'w26', tag: 'power', mood: 'idle',  text: "I do not think people are stupid. I have listened to them for nine centuries. I think they are tired, and being tired is very useful to somebody." },
+  { id: 'w27', tag: 'power', mood: 'sad',   text: "Empire, from here, was other people's fields being decided about by men who had never stood in those either. It is the same sentence. It is only ever the same sentence." },
+  { id: 'w28', tag: 'power', mood: 'think', text: "The commons worked for four hundred years because everybody could see everybody else using it. Most things fail when nobody can see who is taking." },
+  { id: 'w29', tag: 'power', mood: 'happy', text: "The best thing this country ever did, and I say this as a tree with no politics: it decided that being ill should not bankrupt you. I heard people cry about it in this field. With relief." },
+  { id: 'w30', tag: 'power', mood: 'idle',  text: "I am not going to tell you who to vote for. I am a tree. But I will tell you that the people who benefit most from you not bothering are extremely aware of the arithmetic." },
+  { id: 'w31', tag: 'power', mood: 'think', text: "They argue about the climate as though it were an opinion. I keep the record in my rings. Nineteen seventy-six. Two thousand and three. Two thousand and twenty-two. It is not an opinion, it is a diary." },
+  { id: 'w32', tag: 'power', mood: 'sad',   text: "The council meeting about this park had eleven people in it. Nine were retired. The decision lasted forty years and none of them lived to see it land." },
+  { id: 'w33', tag: 'power', mood: 'smug',  text: "Somebody called me a stakeholder in a planning document once. Correct. I have a very large stake and it goes down eleven metres." },
+  { id: 'w34', tag: 'power', mood: 'idle',  text: "Two men fought under me over a hedge for six years. It was never about the hedge. It is almost never about the hedge." },
+  { id: 'w35', tag: 'power', mood: 'think', text: "Nothing out here has ever been given. It was asked for badly, then asked for well, then demanded, and then granted as though it had been the plan all along." }
+]);
+
+DATA.replies.power = [
+  { tone: 'kind',    text: "That must have been hard to watch.", follow: "It was slow. Everything cruel out here is slow, which is how it gets through. Nobody stops a thing that takes forty years." },
+  { tone: 'curious', text: "So what actually changes anything?", follow: "People who will not go away. Every single time. Not the speeches — the ones who came back to the eleventh meeting when there were four of them left in the room." },
+  { tone: 'curious', text: "Whose side are you on?", follow: "Nobody's. I am a tree. I do not have a side, I have a view, and the view is that it is nearly always the same people who have to move." },
+  { tone: 'rude',    text: "Keep politics out of it.", follow: "I would love to. Somebody decided who owns the ground I am standing in, whether you can walk here, and whether I get cut down for a road. It is not a topic to me. It is the soil." },
+  { tone: 'joke',    text: "You should run for office.", follow: "I have excellent name recognition, a fixed address and nine hundred years of unblemished public service. My weakness is that I cannot attend anything." },
+  { tone: 'kind',    text: "I'll pay more attention.", follow: "That is all of it. That is the entire ask. Attention is the only thing anybody out here has ever actually needed from a person like you." },
+  { tone: 'curious', text: "Does it ever get better?", follow: "Yes. Slowly, unevenly, and never permanently. The stream is clean again. Children are not in the mill. It got better because people were annoying about it for a very long time." }
+];
+
+/* =========================================================================
+   THE SETS
+   He does not hand over everything at once. Keep talking and he opens a new
+   subject, and says so.
+   ========================================================================= */
+DATA.sets = [
+  { id: 'goofy', at: 0,  name: 'THE USUAL NONSENSE', tags: ['goofy'],
+    intro: null },
+  { id: 'wise',  at: 8,  name: 'THINGS HE HAS WORKED OUT', tags: ['wise'],
+    intro: "Right. You have stayed longer than most. I have some things I have actually worked out, as opposed to the material. Do you want them?" },
+  { id: 'weird', at: 20, name: 'THE ODD BUSINESS', tags: ['weird'],
+    intro: "There is a category of thing I do not usually mention on a first afternoon. You have earned the odd business. Do not tell the squirrel." },
+  { id: 'pop',   at: 34, name: 'TELEVISION HE HAS NEVER SEEN', tags: ['pop'],
+    intro: "Now. I have never watched a single frame of anything, but I hear it through car windows, and I have OPINIONS. Brace yourself." },
+  { id: 'meta',  at: 52, name: 'THE UNCOMFORTABLE SET', tags: ['meta'],
+    intro: "I am going to say some things about you, and about this, and about the fact that there is a screen. You may not enjoy it. Sit down." },
+  { id: 'power', at: 72, name: 'POWER, AND WHO HAS IT', tags: ['power'],
+    intro: "Here is the set I keep for people who come back. Nine hundred years in one field, watching who decides things about it. I take no side and I will not tell you how to vote. But you should know what I saw." },
+  { id: 'world', at: 100, name: 'THE REAL PARTS', tags: ['world'],
+    intro: "Last set. This is the one I would rather not do. It is the world as it actually is, for people who are in it right now. I will not make jokes in this one." }
+];
+
+DATA.setOpen = [
+  "A new set. Ask again.",
+  "There. Something else to talk about.",
+  "Right, that is unlocked. Go on."
+];
+
+DATA.setAllDone = "That is everything. Nine hundred years, all of it, handed over to one person who kept clicking. I have nothing left to introduce and I am oddly upset about it.";
 </script>
 <script>
 /* =========================================================================
@@ -5006,7 +5117,7 @@ const defaultSave = () => ({
   ach: {}, endings: {}, heard: {}, muted: false, sessions: 0,
   park: { props: [], upgrades: {}, expansions: 0, earned: 0 },
   bag: false, items: {}, taken: {}, plans: {}, planDone: {},
-  quests: {}, questDone: {}, unread: [], snails: {}, metNoc: false,
+  quests: {}, questDone: {}, unread: [], snails: {}, setSeen: {}, metNoc: false,
   stats: { leavesTotal: 0, sneezes: 0, hugs: 0, waters: 0, plants: 0, trades: 0,
            sqChats: 0, rebirths: 0, flicks: 0, seasons: {}, boughtAll: false }
 });
@@ -5024,6 +5135,7 @@ try {
     save.quests = p.quests || {}; save.questDone = p.questDone || {};
     save.unread = Array.isArray(p.unread) ? p.unread : [];
     save.snails = p.snails || {};
+    save.setSeen = p.setSeen || {};
   }
 } catch (e) { /* corrupt save: start fresh, no drama */ }
 
@@ -5058,7 +5170,7 @@ const G = {
   noc: { x: 0, y: GROUND_Y + 8, look: 0, talking: 0, thinking: 0 },
   asleep: false, wakeT: 0, squash: 0, squashV: 0,
   boardPop: 0, cottagePop: 0,
-  hasBag: false, bagOpen: false, bagHover: false, bagBadge: 0,
+  hasBag: false, bagOpen: false, bagHover: false, bagBadge: 0, talkHover: false,
   activePlan: null, chatWho: null, veil: 0,
   hintText: '', hintShown: false, hintCine: false,
   sessionTime: 0, sinceTreeClick: 0, spamCount: 0, spamTimer: 0,
@@ -5098,14 +5210,74 @@ function buildHall() {
   }
 }
 
-/* dialogue bag: never the same line twice until the bag is empty */
+/* =========================================================================
+   THE SETS
+   Talking is the game. He does not hand over nine hundred years at once: each
+   set of subjects opens when you have listened to enough of the last one, and
+   he tells you when it happens.
+   ========================================================================= */
+function heardTotal() { return Object.keys(save.heard).length; }
+
+function openSets() { return DATA.sets.filter(st => heardTotal() >= st.at); }
+
+function unlockedTags() {
+  const tags = {};
+  for (const st of openSets()) for (const tg of st.tags) tags[tg] = 1;
+  return tags;
+}
+
+function nextSet() { return DATA.sets.find(st => heardTotal() < st.at) || null; }
+
+function setById(id) { return DATA.sets.find(st => st.id === id); }
+
+/* how much of a set he has actually got through with you */
+function setHeard(st) {
+  return DATA.lines.filter(l => st.tags.includes(l.tag) && save.heard[l.id]).length;
+}
+function setTotal(st) {
+  return DATA.lines.filter(l => st.tags.includes(l.tag)).length;
+}
+
+/* dialogue bag: never the same line twice, and never a line from a subject
+   he has not opened yet */
 let bag = [];
 function refillBag() {
-  bag = DATA.lines.map((l, i) => i);
-  for (let i = bag.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [bag[i], bag[j]] = [bag[j], bag[i]];
+  const tags = unlockedTags();
+  const pool = [];
+  for (let i = 0; i < DATA.lines.length; i++) {
+    const l = DATA.lines[i];
+    if (!tags[l.tag]) continue;
+    if (!save.heard[l.id]) pool.push(i);            // unheard first, always
   }
+  if (!pool.length) {
+    for (let i = 0; i < DATA.lines.length; i++) if (tags[DATA.lines[i].tag]) pool.push(i);
+  }
+  for (let i = pool.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [pool[i], pool[j]] = [pool[j], pool[i]];
+  }
+  bag = pool;
+}
+
+/* crossing a threshold: he stops and introduces the new subject himself */
+function checkSets() {
+  const open = openSets();
+  const next = open.find(st => !save.setSeen[st.id]);
+  if (!next) return false;
+  save.setSeen[next.id] = 1; persist();
+  const idx = DATA.sets.indexOf(next);
+  if (idx > 0) ACH('set' + Math.min(6, idx));
+  if (DATA.sets.every(st => save.setSeen[st.id])) ACH('setall');
+  if (!next.intro) return false;
+  refillBag();
+  SFX.ach(); G.flash = 0.35;
+  squash(-0.3);
+  ring(CX(), 108, '#fff6d8', 1.4);
+  pop('NEW SET', CX(), 82, '#b8e86a');
+  spawnParticles('star', CX(), 96, 10);
+  say('THE WISE OAK TREE', next.intro, 'think', next.id === 'world' || next.id === 'power' ? 'serious' : '');
+  pushNote('goal', next.name, 'A new set of things he will talk about. Keep him going.', 'mouth', 'set:' + next.id);
+  return true;
 }
 refillBag();
 
@@ -5282,17 +5454,28 @@ function drawTitleFrame(dt) {
    width follows the window's aspect so there are never any bars.
    --------------------------------------------------------------------- */
 let SCALE = 4;
+const MIN_LOGICAL_W = 224;              // the narrowest the world may be
+
 function fit() {
-  const winW = window.innerWidth, winH = window.innerHeight;
-  SCALE = winH / H;
+  // On a phone in portrait, height/192 gives a scale so large that the
+  // narrowest permitted world is wider than the screen, and the canvas gets
+  // cut off. So the scale has to satisfy BOTH dimensions, and the picture
+  // sits as a band in the middle of a tall screen rather than overflowing it.
+  const vv = window.visualViewport;
+  const winW = Math.round((vv && vv.width) || window.innerWidth);
+  const winH = Math.round((vv && vv.height) || window.innerHeight);
+  SCALE = Math.min(winH / H, winW / MIN_LOGICAL_W);
+  if (!(SCALE > 0)) SCALE = 1;
   const logicalW = SPR.setLogicalWidth(winW / SCALE);
   cv.width = logicalW; cv.height = H;
   buf.width = logicalW; buf.height = H;
   ctx.imageSmoothingEnabled = false;
   dc.imageSmoothingEnabled = false;
-  cv.style.width = (logicalW * SCALE) + 'px';
-  cv.style.height = (H * SCALE) + 'px';
+  cv.style.width = Math.floor(logicalW * SCALE) + 'px';
+  cv.style.height = Math.floor(H * SCALE) + 'px';
   if (!started) fitTitleScene();
+  refreshArrows();
+  if (panelOpen()) layoutPanel();
 }
 
 /* The slice of the world the camera is currently showing. Input, the speech
@@ -5426,15 +5609,15 @@ function drawMoreHint(c, b) {
 function drawChoices(c) {
   DLG.rects = [];
   const list = DLG.choices;
-  const w = Math.min(212, W() - 24);
-  const lh = 11;
-  let y = H - 10 - list.length * (lh + 4);
+  const w = Math.min(212, W() - 20);
+  const lh = 14;
+  let y = H - 30 - list.length * (lh + 4);
   for (let i = 0; i < list.length; i++) {
     const x = Math.round(W() / 2 - w / 2);
     const hovered = DLG.hover === i;
     SPR.drawBalloon(c, x, y, w, lh, null, { fill: hovered ? '#ffe06a' : '#ffffff', radius: 4 });
-    F.drawText(c, x + 5, y + 2, '\u203a', '#a06a2a', 1);
-    F.drawText(c, x + 12, y + 2, list[i].text, '#2b1c10', 1);
+    F.drawText(c, x + 5, y + 4, '\u203a', '#a06a2a', 1);
+    F.drawText(c, x + 12, y + 4, fitText(list[i].text, w - 18), '#2b1c10', 1);
     DLG.rects.push({ x, y, w, h: lh, i });
     y += lh + 4;
   }
@@ -5442,7 +5625,8 @@ function drawChoices(c) {
 
 function choiceAt(x, y) {
   for (const r of DLG.rects) {
-    if (x >= r.x - 2 && x <= r.x + r.w + 2 && y >= r.y - 2 && y <= r.y + r.h + 2) return r.i;
+    // generous slop: a fingertip is a great deal wider than a pixel
+    if (x >= r.x - 4 && x <= r.x + r.w + 4 && y >= r.y - 4 && y <= r.y + r.h + 4) return r.i;
   }
   return -1;
 }
@@ -5624,7 +5808,7 @@ function measureItem(it, w) {
       it._lines = F.wrapText(it.s, inner - 8, 1);
       return (it.who === 'sys' ? 0 : LINE_H) + it._lines.length * LINE_H + 4;
     }
-    case 'input': return 15;
+    case 'input': return 18;
     case 'snail': return 30;
     default: return 10;
   }
@@ -5838,7 +6022,8 @@ function drawPanelItem(c, it, x, y, w, i) {
     }
 
     case 'input': {
-      SPR.px(c, x + pad, y + 11, inner, 1, PAP.deep);
+      SPR.px(c, x + pad, y + 13, inner, 1, PAP.deep);
+      PANEL.rects.push({ i, x: x + 2, y: y - 1, w: w - 4, h: 18 });
       const maxW = inner - 8;
       let vis = typedText();
       while (F.textWidth(vis, 1) > maxW) vis = vis.slice(1);      // the view follows the caret
@@ -5897,6 +6082,7 @@ function panelPress(fx, fy) {
   const hit = panelHitAt(fx, fy);
   if (!hit) return true;
   const it = PANEL.items[hit.i];
+  if (it.t === 'input') { if (elTyping) elTyping.focus(); return true; }
   if (it.t === 'btns') { const b2 = it.items[hit.sub]; if (b2 && b2.act) { SFX.click(); b2.act(); } return true; }
   if (it.act) { SFX.click(); it.act(); }
   return true;
@@ -5971,6 +6157,11 @@ function bagItems() {
   const out = [{ t: 'title', s: 'YOUR BACKPACK' }];
   out.push({ t: 'row', label: G.inv.leaves + ' leaves', sub: 'the only currency, and only Noc takes it',
              icon: 'leaf', right: '', dim: false });
+  const nx = nextSet();
+  out.push({ t: 'row', icon: 'mouth', label: 'What he will talk about',
+             sub: nx ? (nx.at - heardTotal()) + ' more things and a new set opens'
+                     : 'every set open \u00b7 ' + heardTotal() + '/' + DATA.lines.length + ' heard',
+             right: 'READ', act: openTopics });
   const jobsDone = DATA.quests.filter(q => save.questDone[q.id]).length;
   out.push({ t: 'text', s: Object.keys(G.inv.items).length + ' things  ·  ' + jobsDone + '/' + DATA.quests.length +
                           ' jobs  ·  ' + plansDone() + '/' + DATA.plans.length + ' plans', col: SPR.PAPER.ink3, align: 'center' });
@@ -6010,6 +6201,38 @@ function bagItems() {
   return out;
 }
 
+/* ---- what he will talk about ---- */
+function openTopics() {
+  ACH('topics');
+  openPanel({
+    id: 'topics', anchor: 'mid', wide: true, maxH: H - 30,
+    build: () => {
+      const out = [{ t: 'title', s: 'WHAT HE WILL TALK ABOUT' }];
+      const total = DATA.lines.length;
+      out.push({ t: 'text', s: heardTotal() + ' of ' + total + ' things heard', col: SPR.PAPER.ink3, align: 'center' });
+      out.push({ t: 'rule' });
+      for (const st of DATA.sets) {
+        const open = heardTotal() >= st.at;
+        const got = setHeard(st), all = setTotal(st);
+        out.push({
+          t: 'row', dim: open && got >= all,
+          label: open ? st.name : '???',
+          sub: open ? (got >= all ? 'you have heard all of it' : got + ' of ' + all + ' heard')
+                    : 'opens once he has told you ' + st.at + ' things',
+          right: open ? (got >= all ? 'DONE' : got + '/' + all) : 'SHUT'
+        });
+      }
+      const nx = nextSet();
+      out.push({ t: 'rule' });
+      out.push({ t: 'text', align: 'center', col: SPR.PAPER.ink2,
+                 s: nx ? 'Keep him talking. ' + (nx.at - heardTotal()) + ' more and he opens something new.'
+                       : DATA.setAllDone });
+      out.push({ t: 'gap', h: 4 });
+      return out;
+    }
+  });
+}
+
 /* ---- the squirrel's settings ---- */
 function openSettings() {
   ACH('gear');
@@ -6026,6 +6249,8 @@ function settingsItems() {
     { t: 'row', label: 'A real mind',
       sub: live ? 'on \u00b7 ' + NOC_AI.model : 'off \u2014 local brains only',
       icon: 'book', right: live ? 'TURN OFF' : 'ADD KEY', act: askForKey },
+    { t: 'row', label: 'What he will talk about', sub: 'the sets he has opened so far', icon: 'mouth',
+      right: 'READ', act: openTopics },
     { t: 'row', label: 'The Trophy Room', sub: 'everything you have earned', icon: 'crown',
       right: 'OPEN', act: openTrophies },
     { t: 'row', label: 'Credits', sub: 'or follow the bright butterfly', icon: 'star',
@@ -6221,7 +6446,8 @@ function drawPost(c) {
       // one word, once, so the first parcel is not missed
       c.globalAlpha = sn.hint;
       const hw = F.textWidth('POST \u2014 TAP IT', 1) / 2 + 4;
-      F.drawTextCentered(c, Math.max(hw, Math.min(W() - hw, sn.x)), sn.y - 22, 'POST \u2014 TAP IT', '#ffe9b0', 1, '#000000');
+      const hy = talkSignShown() ? sn.y - 46 : sn.y - 22;
+      F.drawTextCentered(c, Math.max(hw, Math.min(W() - hw, sn.x)), hy, 'POST \u2014 TAP IT', '#ffe9b0', 1, '#000000');
       c.globalAlpha = 1;
     }
   }
@@ -6417,7 +6643,7 @@ function drawHint(c) {
   if (G.hintCine) {
     F.drawText(c, W() - w - 8, 8, G.hintText, '#c8b89a', 1, '#000000');
   } else {
-    const y = signs.length ? H - 34 : H - 14;
+    const y = signs.length ? H - 34 : (talkSignShown() ? H - 32 : H - 14);
     const pulse = 0.72 + 0.28 * Math.sin(G.t * 2.4);
     c.globalAlpha = pulse;
     F.drawTextCentered(c, W() / 2, y, G.hintText, '#f4ead6', 1, '#000000');
@@ -6436,7 +6662,7 @@ function drawSigns(c) {
 }
 
 function signAt(x, y) {
-  for (const s of signs) if (x >= s.x - 2 && x <= s.x + s.w + 2 && y >= s.y - 2 && y <= s.y + s.h + 2) return s;
+  for (const s of signs) if (x >= s.x - 5 && x <= s.x + s.w + 5 && y >= s.y - 5 && y <= s.y + s.h + 5) return s;
   return null;
 }
 
@@ -6528,18 +6754,37 @@ function talkToTree() {
   }
 
   ACH('hello');
+  // a set opening takes priority over the next line
+  if (checkSets()) return;
+
   if (!bag.length) refillBag();
   const line = DATA.lines[bag.pop()];
+  const fresh = !save.heard[line.id];
   save.heard[line.id] = 1; persist();
-  say('THE WISE OAK TREE', line.text, line.mood, line.tag === 'world' ? 'serious' : '', repliesFor(line.tag));
+  say('THE WISE OAK TREE', line.text, line.mood,
+      line.tag === 'world' || line.tag === 'power' ? 'serious' : '', repliesFor(line.tag));
 
-  const hc = Object.keys(save.heard).length;
+  // listening is how you earn: every new thing he says shakes a leaf loose
+  if (fresh) {
+    G.inv.leaves++;
+    save.stats.leavesTotal = (save.stats.leavesTotal || 0) + 1;
+    G.parkMotes.push({ x: CX() + (Math.random() * 2 - 1) * 30, y: 108, t: 1 });
+    spawnParticles('spark', CX() + (Math.random() * 2 - 1) * 24, 104, 2);
+    checkQuests();
+  }
+
+  const hc = heardTotal();
   if (hc >= 10) ACH('chat10');
   if (hc >= 30) ACH('chat30');
   if (hc >= 60) ACH('chat60');
   if (heardCount() >= totalCount()) { ACH('chatall'); reachEnding('listener'); }
   if (line.tag === 'world') ACH('world1');
   if (line.tag === 'pop') ACH('pop1');
+  if (line.tag === 'power') {
+    ACH('power1');
+    if (heardCount('power') >= 15) ACH('power15');
+    if (heardCount('power') >= totalCount('power')) { ACH('powerall'); reachEnding('commons'); }
+  }
   checkWorldProgress();
   if (heardCount('pop') >= 20) ACH('pop20');
   if (heardCount('pop') >= totalCount('pop')) { ACH('popall'); reachEnding('canon'); }
@@ -7039,7 +7284,7 @@ function openChat(who) {
     onClose: () => { if (elTyping) elTyping.blur(); }
   });
   PANEL.target = panelMaxScroll();          // start at the newest line
-  if (elTyping) { elTyping.value = ''; setTimeout(() => elTyping.focus(), 30); }
+  if (elTyping) { elTyping.value = ''; try { elTyping.focus(); } catch (e) {} }
   ACH(who === 'oak' ? 'oakchat' : 'talknoc');
 }
 
@@ -8314,6 +8559,73 @@ function drawArrows(c) {
   for (const a of G.arrows) SPR.drawTravelArrow(c, G, a.dir, a.label, a.hover);
 }
 
+/* Talking is the whole game, and on a phone the middle of him is all face.
+   So there is one obvious, thumb-sized thing to press. */
+function talkSignShown() {
+  return G.scene === 'game' && !G.cine && !G.dead && !panelOpen() && !G.holding;
+}
+
+function talkSignBox() {
+  const label = talkLabel();
+  const w = Math.max(74, F.textWidth(label, 1) + 24);
+  return { x: Math.round(W() / 2 - w / 2), y: H - 25, w, h: 19 };
+}
+
+function talkLabel() {
+  if (G.asleep) return 'POKE HIM';
+  if (areaId() === 'lane') return 'TALK TO NOC';
+  if (!atOak()) return 'LOOK AROUND';
+  if (DLG.choices && dialogueDone()) return 'TELL ME ANOTHER';
+  return DLG.on ? 'GO ON' : 'TALK TO HIM';
+}
+
+function drawTalkSign(c) {
+  if (!talkSignShown()) return;
+  const b = talkSignBox();
+  const hot = G.talkHover;
+  const bob = Math.sin(G.t * 2.4) * (hot ? 1.4 : 0.7);
+  const y = Math.round(b.y + bob);
+  // two posts into the grass
+  SPR.px(c, b.x + 8, y + b.h, 2, 6, '#5a3a1e');
+  SPR.px(c, b.x + b.w - 10, y + b.h, 2, 6, '#5a3a1e');
+  SPR.roundRect(c, b.x - 2, y - 2, b.w + 4, b.h + 4, 3, SPR.INK);
+  SPR.roundRect(c, b.x, y, b.w, b.h, 2, hot ? '#c39a63' : '#a0703c');
+  SPR.px(c, b.x + 2, y + 2, b.w - 4, 1, '#c9a06a');
+  F.drawTextCentered(c, b.x + b.w / 2, y + 6, talkLabel(), hot ? '#2b1c10' : '#ffe9b0', 1);
+  // how much he still has to say, in leaves-green, under the sign
+  if (atOak() && !G.asleep) {
+    const nx = nextSet();
+    const left = DATA.lines.length - heardTotal();
+    if (left > 0) {
+      const s2 = nx ? (nx.at - heardTotal()) + ' to a new set' : left + ' things left';
+      c.globalAlpha = 0.75;
+      F.drawTextCentered(c, W() / 2, y - 9, s2, '#d8f0a0', 1, '#000000');
+      c.globalAlpha = 1;
+    }
+  }
+}
+
+function overTalkSign(x, y) {
+  if (!talkSignShown()) return false;
+  const b = talkSignBox();
+  return x >= b.x - 6 && x <= b.x + b.w + 6 && y >= b.y - 12 && y <= b.y + b.h + 8;
+}
+
+function pressTalkSign() {
+  if (G.asleep) { wakeHim(); return; }
+  if (areaId() === 'lane') { SFX.click(); openChat('noc'); return; }
+  if (!atOak()) { SFX.click(); say('YOU', 'Quiet out here. He is back up the lane.', null, 'serious'); return; }
+  // while replies are on offer this is the "keep going" one, so the whole
+  // conversation can be had with a single thumb
+  if (DLG.choices && dialogueDone()) {
+    const more = DLG.choices.find(ch => !ch.follow && !ch.type) || DLG.choices[DLG.choices.length - 1];
+    SFX.click();
+    pickReply(more);
+    return;
+  }
+  talkToTree();
+}
+
 function bagButtonBox() { return { x: 4, y: H - 26, w: 26, h: 26 }; }
 function overBagButton(x, y) {
   const b = bagButtonBox();
@@ -8416,7 +8728,7 @@ function render() {
 
   if (G.flash > 0) { ctx.globalAlpha = Math.min(1, G.flash); SPR.px(ctx, 0, 0, W(), H, '#ffffff'); ctx.globalAlpha = 1; }
   if (G.veil > 0) { ctx.globalAlpha = Math.min(1, G.veil); SPR.px(ctx, 0, 0, W(), H, '#05080c'); ctx.globalAlpha = 1; }
-  if (!G.cine && G.scene === 'game') { drawArrows(ctx); SPR.drawHud(ctx, G); }
+  if (!G.cine && G.scene === 'game') { drawArrows(ctx); drawTalkSign(ctx); SPR.drawHud(ctx, G); }
   if (G.areaTitle > 0 && !G.cine) SPR.drawAreaTitle(ctx, G, AREAS[G.area].name, AREAS[G.area].sub, Math.min(1, G.areaTitle));
   if (!G.cine && G.scene === 'game') drawPost(ctx);
   drawHint(ctx);
@@ -8530,8 +8842,8 @@ function hitTest(x, y) {
     const fx = x - CX(), fy = y;
     if (Math.abs(fx) < 34 && fy > 84 && fy < 152) {
       if (fy > 96 && fy < 112 && Math.abs(Math.abs(fx) - 13) < 9) return { kind: 'part', part: 'eye', i: -1 };
-      if (fy >= 100 && fy < CX() && Math.abs(fx) < 9) return { kind: 'part', part: 'nose', i: -1 };
-      if (fy >= CX() && fy < 145 && Math.abs(fx) < 20) return { kind: 'part', part: 'mouth', i: -1 };
+      if (fy >= 100 && fy < 126 && Math.abs(fx) < 9) return { kind: 'part', part: 'nose', i: -1 };
+      if (fy >= 126 && fy < 145 && Math.abs(fx) < 20) return { kind: 'part', part: 'mouth', i: -1 };
       if (fy >= 145 && Math.abs(fx) < 26) return { kind: 'part', part: 'beard', i: -1 };
     }
     if (y > GROUND_Y - 6 && y < GROUND_Y + 12 && Math.abs(x - CX()) > 24 && Math.abs(x - CX()) < 56)
@@ -8602,7 +8914,8 @@ function onMove(ev) {
   const ar = arrowAt(fr.x, fr.y);
   for (const a of G.arrows) a.hover = a === ar;
   G.bagHover = overBagButton(fr.x, fr.y);
-  if (onSign || ar || G.bagHover) { cv.style.cursor = 'pointer'; return; }
+  G.talkHover = overTalkSign(fr.x, fr.y);
+  if (onSign || ar || G.bagHover || G.talkHover) { cv.style.cursor = 'pointer'; return; }
   DLG.hover = DLG.choices && dialogueDone() ? choiceAt(fr.x, fr.y) : -1;
   cv.style.cursor = DLG.hover >= 0 ? 'pointer' : (G.holding ? 'none' : cv.style.cursor);
 
@@ -8749,6 +9062,7 @@ function onPress(ev) {
 
   // the signposts at the edges, and the bag in the corner
   if (!G.cine && G.scene === 'game') {
+    if (overTalkSign(fr.x, fr.y)) { pressTalkSign(); return; }
     const ar = arrowAt(fr.x, fr.y);
     if (ar) { travel(ar.dir); return; }
     if (overBagButton(fr.x, fr.y)) { SFX.click(); toggleBag(); return; }
@@ -9023,7 +9337,8 @@ if (/[?&]debug/.test(location.search)) {
   window.OAK = { G, save, ACH, reachEnding, startBurning, goHeaven, reincarnate,
                  refreshHUD, dropLeaf, triggerSneeze, maybeSpawnSquirrel, persist,
                  skipAll: () => { if (G.cine) { G.cine.i = G.cine.stages.length - 1; skipStage(); } },
-                 parkMargin, parkIncome, parkFill, boardHere, cottageHere, puff, ring, pop, squash, PANEL, openPanel, closePanel, panelIs, panelOpen, openQuestBoard, openJournal, acceptQuest, checkQuests, questStatus, plotPos, hitTest,
+                 parkMargin, parkIncome, parkFill, talkSignBox, pressTalkSign, heardTotal, openSets, nextSet, openTopics,
+                 unlockedTags, setHeard, setTotal, checkSets, talkToTree, boardHere, cottageHere, puff, ring, pop, squash, PANEL, openPanel, closePanel, panelIs, panelOpen, openQuestBoard, openJournal, acceptQuest, checkQuests, questStatus, plotPos, hitTest,
                  travel, takePickup, seedPickups, openChat, closeChat, sendChat, openBag, closeBag,
                  agreePlan, completePlan, planById, areaId, wakeHim, AREAS,
                  openPost, closePost, openSettings, openCredits, openTrophies, openEndings, openGarden, closeGarden, buildGarden, snailName, finishQuest, questById, questProgress,
@@ -9055,6 +9370,11 @@ window.addEventListener('beforeunload', persist);
 
 window.addEventListener('resize', () => fit());
 window.addEventListener('orientationchange', () => setTimeout(fit, 200));
+// a phone keyboard changes the usable height without firing resize on iOS
+if (window.visualViewport) {
+  window.visualViewport.addEventListener('resize', () => fit());
+  window.visualViewport.addEventListener('scroll', () => fit());
+}
 
 })();
 </script>
