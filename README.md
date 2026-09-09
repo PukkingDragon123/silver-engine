@@ -103,8 +103,8 @@ Six of them, all letterboxed and captioned, all skippable with a click.
 ## Talking in your own words
 
 **Both of them will answer anything you type.** Click Noc, or press `T`, and a
-talk box opens on whoever is standing in front of you — Noc in the lane, the
-oak everywhere else. The oak also offers it as a reply option every time he
+scroll unrolls in front of whoever is standing there — Noc in the lane, the
+oak everywhere else. You type straight onto the paper. The oak also offers it as a reply option every time he
 speaks: *"let me say something myself"*.
 
 They are not the same voice. Noc is quiet and consoling and turns what you say
@@ -156,15 +156,24 @@ and the trophy tied on top in miniature — and if you want to know what is in
 it you have to **stop him and open it**. Then you get the full card: the carved
 trophy at proper size, the tier, the name and what you did.
 
-It opens like a scroll, because it is one: the wax seal cracks and drops
-through, the sheet unrolls in fifteen discrete steps (pixel art does not ease)
-to exactly the height of what is written on it, the lower rod riding down with
-it, and the words are inked on once there is room to hold them. Closing it
-rolls it back up. **Every panel in the game is that same object** — the
-backpack, the talk box, the settings, the trophy room, the ending cards — one
-scroll component with a turned rod at each end, a sheet of laid paper between
-them, and a seal that has to break first. Nothing in the game is a dark
-rectangle with a title bar any more.
+It opens like a scroll, because it is one, and it is **drawn on the canvas in
+the game's own 5x7 bitmap font at logical resolution** — not a web panel
+floating over the art. The wax seal cracks and drops through, the paper
+unrolls in fifteen discrete steps to exactly the height of what is written on
+it, the lower rod rides down with it, and the words are inked on once there is
+room to hold them. Closing rolls it back up.
+
+**Every panel in the game is that same object**: the backpack, the talk box,
+the settings, the board, the journal, the trophy room, the endings list, the
+credits and the ending cards. One scroll widget, laid out from a list of
+items, measured in logical pixels, with turned rods, laid paper, fold creases
+and a seal. Nothing in the game is a browser-font rectangle sitting on top of
+the world.
+
+The only DOM left besides the canvas is **one transparent input**, which
+exists solely to raise a phone keyboard and collect keystrokes; every
+character it catches is redrawn in pixels on the paper, with a blinking block
+caret.
 
 **Every achievement has its own snail, and it is always the same snail.** The
 shell palette, the pattern on it (bands, spots, spiral, chevron, marbled,

@@ -133,13 +133,8 @@ const buf = document.createElement('canvas');
 const dc = buf.getContext('2d');
 dc.imageSmoothingEnabled = false;
 
-const elBag = $('bag'), elBagBody = $('bagbody');
-const elChat = $('chat'), elChatLog = $('chatlog'), elChatInput = $('chatinput');
-const elChatWho = $('chatwho'), elChatFoot = $('chatfoot');
-const elPost = $('post'), elPostBody = $('postbody');
-const elSet = $('settings'), elSetBody = $('setbody');
-const elModal = $('modal'), elModalBody = $('modalbody'), elModalTitle = $('modaltitle');
-const elEndingCard = $('endingcard');
+/* The only DOM left in the game is the canvas, the two captions, and one
+   transparent input that exists purely to raise a keyboard on a phone. */
 
 /* the one line of guidance the game ever shows, drawn in pixels */
 const elHint = {
@@ -399,7 +394,7 @@ function balloonBox() {
   const w = balloonWidth();
   const nLines = DLG.lines.length;
   const h = 12 + nLines * 9;
-  if (G.menu) {
+  if (panelOpen()) {
     return { x: Math.round(W() / 2 - w / 2), y: H - h - 8, w, h, tail: null };
   }
   const a = speakerAnchor();
@@ -592,102 +587,635 @@ const REDUCED = (function () {
   try { return window.matchMedia('(prefers-reduced-motion: reduce)').matches; } catch (e) { return false; }
 })();
 
-function openPost(note, fromBag) {
-  if (!note) return;
-  SFX.page(); ACH('openpost');
-  const head = note.kind === 'ending' ? 'AN ENDING' :
-               note.kind === 'chal' ? 'A CHALLENGE' :
-               note.kind === 'goal' ? 'A GOAL' : 'AN ACHIEVEMENT';
-  elPostBody.innerHTML =
-    '<div class="pcard ' + note.kind + '">' +
-      '<canvas class="ptro" width="64" height="64"></canvas>' +
-      '<p class="ptier">' + head + '</p>' +
-      '<h2 class="pname"></h2>' +
-      '<p class="pdesc"></p>' +
-      '<p class="pby">brought to you by <b></b><br><i></i></p>' +
-    '</div>';
-  elPostBody.querySelector('.pname').textContent = note.name;
-  elPostBody.querySelector('.pdesc').textContent = note.desc || '';
-  elPostBody.querySelector('.pby b').textContent = snailName(note.id || note.name);
-  elPostBody.querySelector('.pby i').textContent = snailNote(note.id || note.name);
-  const cc = elPostBody.querySelector('.ptro').getContext('2d');
-  cc.imageSmoothingEnabled = false;
-  // achievements have carved trophies of their own; endings borrow their icon's
-  const art = SPR.TROPHY_ART || {};
-  const key = art[note.id] ? note.id : (art[note.icon] ? note.icon : note.id);
-  try {
-    cc.drawImage(SPR.trophySprite(key || 'end1'), 0, 0);
-  } catch (e) {
-    drawIcon(cc, note.icon || 'leaf', 16);
+/* =========================================================================
+   PANELS, DRAWN IN THE WORLD
+   One scroll at a time, laid out from a list of items, measured in logical
+   pixels and drawn in the same 5x7 font as the rest of the game. Nothing in
+   here is a DOM element, so nothing in here can look like a web page.
+   ========================================================================= */
+const PAP = SPR.PAPER;
+
+const PANEL = {
+  spec: null,        // { id, title, foot, build, anchor, w, maxH, wide }
+  items: [],
+  contentH: 0, viewH: 0, w: 0, x: 0, y: 0,
+  unroll: 0, crack: 0, closing: 0,
+  scroll: 0, target: 0,
+  hover: -1, rects: [],
+  ink: 0             // the words fade in once the paper is open enough
+};
+
+const PANEL_STEPS = 15;
+
+function panelOpen() { return !!PANEL.spec; }
+
+/* ---- layout ---------------------------------------------------------- */
+const ROW_H = 17, LINE_H = 8, TITLE_H = 13;
+
+function measureItem(it, w) {
+  const inner = w - 12;
+  switch (it.t) {
+    case 'title': return TITLE_H;
+    case 'rule':  return 4;
+    case 'gap':   return it.h || 5;
+    case 'text': {
+      const sc = it.scale || 1;
+      it._lines = F.wrapText(it.s, inner, sc);
+      return it._lines.length * (LINE_H * sc) + 2;
+    }
+    case 'row': {
+      it._sub = it.sub ? F.wrapText(it.sub, inner - (it.icon ? 20 : 0) - (it.right ? F.textWidth(it.right, 1) + 6 : 0), 1) : [];
+      return Math.max(ROW_H, 12 + it._sub.length * LINE_H);
+    }
+    case 'btns':  return 16;
+    case 'trophy': return 46;
+    case 'chat': {
+      it._lines = F.wrapText(it.s, inner - 8, 1);
+      return (it.who === 'sys' ? 0 : LINE_H) + it._lines.length * LINE_H + 4;
+    }
+    case 'input': return 15;
+    case 'snail': return 30;
+    default: return 10;
+  }
+}
+
+function layoutPanel() {
+  const sp = PANEL.spec;
+  if (!sp) return;
+  const maxW = Math.min(sp.wide ? 236 : 178, W() - 28);
+  PANEL.w = maxW;
+  PANEL.items = sp.build();
+  let h = 4;
+  for (const it of PANEL.items) { it._h = measureItem(it, maxW); it._y = h; h += it._h; }
+  h += 4;
+  PANEL.contentH = h;
+  const cap = sp.maxH || (sp.anchor === 'mid' ? H - 22 : H - 34);
+  PANEL.viewH = Math.min(h, cap);
+  PANEL.target = Math.max(0, Math.min(PANEL.target, h - PANEL.viewH));
+
+  // where it hangs
+  const a = sp.anchor || 'mid';
+  PANEL.x = Math.round(a === 'left' ? 10 : a === 'right' ? W() - maxW - 10 : W() / 2 - maxW / 2);
+  PANEL.y = Math.round(a === 'mid' ? (H - PANEL.viewH) / 2 : H - PANEL.viewH - 30);
+  if (PANEL.y < 12) PANEL.y = 12;
+}
+
+function openPanel(spec) {
+  if (G.cine) return;
+  PANEL.spec = spec;
+  PANEL.unroll = 0.001; PANEL.crack = 0; PANEL.closing = 0;
+  PANEL.scroll = 0; PANEL.target = 0; PANEL.hover = -1; PANEL.ink = 0;
+  layoutPanel();
+  SFX.page();
+  hideBubble();
+}
+
+function refreshPanel() { if (PANEL.spec) layoutPanel(); }
+
+function closePanel() {
+  if (!PANEL.spec || PANEL.closing) return;
+  PANEL.closing = 1;
+  SFX.page();
+  if (PANEL.spec.onClose) PANEL.spec.onClose();
+}
+
+function panelIs(id) { return PANEL.spec && PANEL.spec.id === id; }
+
+/* ---- animation ------------------------------------------------------- */
+function panelMaxScroll() { return Math.max(0, PANEL.contentH - PANEL.viewH); }
+
+function updatePanel(dt) {
+  if (!PANEL.spec) return;
+  PANEL.target = Math.max(0, Math.min(panelMaxScroll(), PANEL.target));
+  if (PANEL.closing) {
+    PANEL.unroll -= dt * 3.4;
+    PANEL.ink = 0;
+    if (PANEL.unroll <= 0) { PANEL.spec = null; PANEL.items = []; PANEL.rects = []; }
+    return;
+  }
+  PANEL.crack = Math.min(1, PANEL.crack + dt * 2.6);
+  if (PANEL.crack > 0.45) PANEL.unroll = Math.min(1, PANEL.unroll + dt * 1.7);
+  if (PANEL.unroll > 0.55) PANEL.ink = Math.min(1, PANEL.ink + dt * 3.4);
+  PANEL.scroll += (PANEL.target - PANEL.scroll) * Math.min(1, dt * 9);
+}
+
+/* the paper opens in discrete steps; pixel art does not ease */
+function panelStepped() {
+  return Math.round(PANEL.unroll * PANEL_STEPS) / PANEL_STEPS;
+}
+
+/* ---- drawing --------------------------------------------------------- */
+function drawPanelScroll(c) {
+  const sp = PANEL.spec;
+  if (!sp) return;
+  const k = panelStepped();
+  const h = Math.max(0, Math.round(PANEL.viewH * k));
+  const x = PANEL.x, y = Math.round(PANEL.y + (PANEL.viewH - h) / 2);
+
+  if (sp.anchor === 'mid') {
+    c.globalAlpha = 0.62 * Math.min(1, PANEL.unroll * 1.6);
+    SPR.px(c, 0, 0, W(), H, '#0a0806');
+    c.globalAlpha = 1;
   }
 
-  unroll(elPost);
+  SPR.drawScrollFrame(c, x, y, PANEL.w, h, { crack: PANEL.crack });
+  if (h < 10 || PANEL.ink <= 0) return;
 
-  // remove it from the unopened pile
+  // the words, clipped to the open paper
+  c.save();
+  c.beginPath();
+  c.rect(x, y + 1, PANEL.w, h - 2);
+  c.clip();
+  c.globalAlpha = PANEL.ink;
+  PANEL.rects = [];
+  const top = y - Math.round(PANEL.scroll);
+  for (let i = 0; i < PANEL.items.length; i++) {
+    const it = PANEL.items[i];
+    const iy = top + it._y;
+    if (iy > y + h || iy + it._h < y) continue;
+    drawPanelItem(c, it, x, iy, PANEL.w, i);
+  }
+  c.globalAlpha = 1;
+  c.restore();
+
+  // a scroll thumb, if there is more paper than window
+  if (PANEL.contentH > PANEL.viewH && PANEL.ink > 0.5) {
+    const trackH = h - 10;
+    const th = Math.max(6, trackH * PANEL.viewH / PANEL.contentH);
+    const tp = (PANEL.scroll / (PANEL.contentH - PANEL.viewH)) * (trackH - th);
+    SPR.px(c, x + PANEL.w - 4, y + 4, 3, trackH + 2, PAP.dim);
+    SPR.px(c, x + PANEL.w - 4, y + 5 + tp, 3, th, PAP.ink3);
+  }
+}
+
+function drawPanelItem(c, it, x, y, w, i) {
+  const pad = 6;
+  const inner = w - pad * 2;
+  switch (it.t) {
+    case 'title':
+      F.drawTextCentered(c, x + w / 2, y + 3, it.s, PAP.ink, 1);
+      SPR.px(c, x + pad, y + 11, inner, 1, PAP.deep);
+      break;
+
+    case 'rule':
+      for (let dx = 0; dx < inner; dx += 2) SPR.px(c, x + pad + dx, y + 1, 1, 1, PAP.deep);
+      break;
+
+    case 'text': {
+      const sc = it.scale || 1;
+      const col = it.col || PAP.ink2;
+      for (let l = 0; l < it._lines.length; l++) {
+        const ly = y + 1 + l * LINE_H * sc;
+        if (it.align === 'center') F.drawTextCentered(c, x + w / 2, ly, it._lines[l], col, sc);
+        else F.drawText(c, x + pad, ly, it._lines[l], col, sc);
+      }
+      break;
+    }
+
+    case 'row': {
+      const hot = PANEL.hover === i && it.act;
+      if (hot) SPR.px(c, x + 2, y, w - 4, it._h - 1, PAP.lit);
+      let tx = x + pad;
+      if (it.icon) {
+        drawSmallIcon(c, it.icon, tx, y + 2);
+        tx += 20;
+      }
+      const rw = it.right ? F.textWidth(it.right, 1) : 0;
+      F.drawText(c, tx, y + 2, fitText(it.label, w - pad - (tx - x) - rw - 8), it.dim ? PAP.leaf : PAP.ink, 1);
+      for (let l = 0; l < it._sub.length; l++) {
+        F.drawText(c, tx, y + 11 + l * LINE_H, it._sub[l], PAP.ink3, 1);
+      }
+      if (it.right) {
+        const col = it.rightCol ||
+          (it.right === 'DONE' || it.right === 'HAVE IT' ? PAP.leaf : it.right === 'TAKEN' ? PAP.gold : PAP.leaf);
+        F.drawText(c, x + w - pad - rw, y + 5, it.right, col, 1);
+      }
+      if (it.act) PANEL.rects.push({ i, x: x + 2, y, w: w - 4, h: it._h - 1 });
+      for (let dx = 0; dx < inner; dx += 3) SPR.px(c, x + pad + dx, y + it._h - 1, 1, 1, PAP.dim);
+      break;
+    }
+
+    case 'btns': {
+      const n = it.items.length;
+      const bw = Math.floor((inner - (n - 1) * 4) / n);
+      for (let b = 0; b < n; b++) {
+        const bx = x + pad + b * (bw + 4);
+        const hot = PANEL.hover === i && PANEL.hoverSub === b;
+        SPR.px(c, bx, y, bw, 13, SPR.INK);
+        SPR.px(c, bx + 1, y + 1, bw - 2, 11, hot ? PAP.lit : PAP.dim);
+        SPR.px(c, bx + 1, y + 1, bw - 2, 1, PAP.lit);
+        const lbl = it.items[b].label;
+        F.drawTextCentered(c, bx + bw / 2, y + 4, fitText(lbl, bw - 6), it.items[b].bad ? '#8a1f14' : PAP.ink, 1);
+        PANEL.rects.push({ i, sub: b, x: bx, y, w: bw, h: 13 });
+      }
+      break;
+    }
+
+    case 'trophy': {
+      try {
+        const spr = SPR.trophySprite(it.id);
+        c.imageSmoothingEnabled = false;
+        c.drawImage(spr, Math.round(x + w / 2 - 22), y - 6, 44, 44);
+      } catch (e) { /* the generic mount will do */ }
+      break;
+    }
+
+    case 'snail': {
+      const skin = SPR.snailSkin(it.id, it.kind);
+      SPR.drawSnail(c, G, { x: x + w / 2, y: y + 22, dir: 1, skin,
+                            scale: Math.min(1.2, skin.scale), noTrail: true, opened: true, kind: it.kind });
+      break;
+    }
+
+    case 'chat': {
+      const you = it.who === 'you';
+      const sys = it.who === 'sys';
+      let ly = y + 1;
+      if (!sys) {
+        const tag = you ? 'YOU' : (G.chatWho === 'oak' ? 'THE OAK' : 'NOC');
+        if (you) F.drawText(c, x + w - pad - F.textWidth(tag, 1), ly, tag, '#2a5a7a', 1);
+        else F.drawText(c, x + pad, ly, tag, PAP.gold, 1);
+        ly += LINE_H;
+      }
+      for (const line of it._lines) {
+        const col = sys ? PAP.ink3 : you ? PAP.ink2 : PAP.ink;
+        if (you) F.drawText(c, x + w - pad - F.textWidth(line, 1), ly, line, col, 1);
+        else F.drawText(c, x + pad + (sys ? 0 : 4), ly, line, col, 1);
+        ly += LINE_H;
+      }
+      break;
+    }
+
+    case 'input': {
+      SPR.px(c, x + pad, y + 11, inner, 1, PAP.deep);
+      const maxW = inner - 8;
+      let vis = typedText();
+      while (F.textWidth(vis, 1) > maxW) vis = vis.slice(1);      // the view follows the caret
+      if (chatBusy) {
+        F.drawText(c, x + pad + 1, y + 2, 'he is thinking about it', PAP.ink3, 1);
+        break;
+      }
+      const caretX = x + pad + 1 + (vis ? F.textWidth(vis, 1) + 1 : 0);
+      if (vis) F.drawText(c, x + pad + 1, y + 2, vis, PAP.ink, 1);
+      else F.drawText(c, caretX + 5, y + 2, 'say something', PAP.ink3, 1);
+      if (Math.sin(G.t * 6) > 0) SPR.px(c, caretX, y + 2, 3, 7, PAP.ink);
+      break;
+    }
+  }
+}
+
+/* a 16x16 achievement icon, drawn straight in at logical scale */
+const _iconCache = new Map();
+function drawSmallIcon(c, id, x, y) {
+  let cv2 = _iconCache.get(id);
+  if (!cv2) {
+    const m = SPR.makeCanvas(16, 16);
+    drawIcon(m.ctx, id, 16);
+    cv2 = m.cv;
+    _iconCache.set(id, cv2);
+  }
+  c.imageSmoothingEnabled = false;
+  c.drawImage(cv2, x, y, 16, 16);
+}
+
+/* ---- input ----------------------------------------------------------- */
+function panelBox() {
+  const k = panelStepped();
+  const h = Math.max(0, Math.round(PANEL.viewH * k));
+  return { x: PANEL.x, y: Math.round(PANEL.y + (PANEL.viewH - h) / 2), w: PANEL.w, h };
+}
+
+function panelHitAt(fx, fy) {
+  for (const r of PANEL.rects) {
+    if (fx >= r.x && fx <= r.x + r.w && fy >= r.y && fy <= r.y + r.h) return r;
+  }
+  return null;
+}
+
+function panelMove(fx, fy) {
+  const hit = panelHitAt(fx, fy);
+  PANEL.hover = hit ? hit.i : -1;
+  PANEL.hoverSub = hit ? hit.sub : -1;
+  return !!hit;
+}
+
+function panelPress(fx, fy) {
+  const b = panelBox();
+  const inside = fx >= b.x - 6 && fx <= b.x + b.w + 6 && fy >= b.y - 10 && fy <= b.y + b.h + 10;
+  if (!inside) { closePanel(); return true; }
+  const hit = panelHitAt(fx, fy);
+  if (!hit) return true;
+  const it = PANEL.items[hit.i];
+  if (it.t === 'btns') { const b2 = it.items[hit.sub]; if (b2 && b2.act) { SFX.click(); b2.act(); } return true; }
+  if (it.act) { SFX.click(); it.act(); }
+  return true;
+}
+
+
+/* =========================================================================
+   THE PANELS THEMSELVES
+   ========================================================================= */
+
+/* a headline is double height only while it still fits on one line */
+function bigEnough(str, wide) {
+  const inner = Math.min(wide ? 236 : 178, W() - 28) - 12;
+  return F.textWidth(String(str).toUpperCase(), 2) <= inner ? 2 : 1;
+}
+
+/* ---- the post ---- */
+let lastNote = null;
+function openPost(note, fromBag) {
+  if (!note) return;
+  ACH('openpost');
+  lastNote = note;
   if (save.unread) {
     save.unread = save.unread.filter(u => u.id !== note.id);
     persist();
   }
-  if (!fromBag && G.bagOpen) renderBag();
   if ((save.stats.postSent || 0) >= 6 && !(save.unread || []).length) ACH('allpost');
+  const head = note.kind === 'ending' ? 'AN ENDING' :
+               note.kind === 'chal' ? 'A CHALLENGE' :
+               note.kind === 'goal' ? 'A GOAL' : 'AN ACHIEVEMENT';
+  const art = SPR.TROPHY_ART || {};
+  const key = art[note.id] ? note.id : (art[note.icon] ? note.icon : note.id);
+  const nameCol = note.kind === 'chal' ? SPR.PAPER.plum : note.kind === 'ending' ? SPR.PAPER.rust : '#6b3410';
+  openPanel({
+    id: 'post', anchor: 'mid',
+    build: () => [
+      { t: 'gap', h: 6 },
+      { t: 'trophy', id: key },
+      { t: 'gap', h: 8 },
+      { t: 'text', s: head, col: SPR.PAPER.gold, align: 'center' },
+      { t: 'text', s: note.name.toUpperCase(), col: nameCol, align: 'center', scale: bigEnough(note.name) },
+      { t: 'gap', h: 4 },
+      { t: 'text', s: note.desc || '', col: SPR.PAPER.ink2, align: 'center' },
+      { t: 'rule' },
+      { t: 'text', s: 'carried by ' + snailName(note.id || note.name), col: SPR.PAPER.ink, align: 'center' },
+      { t: 'snail', id: note.id || note.name, kind: note.kind },
+      { t: 'text', s: snailNote(note.id || note.name), col: SPR.PAPER.ink3, align: 'center' },
+      { t: 'gap', h: 6 }
+    ],
+    onClose: () => { if (panelWas === 'bag') openBag(); }
+  });
+  panelWas = fromBag ? 'bag' : null;
 }
+let panelWas = null;
+function closePost() { if (panelIs('post')) closePanel(); }
 
-/* =========================================================================
-   OPENING AND SHUTTING A SCROLL
-   Every panel in the game is the same object, so they all open the same way:
-   measure the content, snap the sheet shut, then unroll to exactly that
-   height in fifteen steps while the seal cracks and the words are inked on.
-   ========================================================================= */
-function unroll(el) {
-  const sheet = el.querySelector('.sheet');
-  if (!sheet) return;
-  const inner = sheet.querySelector('.inner');
-  el.classList.remove('hidden');
-  el.classList.remove('open');
-  sheet.classList.remove('scrolly');
-  sheet.style.transition = 'none';
-  sheet.style.height = 'auto';
-  const natural = inner ? inner.scrollHeight : sheet.scrollHeight;
-  const capVh = parseFloat(el.getAttribute('data-cap') || '0');
-  const cap = capVh ? window.innerHeight * capVh / 100 : Infinity;
-  const full = Math.min(natural, cap);
-  clearTimeout(el._rollT);
+/* ---- the backpack ---- */
+function openBag() {
+  if (!save.bag || G.cine) return;
+  G.bagOpen = true; G.bagBadge = 0;
+  SFX.pickup();
+  openPanel({
+    id: 'bag', anchor: 'left', build: bagItems,
+    onClose: () => { G.bagOpen = false; }
+  });
+}
+function closeBag() { if (panelIs('bag')) closePanel(); else G.bagOpen = false; }
+function toggleBag() { panelIs('bag') ? closeBag() : openBag(); }
+function renderBag() { if (panelIs('bag')) refreshPanel(); }
 
-  if (REDUCED) {
-    sheet.style.height = full + 'px';
-    el.classList.add('open');
-    if (natural > cap) sheet.classList.add('scrolly');
-    return;
+function bagItems() {
+  const out = [{ t: 'title', s: 'YOUR BACKPACK' }];
+  out.push({ t: 'row', label: G.inv.leaves + ' leaves', sub: 'the only currency, and only Noc takes it',
+             icon: 'leaf', right: '', dim: false });
+  const jobsDone = DATA.quests.filter(q => save.questDone[q.id]).length;
+  out.push({ t: 'text', s: Object.keys(G.inv.items).length + ' things  ·  ' + jobsDone + '/' + DATA.quests.length +
+                          ' jobs  ·  ' + plansDone() + '/' + DATA.plans.length + ' plans', col: SPR.PAPER.ink3, align: 'center' });
+  out.push({ t: 'rule' });
+
+  const owned = DATA.shop.filter(it => has(it.id));
+  if (!owned.length) {
+    out.push({ t: 'text', s: 'Empty, apart from crumbs and one very old bus ticket. Look around the lane and the hollow, and make plans with Noc.' });
   }
-  sheet.style.height = '6px';
-  void sheet.offsetHeight;                        // commit the shut state
-  sheet.style.transition = 'height .6s steps(15, end) .16s';
-  el.classList.add('open');
-  sheet.style.height = full + 'px';
-  // the paper keeps rustling the whole way down
-  SFX.page();
-  setTimeout(() => SFX.page(), 240);
-  setTimeout(() => SFX.page(), 500);
-  // once it has stopped moving, content taller than the cap may scroll
-  el._rollT = setTimeout(() => { if (natural > cap) sheet.classList.add('scrolly'); }, 820);
+  for (const it of owned) {
+    out.push({ t: 'row', label: it.name, sub: TOOL_HINTS[it.id] || it.desc, icon: it.icon,
+               right: 'TAKE OUT', act: () => holdFromBag(it.id) });
+  }
+
+  const unread = save.unread || [];
+  if (unread.length) {
+    out.push({ t: 'title', s: 'UNOPENED POST (' + unread.length + ')' });
+    for (const n of unread) {
+      out.push({ t: 'row', label: 'A sealed parcel', sub: 'the snail got past you', icon: 'paper',
+                 right: 'OPEN IT', act: () => openPost(n, true) });
+    }
+  }
+  const jobs = DATA.quests.filter(q => save.quests[q.id]);
+  if (jobs.length) {
+    out.push({ t: 'title', s: 'JOBS IN HAND' });
+    for (const q of jobs) out.push({ t: 'row', label: q.name, sub: questProgress(q) });
+  }
+  const openPlans = DATA.plans.filter(p => save.plans[p.id]);
+  const donePlans = DATA.plans.filter(p => save.planDone[p.id]);
+  if (openPlans.length || donePlans.length) {
+    out.push({ t: 'title', s: 'PLANS WITH NOC' });
+    for (const p of openPlans) out.push({ t: 'row', label: p.name, sub: planBlocker(p) || 'ready — go and tell him' });
+    for (const p of donePlans) out.push({ t: 'row', label: p.name, sub: p.done, right: 'KEPT', dim: true });
+  }
+  out.push({ t: 'rule' });
+  out.push({ t: 'text', s: 'found, not bought', col: SPR.PAPER.ink3, align: 'center' });
+  return out;
 }
 
-function rollUp(el, done) {
-  const sheet = el.querySelector('.sheet');
-  if (!sheet || el.classList.contains('hidden')) { if (done) done(); return; }
-  clearTimeout(el._rollT);
-  sheet.classList.remove('scrolly');
-  el.classList.remove('open');
-  if (REDUCED) { el.classList.add('hidden'); if (done) done(); return; }
-  sheet.style.transition = 'height .34s steps(9, end)';
-  sheet.style.height = '6px';
-  SFX.page();
-  el._rollT = setTimeout(() => { el.classList.add('hidden'); if (done) done(); }, 340);
+/* ---- the squirrel's settings ---- */
+function openSettings() {
+  ACH('gear');
+  openPanel({ id: 'set', anchor: 'right', build: settingsItems });
+}
+function closeSettings() { if (panelIs('set')) closePanel(); }
+
+function settingsItems() {
+  const live = NOC_AI.live;
+  return [
+    { t: 'title', s: "THE SQUIRREL'S SETTINGS" },
+    { t: 'row', label: 'Sound', sub: save.muted ? 'muted' : 'on', icon: 'feather',
+      right: save.muted ? 'TURN ON' : 'MUTE', act: () => { toggleMute(); refreshPanel(); } },
+    { t: 'row', label: 'A real mind',
+      sub: live ? 'on \u00b7 ' + NOC_AI.model : 'off \u2014 local brains only',
+      icon: 'book', right: live ? 'TURN OFF' : 'ADD KEY', act: askForKey },
+    { t: 'row', label: 'The Trophy Room', sub: 'everything you have earned', icon: 'crown',
+      right: 'OPEN', act: openTrophies },
+    { t: 'row', label: 'Credits', sub: 'or follow the bright butterfly', icon: 'star',
+      right: 'READ', act: openCredits },
+    { t: 'row', label: 'Erase everything', sub: 'he will not remember you', icon: 'fire',
+      right: 'ERASE', rightCol: '#8a1f14', act: eraseEverything },
+    { t: 'rule' },
+    { t: 'text', s: 'he kept the gear off a lawnmower in 1998', col: SPR.PAPER.ink3, align: 'center' }
+  ];
 }
 
-function closePost() { rollUp(elPost, () => { if (G.bagOpen) renderBag(); }); }
+function askForKey() {
+  if (NOC_AI.live) { NOC_AI.setKey(''); refreshPanel(); return; }
+  const k = prompt("Paste an Anthropic API key.\n\nIt is kept in this browser only and is sent nowhere except Anthropic. Leave it blank to cancel.");
+  if (k && k.trim()) { NOC_AI.setKey(k.trim()); ACH('realai'); }
+  refreshPanel();
+}
 
-/* a poke makes him hurry along */
+/* ---- the trophy room, the endings, the credits ---- */
+function openTrophies() {
+  const done = DATA.achievements.filter(a => save.ach[a.id]).length;
+  openPanel({
+    id: 'tro', anchor: 'mid', wide: true, maxH: H - 40,
+    build: () => {
+      const out = [{ t: 'title', s: 'THE TROPHY ROOM' },
+                   { t: 'text', s: done + ' of ' + DATA.achievements.length + ' earned', col: SPR.PAPER.ink3, align: 'center' },
+                   { t: 'rule' }];
+      for (const a of DATA.achievements) {
+        const got = !!save.ach[a.id];
+        out.push({ t: 'row', label: got ? a.name : '???', sub: a.desc, icon: got ? a.icon : null,
+                   right: got ? 'EARNED' : '', dim: got });
+      }
+      return out;
+    }
+  });
+}
+
+function openEndings() {
+  const found = DATA.endings.filter(e => save.endings[e.id]).length;
+  openPanel({
+    id: 'ends', anchor: 'mid', wide: true, maxH: H - 40,
+    build: () => {
+      const out = [{ t: 'title', s: 'THE ENDINGS' },
+                   { t: 'text', s: found + ' of ' + DATA.endings.length + ' found', col: SPR.PAPER.ink3, align: 'center' },
+                   { t: 'rule' }];
+      for (const e of DATA.endings) {
+        const got = !!save.endings[e.id];
+        out.push({ t: 'row', label: got ? e.name : '???', sub: got ? e.title : e.hint,
+                   icon: got ? e.icon : null, right: got ? 'FOUND' : '', dim: got });
+      }
+      return out;
+    }
+  });
+}
+
+function openCredits() {
+  ACH('credits');
+  openPanel({
+    id: 'cred', anchor: 'mid', build: () => [
+      { t: 'title', s: 'CREDITS' },
+      { t: 'text', s: 'THE WISE OAK TREE', col: SPR.PAPER.ink, align: 'center' },
+      { t: 'gap', h: 3 },
+      { t: 'text', s: 'A nine-hundred-year-old oak, a lamp-keeper called Noc, a squirrel who gave up retail for technical support, and one butterfly that would not stay in the background.' },
+      { t: 'rule' },
+      { t: 'text', s: 'Every pixel is drawn at runtime on one canvas: the tree, the wood, the weather, the trophies, these words. The font is a 5x7 bitmap written for it. There are no images and no dependencies.', col: SPR.PAPER.ink3 },
+      { t: 'gap', h: 3 },
+      { t: 'text', s: DATA.lines.length + ' things he says  ·  ' + DATA.achievements.length + ' trophies  ·  ' +
+                      DATA.endings.length + ' endings  ·  ' + DATA.quests.length + ' jobs  ·  ' + DATA.plans.length + ' plans',
+        col: SPR.PAPER.ink3, align: 'center' },
+      { t: 'rule' },
+      { t: 'text', s: 'Thank you for standing still long enough to read this. He noticed. He notices everything.', col: SPR.PAPER.ink2 },
+      { t: 'gap', h: 4 }
+    ]
+  });
+}
+
+function eraseEverything() {
+  openPanel({
+    id: 'wipe', anchor: 'mid', build: () => [
+      { t: 'title', s: 'ERASE EVERYTHING?' },
+      { t: 'text', s: 'Every trophy. Every ending. Every snail. Every line you ever heard him say.' },
+      { t: 'text', s: 'He will not remember you.', col: SPR.PAPER.ink3 },
+      { t: 'gap', h: 4 },
+      { t: 'btns', items: [
+        { label: 'KEEP IT', act: () => closePanel() },
+        { label: 'ERASE IT ALL', bad: true, act: () => {
+            erased = true;
+            try { localStorage.removeItem(SAVE_KEY); } catch (e) {}
+            location.reload();
+          } }
+      ] },
+      { t: 'gap', h: 4 }
+    ]
+  });
+}
+
+/* ---- the board and the journal ---- */
+function openQuestBoard() {
+  openPanel({
+    id: 'board', anchor: 'mid', wide: true, maxH: H - 40,
+    build: () => {
+      const rows = [{ t: 'title', s: 'THE BOARD' }];
+      const openN = DATA.quests.filter(q => save.quests[q.id]).length;
+      const doneN = DATA.quests.filter(q => save.questDone[q.id]).length;
+      rows.push({ t: 'text', s: doneN + ' done  ·  ' + openN + ' in hand', col: SPR.PAPER.ink3, align: 'center' });
+      rows.push({ t: 'rule' });
+      let any = false;
+      for (const q of DATA.quests) {
+        if (!questOffered(q)) continue;
+        any = true;
+        const st = questStatus(q);
+        rows.push({
+          t: 'row', dim: st === 'done',
+          label: q.name,
+          sub: st === 'open' ? questProgress(q) : q.desc,
+          right: st === 'done' ? 'DONE' : st === 'open' ? 'TAKEN' : 'TAKE IT',
+          act: st === 'new' ? () => { acceptQuest(q.id); refreshPanel(); }
+             : () => { const v = q.from === 'oak' ? sayTree : nocSay;
+                       v(st === 'done' ? q.done : q.ask, st === 'done' ? 'happy' : 'think'); closePanel(); }
+        });
+      }
+      if (!any) rows.push({ t: 'text', s: DATA.boardEmpty, align: 'center', col: SPR.PAPER.ink3 });
+      return rows;
+    }
+  });
+}
+
+function openJournal() {
+  openPanel({
+    id: 'journal', anchor: 'mid', wide: true, maxH: H - 40,
+    build: () => {
+      const rows = [{ t: 'title', s: "THE KEEPER'S JOURNAL" }];
+      rows.push({ t: 'text', s: parkIncome().toFixed(2) + ' leaves a second  ·  ' + save.park.earned + ' earned  ·  ' +
+                                save.park.props.length + '/' + plotCount() + ' plots used',
+                  col: SPR.PAPER.ink3, align: 'center' });
+      rows.push({ t: 'rule' });
+      const counts = {};
+      for (const p of save.park.props) counts[p.type] = (counts[p.type] || 0) + 1;
+      let any = false;
+      for (const b of DATA.build) {
+        if (!counts[b.id]) continue;
+        any = true;
+        rows.push({ t: 'row', label: b.name + (counts[b.id] > 1 ? ' x' + counts[b.id] : ''), sub: b.desc,
+                    right: 'IN THE PARK' });
+      }
+      for (const u of DATA.upgrades) {
+        if (!save.park.upgrades[u.id]) continue;
+        any = true;
+        rows.push({ t: 'row', label: u.name, sub: u.desc, right: 'EARNED', dim: true });
+      }
+      if (!any) rows.push({ t: 'text', s: 'Nothing yet. The park is one tree and a great deal of room.', align: 'center', col: SPR.PAPER.ink3 });
+      return rows;
+    }
+  });
+}
+
+/* ---- the ending card ---- */
+function showEndingCard(e) {
+  SFX.ending();
+  pushNote('ending', e.name, e.title, e.icon, e.id);
+  openPanel({
+    id: 'ending', anchor: 'mid', wide: true, maxH: H - 30,
+    build: () => [
+      { t: 'gap', h: 4 },
+      { t: 'trophy', id: e.icon },
+      { t: 'gap', h: 6 },
+      { t: 'text', s: 'AN ENDING', col: SPR.PAPER.gold, align: 'center' },
+      { t: 'text', s: e.name, col: SPR.PAPER.rust, align: 'center', scale: bigEnough(e.name, true) },
+      { t: 'gap', h: 3 },
+      { t: 'text', s: e.title, col: SPR.PAPER.ink, align: 'center' },
+      { t: 'rule' },
+      { t: 'text', s: e.body, col: SPR.PAPER.ink2 },
+      { t: 'gap', h: 4 },
+      { t: 'btns', items: [{ label: 'GO ON', act: () => closePanel() }] },
+      { t: 'gap', h: 4 }
+    ],
+    onClose: () => { if (G.pendingEnding) { const f = G.pendingEnding; G.pendingEnding = null; f(); } }
+  });
+}
+
+
 function snailAt(x, y) {
   for (const sn of snails) {
     if (Math.abs(x - sn.x) < 14 && Math.abs(y - sn.y) < 12) return sn;
@@ -1249,66 +1777,6 @@ function clickSquirrel() {
 /* ---------------------------------------------------------------------
    SETTINGS — kept by a squirrel, in a panel, because knobs need labels
    --------------------------------------------------------------------- */
-function openSettings() {
-  ACH('gear');
-  renderSettings();
-  unroll(elSet);
-}
-function closeSettings() { rollUp(elSet); }
-
-function renderSettings() {
-  if (!elSetBody) return;
-  const live = NOC_AI.live;
-  elSetBody.innerHTML =
-    '<div class="setrow"><div><b>Sound</b><span>' + (save.muted ? 'muted' : 'on') + '</span></div>' +
-      '<button class="act" id="setsound">' + (save.muted ? 'TURN ON' : 'MUTE') + '</button></div>' +
-    '<div class="setrow"><div><b>Real model for the voices</b><span>' +
-      (live ? 'on \u00b7 ' + NOC_AI.model : 'off \u2014 they are using the brains they were born with') +
-      '</span></div><button class="act" id="setai">' + (live ? 'TURN OFF' : 'ADD A KEY') + '</button></div>' +
-    '<div class="setrow"><div><b>The Trophy Room</b><span>everything you have earned so far</span></div>' +
-      '<button class="act" id="settro">OPEN</button></div>' +
-    '<div class="setrow"><div><b>Credits</b><span>or follow the bright butterfly</span></div>' +
-      '<button class="act" id="setcred">READ</button></div>' +
-    '<div class="setrow bad"><div><b>Erase everything</b><span>he will not remember you</span></div>' +
-      '<button class="act bad" id="setwipe">ERASE</button></div>';
-
-  $('setsound').onclick = () => { toggleMute(); renderSettings(); };
-  $('setai').onclick = () => {
-    if (NOC_AI.live) { NOC_AI.setKey(''); renderSettings(); return; }
-    const k = prompt("Paste an Anthropic API key.\n\nIt is kept in this browser only and is sent nowhere except Anthropic. Leave it blank to cancel.");
-    if (k && k.trim()) { NOC_AI.setKey(k.trim()); ACH('realai'); }
-    renderSettings();
-  };
-  $('settro').onclick = () => { closeSettings(); openTrophies(); };
-  $('setcred').onclick = () => { closeSettings(); openCredits(); };
-  $('setwipe').onclick = () => { closeSettings(); eraseEverything(); };
-}
-
-/* ---------------------------------------------------------------------
-   CREDITS — carried by the one butterfly that is not like the others
-   --------------------------------------------------------------------- */
-function openCredits() {
-  ACH('credits');
-  openModal('CREDITS', [
-    '<p class="small">THE WISE OAK TREE</p>',
-    '<p>A nine-hundred-year-old oak, a lamp-keeper called Noc, a squirrel who ' +
-      'gave up retail for technical support, and one butterfly that would not ' +
-      'stay in the background.</p>',
-    '<p class="small">Every pixel in this game is drawn at runtime on one canvas: ' +
-      'the tree, the forest, the weather, the trophies, and all ' + DATA.lines.length +
-      ' things he has to say. The font is a 5x7 bitmap written for it. ' +
-      'There are no images and no dependencies.</p>',
-    '<p class="small">' + DATA.achievements.length + ' achievements \u00b7 ' +
-      DATA.endings.length + ' endings \u00b7 ' + DATA.quests.length + ' jobs \u00b7 ' +
-      DATA.plans.length + ' plans</p>',
-    '<p class="small">Noc and the oak will both answer anything you type. ' +
-      'Their default brains run offline, inside the page. Add a key in the ' +
-      "squirrel's settings and a real model answers instead.</p>",
-    '<p class="small">Thank you for standing still long enough to read this. ' +
-      'He noticed. He notices everything.</p>'
-  ].join(''));
-}
-
 /* =========================================================================
    THE SNAIL GARDEN
    Reached from heaven. Every snail that ever delivered to you is out here on
@@ -1383,7 +1851,7 @@ function atOak() { return areaId() === 'oak'; }
 
 function canTravel(dir) {
   const i = G.area + dir;
-  return i >= 0 && i < AREAS.length && !G.cine && G.scene === 'game' && !G.dead && !G.menu;
+  return i >= 0 && i < AREAS.length && !G.cine && G.scene === 'game' && !G.dead && !panelOpen();
 }
 
 function travel(dir) {
@@ -1534,73 +2002,65 @@ function completePlan(p) {
 /* ---------------------------------------------------------------------
    THE TALK BOX — your words go in, Noc's come out
    --------------------------------------------------------------------- */
+
+/* =========================================================================
+   THE TALK BOX
+   The scroll is drawn on the canvas in the game's own font; a transparent
+   input element sits underneath purely to raise a keyboard and collect
+   keystrokes, and every character it catches is redrawn in 5x7 pixels.
+   ========================================================================= */
 let chatBusy = false;
+const CHAT_LOG = { noc: [], oak: [] };
+const elTyping = $('typing');
 
-const CHAT_LOGS = { noc: null, oak: null };
+function typedText() { return elTyping ? elTyping.value : ''; }
 
-/* One panel, two people. Each keeps their own transcript, swapped in and out. */
+function chatPartner() { return areaId() === 'lane' ? 'noc' : 'oak'; }
+
 function openChat(who) {
   if (G.cine) return;
   who = who === 'oak' ? 'oak' : 'noc';
-  if (G.chatWho && G.chatWho !== who) CHAT_LOGS[G.chatWho] = elChatLog.innerHTML;
   G.chatWho = who;
-  const wasShut = elChat.classList.contains('hidden');
-  elChat.classList.toggle('oak', who === 'oak');
-  elChatWho.textContent = who === 'oak' ? 'TALKING TO THE OAK' : 'TALKING TO NOC';
-  elChatInput.placeholder = who === 'oak' ? 'say something to him\u2026' : 'say something to Noc\u2026';
-  elChatLog.innerHTML = CHAT_LOGS[who] || '';
-
-  if (!elChatLog.childElementCount) {
-    chatLine('sys', NOC_AI.live
-      ? 'Answering with a real model. (' + NOC_AI.model + ')'
-      : 'Type anything \u2014 he answers in his own words. \u00b7 /help for the odd commands.');
-    if (who === 'oak') {
-      chatLine('them', "Oh. You are going to TALK to me. Nobody talks to me. They click me and take what they are given. Go on, then.");
-    } else {
-      chatLine('them', save.metNoc ? DATA.nocLines[Math.floor(Math.random() * DATA.nocLines.length)] : DATA.nocIntro[0]);
-    }
+  const log = CHAT_LOG[who];
+  if (!log.length) {
+    log.push({ who: 'sys', s: NOC_AI.live
+      ? 'Answering with a real mind. (' + NOC_AI.model + ')'
+      : 'Type anything. He answers in his own words. /help for the odd commands.' });
+    log.push({ who: 'them', s: who === 'oak'
+      ? "Oh. You are going to TALK to me. Nobody talks to me. They click me and take what they are given. Go on, then."
+      : (save.metNoc ? DATA.nocLines[Math.floor(Math.random() * DATA.nocLines.length)] : DATA.nocIntro[0]) });
   }
-  if (wasShut) unroll(elChat); else elChat.classList.add('open');
-  setTimeout(() => elChatInput.focus(), REDUCED ? 30 : 540);
+  openPanel({
+    id: 'chat', anchor: 'bottom', build: chatItems,
+    onClose: () => { if (elTyping) elTyping.blur(); }
+  });
+  PANEL.target = panelMaxScroll();          // start at the newest line
+  if (elTyping) { elTyping.value = ''; setTimeout(() => elTyping.focus(), 30); }
   ACH(who === 'oak' ? 'oakchat' : 'talknoc');
 }
 
-function closeChat() {
-  if (G.chatWho) CHAT_LOGS[G.chatWho] = elChatLog.innerHTML;
-  rollUp(elChat);
+function closeChat() { if (panelIs('chat')) closePanel(); }
+
+function chatItems() {
+  const who = G.chatWho || 'noc';
+  const out = [{ t: 'title', s: who === 'oak' ? 'TALKING TO THE OAK' : 'TALKING TO NOC' }];
+  for (const e of CHAT_LOG[who]) {
+    out.push({ t: 'chat', who: e.who, s: e.s });
+    if (e.acts) out.push({ t: 'btns', items: e.acts });
+  }
+  out.push({ t: 'rule' });
+  out.push({ t: 'input' });
+  return out;
 }
 
-/* whoever is standing in front of you */
-function chatPartner() { return areaId() === 'lane' ? 'noc' : 'oak'; }
-
-function chatLine(who, text, actions) {
-  const row = document.createElement('div');
-  const them = who === 'them' || who === 'noc';
-  row.className = 'cline ' + (them ? 'them' : who);
-  if (who !== 'sys') {
-    const tag = document.createElement('b');
-    tag.textContent = them ? (G.chatWho === 'oak' ? 'THE OAK' : 'NOC') : 'YOU';
-    row.appendChild(tag);
-  }
-  const sp = document.createElement('span');
-  sp.textContent = text;
-  row.appendChild(sp);
-  if (actions && actions.length) {
-    const bar = document.createElement('div');
-    bar.className = 'cbtns';
-    for (const [label, fn] of actions) {
-      const b = document.createElement('button');
-      b.className = 'act';
-      b.textContent = label;
-      b.onclick = () => { b.parentElement.remove(); fn(); };
-      bar.appendChild(b);
-    }
-    row.appendChild(bar);
-  }
-  elChatLog.appendChild(row);
-  elChatLog.scrollTop = elChatLog.scrollHeight;
-  if (them) { G.noc.talking = 2; SFX.click(); }
-  return row;
+function chatLine(who, text, acts) {
+  const w = G.chatWho || 'noc';
+  const e = { who: who === 'noc' ? 'them' : who, s: text, acts };
+  CHAT_LOG[w].push(e);
+  if (CHAT_LOG[w].length > 40) CHAT_LOG[w].splice(0, CHAT_LOG[w].length - 40);
+  if (e.who === 'them') { G.noc.talking = 2; SFX.click(); }
+  if (panelIs('chat')) { refreshPanel(); PANEL.target = panelMaxScroll(); }
+  return e;
 }
 
 function chatCommand(text) {
@@ -1608,36 +2068,37 @@ function chatCommand(text) {
   const arg = rest.join(' ').trim();
   switch (cmd.toLowerCase()) {
     case 'help':
-      chatLine('sys', '/key <anthropic api key> \u2014 answer with a real model \u00b7 /model <id> \u00b7 /nokey \u00b7 /jobs \u00b7 /plans \u00b7 /forget');
+      chatLine('sys', '/key <anthropic key> · /model <id> · /nokey · /jobs · /plans · /forget');
       return true;
     case 'key':
-      if (!arg) { chatLine('sys', 'Paste the key after /key. It is stored in this browser only and never leaves it except to Anthropic.'); return true; }
+      if (!arg) { chatLine('sys', 'Paste the key after /key. It stays in this browser.'); return true; }
       NOC_AI.setKey(arg);
-      chatLine('sys', 'Right. They are both thinking with a real model now (' + NOC_AI.model + '). The local brains stay as the backup.');
+      chatLine('sys', 'Right. They think with a real mind now (' + NOC_AI.model + '). The local brains stay as backup.');
       ACH('realai');
       return true;
     case 'nokey':
       NOC_AI.setKey('');
-      chatLine('sys', 'Key cleared. Back to the brain he was born with.');
+      chatLine('sys', 'Key cleared. Back to the brains they were born with.');
       return true;
     case 'model':
       chatLine('sys', 'Model: ' + NOC_AI.setModel(arg));
       return true;
     case 'forget':
-      NOC_AI.forget(G.chatWho); elChatLog.innerHTML = '';
+      NOC_AI.forget(G.chatWho);
+      CHAT_LOG[G.chatWho || 'noc'].length = 0;
       chatLine('sys', 'He has forgotten the conversation. He has not forgotten you.');
       return true;
     case 'jobs':
       for (const q of DATA.quests) {
         const st = questStatus(q);
-        chatLine('sys', (st === 'done' ? '\u2713 ' : st === 'open' ? '\u00b7 ' : '  ') + q.name + ' \u2014 ' +
-                        (st === 'done' ? 'done' : st === 'open' ? questProgress(q) : q.desc));
+        chatLine('sys', (st === 'done' ? 'done: ' : st === 'open' ? 'in hand: ' : '') + q.name +
+                        ' — ' + (st === 'open' ? questProgress(q) : q.desc));
       }
       return true;
     case 'plans':
       for (const p of DATA.plans) {
         const st = planStatus(p);
-        chatLine('sys', (st === 'done' ? '✓ ' : st === 'open' ? '· ' : '  ') + p.name +
+        chatLine('sys', (st === 'done' ? 'kept: ' : st === 'open' ? 'agreed: ' : '') + p.name +
                         (st === 'open' ? ' — ' + (planBlocker(p) || 'ready. Say so.') : ''));
       }
       return true;
@@ -1646,9 +2107,9 @@ function chatCommand(text) {
 }
 
 async function sendChat() {
-  const text = elChatInput.value.trim();
+  const text = typedText().trim();
   if (!text || chatBusy) return;
-  elChatInput.value = '';
+  if (elTyping) elTyping.value = '';
   if (text[0] === '/') { if (chatCommand(text)) return; }
 
   const who = G.chatWho || 'noc';
@@ -1665,7 +2126,7 @@ async function sendChat() {
   chatBusy = true;
   G.noc.thinking = 1;
   if (who === 'oak') { G.talking = true; G.mood = 'think'; }
-  const dots = chatLine('them', '\u2026');
+  const dots = chatLine('them', '...');
   const ctx = {
     season: G.season, night: SPR.isNight(G.timeOfDay), leaves: G.inv.leaves,
     plansDone: plansDone(), backpack: !!save.bag, heard: heardCount()
@@ -1673,130 +2134,39 @@ async function sendChat() {
   let res;
   try { res = await NOC_AI.ask(text, ctx, who); }
   catch (e) { res = { text: "Sorry. Lost my thread. Say it again?", plan: null }; }
-  dots.remove();
   G.noc.thinking = 0;
   chatBusy = false;
   if (who === 'oak') { G.talking = false; G.mood = 'chill'; G.moodTimer = 4; G.sinceTreeClick = 0; }
 
+  const log = CHAT_LOG[who];
+  const at = log.indexOf(dots);
+  if (at >= 0) log.splice(at, 1);
+
   const p = res.plan && who === 'noc' ? planById(res.plan) : null;
   const acts = [];
   if (p && !save.planDone[p.id]) {
-    acts.push([save.plans[p.id] ? 'DO IT NOW' : 'AGREE TO IT', () => agreePlan(p.id)]);
-    acts.push(['NOT YET', () => chatLine('them', "Fine. It'll keep. Everything out here keeps.")]);
+    acts.push({ label: save.plans[p.id] ? 'DO IT NOW' : 'AGREE', act: () => agreePlan(p.id) });
+    acts.push({ label: 'NOT YET', act: () => chatLine('them', "Fine. It'll keep. Everything out here keeps.") });
   }
-  chatLine('them', res.text, acts);
-  // the balloon is for when the talk box is shut; two at once is noise
-  const short = res.text.length > 150 ? res.text.slice(0, 148) + '\u2026' : res.text;
-  if (elChat.classList.contains('hidden')) {
-    if (who === 'oak') sayTree(short, 'chill'); else nocSay(short);
-  } else G.noc.talking = 2.5;
+  chatLine('them', res.text, acts.length ? acts : null);
+
+  const short = res.text.length > 150 ? res.text.slice(0, 148) + '...' : res.text;
+  if (!panelIs('chat')) { if (who === 'oak') sayTree(short, 'chill'); else nocSay(short); }
+  else G.noc.talking = 2.5;
+}
+
+/* trim a string until it fits, with an ellipsis */
+function fitText(str, maxW) {
+  str = String(str);
+  if (F.textWidth(str, 1) <= maxW) return str;
+  let t = str;
+  while (t.length > 1 && F.textWidth(t + '..', 1) > maxW) t = t.slice(0, -1);
+  return t + '..';
 }
 
 /* =========================================================================
    THE BAG
    ========================================================================= */
-function openBag() {
-  if (!save.bag || G.cine) return;
-  G.bagOpen = true; G.bagBadge = 0;
-  renderBag();
-  unroll(elBag);
-  SFX.pickup();
-}
-function closeBag() { G.bagOpen = false; rollUp(elBag); }
-function toggleBag() { G.bagOpen ? closeBag() : openBag(); }
-
-function renderBag() {
-  if (!elBagBody) return;
-  elBagBody.innerHTML = '';
-  const head = document.createElement('div');
-  head.className = 'bagtop';
-  head.innerHTML = '<span class="leaves">☘ ' + G.inv.leaves + ' leaves</span>' +
-                   '<span class="dim">' + Object.keys(G.inv.items).length + ' things · ' +
-                   DATA.quests.filter(q => save.questDone[q.id]).length + '/' + DATA.quests.length + ' jobs · ' +
-                   plansDone() + '/' + DATA.plans.length + ' plans</span>';
-  elBagBody.appendChild(head);
-
-  const owned = DATA.shop.filter(it => has(it.id));
-  if (!owned.length) {
-    const e = document.createElement('p');
-    e.className = 'bagempty';
-    e.textContent = 'Empty, apart from crumbs and one very old bus ticket. Look around the lane and the hollow, and make plans with Noc.';
-    elBagBody.appendChild(e);
-  }
-  for (const it of owned) {
-    const row = document.createElement('div');
-    row.className = 'bagrow';
-    const c = document.createElement('canvas');
-    c.width = 16; c.height = 16; c.className = 'itemicon';
-    drawIcon(c.getContext('2d'), it.icon, 16);
-    const info = document.createElement('div');
-    info.className = 'shopinfo';
-    info.innerHTML = '<b>' + it.name + '</b><span>' + (TOOL_HINTS[it.id] || it.desc) + '</span>';
-    const btn = document.createElement('button');
-    btn.className = 'buy';
-    btn.textContent = 'TAKE OUT';
-    btn.onclick = (e) => { e.stopPropagation(); holdFromBag(it.id); };
-    row.appendChild(c); row.appendChild(info); row.appendChild(btn);
-    elBagBody.appendChild(row);
-  }
-
-  const unread = save.unread || [];
-  if (unread.length) {
-    const h = document.createElement('div');
-    h.className = 'bagsec';
-    h.textContent = 'UNOPENED POST (' + unread.length + ')';
-    elBagBody.appendChild(h);
-    for (const n of unread) {
-      const d = document.createElement('div');
-      d.className = 'bagrow';
-      const info = document.createElement('div');
-      info.className = 'shopinfo';
-      info.innerHTML = '<b>A sealed parcel</b><span>the snail got past you</span>';
-      const btn = document.createElement('button');
-      btn.className = 'buy';
-      btn.textContent = 'OPEN IT';
-      btn.onclick = (e) => { e.stopPropagation(); openPost(n, true); renderBag(); };
-      d.appendChild(info); d.appendChild(btn);
-      elBagBody.appendChild(d);
-    }
-  }
-
-  const jobs = DATA.quests.filter(q => save.quests[q.id]);
-  if (jobs.length) {
-    const h = document.createElement('div');
-    h.className = 'bagsec';
-    h.textContent = 'JOBS IN HAND';
-    elBagBody.appendChild(h);
-    for (const q of jobs) {
-      const d = document.createElement('div');
-      d.className = 'planrow';
-      d.innerHTML = '<b>' + q.name + '</b><span>' + questProgress(q) + '</span>';
-      elBagBody.appendChild(d);
-    }
-  }
-
-  const open = DATA.plans.filter(p => save.plans[p.id]);
-  const done = DATA.plans.filter(p => save.planDone[p.id]);
-  if (open.length || done.length) {
-    const h = document.createElement('div');
-    h.className = 'bagsec';
-    h.textContent = 'PLANS WITH NOC';
-    elBagBody.appendChild(h);
-    for (const p of open) {
-      const d = document.createElement('div');
-      d.className = 'planrow';
-      d.innerHTML = '<b>' + p.name + '</b><span>' + (planBlocker(p) || 'ready — go and tell him') + '</span>';
-      elBagBody.appendChild(d);
-    }
-    for (const p of done) {
-      const d = document.createElement('div');
-      d.className = 'planrow kept';
-      d.innerHTML = '<b>✓ ' + p.name + '</b><span>' + p.done + '</span>';
-      elBagBody.appendChild(d);
-    }
-  }
-}
-
 function holdFromBag(id) {
   closeBag();
   if (!atOak() && id !== 'diary') {
@@ -1813,64 +2183,6 @@ function holdFromBag(id) {
 /* ---------------------------------------------------------------------
    MODALS / PANELS
    --------------------------------------------------------------------- */
-function openModal(title, html, buttons) {
-  elModalTitle.textContent = title;
-  elModalBody.innerHTML = html;
-  const bar = document.createElement('div');
-  bar.className = 'modalbtns';
-  (buttons || [['Close', closeModal]]).forEach(([label, fn, cls]) => {
-    const b = document.createElement('button');
-    b.className = 'act ' + (cls || '');
-    b.textContent = label;
-    b.onclick = (e) => { e.stopPropagation(); SFX.click(); fn(); };
-    bar.appendChild(b);
-  });
-  elModalBody.appendChild(bar);
-  unroll(elModal);
-}
-function closeModal() { rollUp(elModal); G.flags.confirming = false; }
-
-function openTrophies() {
-  const done = DATA.achievements.filter(a => save.ach[a.id]).length;
-  let html = '<p class="small">' + done + ' / ' + DATA.achievements.length + ' unlocked</p><div class="grid">';
-  for (const a of DATA.achievements) {
-    const got = !!save.ach[a.id];
-    html += '<div class="tro ' + a.kind + (got ? '' : ' locked') + '">' +
-      '<canvas class="troicon" data-icon="' + (got ? a.icon : 'lock') + '" width="16" height="16"></canvas>' +
-      '<div><b>' + (got ? a.name : '???') + '</b><span>' + a.desc + '</span></div></div>';
-  }
-  html += '</div>';
-  openModal('TROPHY ROOM', html);
-  elModalBody.querySelectorAll('.troicon').forEach(c => {
-    const ic = c.getAttribute('data-icon');
-    const cc = c.getContext('2d');
-    if (ic === 'lock') { px(cc, 4, 7, 8, 7, '#555'); px(cc, 6, 3, 4, 4, '#555'); px(cc, 7, 9, 2, 3, '#222'); }
-    else drawIcon(cc, ic, 16);
-  });
-}
-
-function openEndings() {
-  const done = DATA.endings.filter(e => save.endings[e.id]).length;
-  let html = '<p class="small">' + done + ' / ' + DATA.endings.length + ' endings found</p><div class="grid">';
-  for (const e of DATA.endings) {
-    const got = !!save.endings[e.id];
-    html += '<div class="tro ' + (got ? 'goal' : 'locked') + '">' +
-      '<canvas class="troicon" data-icon="' + (got ? e.icon : 'lock') + '" width="16" height="16"></canvas>' +
-      '<div><b>' + (got ? e.name : '???') + '</b><span>' + (got ? e.title : 'Hint: ' + e.hint) + '</span></div></div>';
-  }
-  html += '</div>';
-  openModal('ENDINGS', html);
-  elModalBody.querySelectorAll('.troicon').forEach(c => {
-    const ic = c.getAttribute('data-icon');
-    const cc = c.getContext('2d');
-    if (ic === 'lock') { px(cc, 4, 7, 8, 7, '#555'); px(cc, 6, 3, 4, 4, '#555'); px(cc, 7, 9, 2, 3, '#222'); }
-    else drawIcon(cc, ic, 16);
-  });
-}
-
-/* ---------------------------------------------------------------------
-   ENDINGS
-   --------------------------------------------------------------------- */
 function reachEnding(id) {
   const e = DATA.endings.find(x => x.id === id);
   if (!e) return;
@@ -1885,27 +2197,6 @@ function reachEnding(id) {
 function checkCompletionist() {
   const need = DATA.achievements.filter(a => a.id !== 'allach' && a.id !== 'endall');
   if (need.every(a => save.ach[a.id]) && !save.endings.completionist) reachEnding('completionist');
-}
-
-function showEndingCard(e) {
-  SFX.ending();
-  pushNote('ending', e.name, e.title, e.icon, e.id);
-  const c = document.createElement('canvas');
-  c.width = 16; c.height = 16;
-  drawIcon(c.getContext('2d'), e.icon, 16);
-  elEndingCard.innerHTML =
-    '<div class="ecard"><div class="etop">ENDING UNLOCKED</div>' +
-    '<div class="ename">' + e.name + '</div>' +
-    '<div class="etitle">' + e.title + '</div>' +
-    '<p class="ebody">' + e.body + '</p>' +
-    '<button class="act" id="econt">Continue</button></div>';
-  elEndingCard.querySelector('.ecard').prepend(c);
-  elEndingCard.classList.remove('hidden');
-  $('econt').onclick = (ev) => {
-    ev.stopPropagation(); SFX.click();
-    elEndingCard.classList.add('hidden');
-    if (G.pendingEnding) { const f = G.pendingEnding; G.pendingEnding = null; f(); }
-  };
 }
 
 /* ---------------------------------------------------------------------
@@ -2023,7 +2314,7 @@ function playCine(name, stages, onDone) {
   G.cine = { name, stages, i: 0, t: 0, done: onDone || null };
   G.scene = 'cine';
   hideBubble();
-  for (const el of [elBag, elChat, elPost, elSet, elModal]) { el.classList.remove('open'); el.classList.add('hidden'); }
+  PANEL.spec = null; PANEL.items = []; PANEL.rects = []; PANEL.unroll = 0;
   G.bagOpen = false;
   refreshActions();
   enterStage();
@@ -2204,6 +2495,7 @@ function update(dt) {
   G.t += dt; G.dt = dt;
   G.sessionTime += dt;
   updateDialogue(dt);
+  updatePanel(dt);
   updateToasts(dt);
   updateParticles(dt);
 
@@ -2620,115 +2912,6 @@ function grantProp(type) {
 }
 
 /* ---- the board itself: a list of jobs, not a list of prices ---- */
-function openQuestBoard() {
-  const rows = [];
-  for (const q of DATA.quests) {
-    if (!questOffered(q)) continue;
-    const st = questStatus(q);
-    rows.push({
-      label: (st === 'done' ? '✓ ' : '') + q.name,
-      sub: st === 'open' ? questProgress(q) : q.desc,
-      right: st === 'done' ? 'DONE' : st === 'open' ? 'TAKEN' : 'TAKE IT',
-      dim: st === 'done',
-      act: st === 'new' ? () => acceptQuest(q.id)
-         : () => { const v = q.from === 'oak' ? sayTree : nocSay;
-                   v(st === 'done' ? q.done : q.ask, st === 'done' ? 'happy' : 'think'); closeMenu(); }
-    });
-  }
-  const open = DATA.quests.filter(q => save.quests[q.id]).length;
-  const done = DATA.quests.filter(q => save.questDone[q.id]).length;
-  G.menu = {
-    kind: 'board', title: 'THE BOARD', rows, sel: -1,
-    note: rows.length ? (done + ' done  ·  ' + open + ' in hand') : DATA.boardEmpty
-  };
-  SFX.page();
-}
-
-/* ---- the cottage: what the park is, not what it costs ---- */
-function openJournal() {
-  const rows = [];
-  const counts = {};
-  for (const p of save.park.props) counts[p.type] = (counts[p.type] || 0) + 1;
-  for (const b of DATA.build) {
-    if (!counts[b.id]) continue;
-    rows.push({ label: b.name + (counts[b.id] > 1 ? ' x' + counts[b.id] : ''), sub: b.desc, right: 'IN THE PARK' });
-  }
-  for (const u of DATA.upgrades) {
-    if (!save.park.upgrades[u.id]) continue;
-    rows.push({ label: u.name, sub: u.desc, right: 'EARNED', dim: true });
-  }
-  if (!rows.length) rows.push({ label: 'Nothing yet', sub: 'The park is one tree and a great deal of room.', right: '' });
-  G.menu = {
-    kind: 'journal', title: "THE KEEPER'S JOURNAL", rows, sel: -1,
-    note: parkIncome().toFixed(2) + ' leaves a second  ·  ' + save.park.earned + ' earned  ·  ' +
-          save.park.props.length + '/' + plotCount() + ' plots used'
-  };
-  SFX.page();
-}
-
-function closeMenu() { G.menu = null; SFX.click(); }
-
-function menuBox() {
-  const m = G.menu;
-  const w = Math.min(300, W() - 16);
-  const h = 26 + m.rows.length * 17 + (m.note ? 10 : 0);
-  return { x: Math.round(W() / 2 - w / 2), y: Math.round(H / 2 - h / 2) - 6, w, h };
-}
-
-function menuRowAt(x, y) {
-  if (!G.menu) return -2;
-  const b = menuBox();
-  if (x > b.x + b.w - 12 && x < b.x + b.w + 2 && y > b.y - 2 && y < b.y + 12) return -1;   // close
-  const top = b.y + 16 + (G.menu.note ? 10 : 0);
-  for (let i = 0; i < G.menu.rows.length; i++) {
-    if (x >= b.x + 3 && x <= b.x + b.w - 3 && y >= top + i * 17 && y < top + i * 17 + 16) return i;
-  }
-  return -2;
-}
-
-/* trim a string until it fits, with an ellipsis */
-function fitText(str, maxW) {
-  if (F.textWidth(str, 1) <= maxW) return str;
-  let t = str;
-  while (t.length > 1 && F.textWidth(t + '...', 1) > maxW) t = t.slice(0, -1);
-  return t + '...';
-}
-
-function drawMenu(c) {
-  const m = G.menu;
-  if (!m) return;
-  const b = menuBox();
-  SPR.drawPanel(c, b.x, b.y, b.w, b.h, m.title);
-  // leaf purse, top right — the only currency left, and only Noc takes it
-  F.drawText(c, b.x + b.w - 34, b.y + 3, String(G.inv.leaves), '#ffe9b0', 1);
-  SPR.drawLeafSprite(c, b.x + b.w - 44, b.y + 3, '#8fd95a', '#3a7a28');
-  // close
-  F.drawText(c, b.x + b.w - 9, b.y + 3, 'x', m.sel === -1 ? '#ffd24a' : '#ffe9b0', 1);
-
-  let top = b.y + 16;
-  if (m.note) { F.drawTextCentered(c, b.x + b.w / 2, top, fitText(m.note, b.w - 10), '#6b4a2a', 1); top += 10; }
-
-  for (let i = 0; i < m.rows.length; i++) {
-    const r = m.rows[i];
-    const y = top + i * 17;
-    const hot = m.sel === i;
-    if (hot) SPR.roundRect(c, b.x + 3, y, b.w - 6, 16, 2, '#e8c98a');
-    const right = r.right || '';
-    const rw = right ? F.textWidth(right, 1) : 0;
-    F.drawText(c, b.x + 7, y + 1, fitText(r.label, b.w - 18 - rw), r.dim ? '#6b8a4a' : '#3a2410', 1);
-    F.drawText(c, b.x + 7, y + 9, fitText(r.sub || '', b.w - 18 - rw), '#7a6248', 1);
-    if (right) {
-      const col = right === 'DONE' ? '#6b8a4a' : right === 'TAKEN' ? '#a07a3a' : right === 'TAKE IT' ? '#2d6b1f' : '#7a6248';
-      F.drawText(c, b.x + b.w - 9 - rw, y + 4, right, col, 1);
-    }
-  }
-}
-
-/* ---------------------------------------------------------------------
-   CRITTERS
-   --------------------------------------------------------------------- */
-/* The resting camera crops a sliver off each edge, so anything the player
-   needs to be able to click has to stay inside this. */
 const REST_ZOOM = 1.09;
 function inset() { return Math.ceil((W() - W() / REST_ZOOM) / 2) + 6; }
 function insetX(x) { return Math.max(inset(), Math.min(W() - inset(), x)); }
@@ -3003,7 +3186,7 @@ function drawPickups(c) {
 /* the signposts, drawn on the finished frame so a click lands where it looks */
 function refreshArrows() {
   G.arrows = [];
-  if (G.cine || G.scene !== 'game' || G.dead || G.menu) return;
+  if (G.cine || G.scene !== 'game' || G.dead || panelOpen()) return;
   for (const dir of [-1, 1]) {
     const i = G.area + dir;
     if (i < 0 || i >= AREAS.length) continue;
@@ -3137,7 +3320,7 @@ function render() {
   if (!G.cine && G.scene === 'game') drawPost(ctx);
   drawHint(ctx);
   drawSigns(ctx);
-  if (G.menu) drawMenu(ctx);
+  drawPanelScroll(ctx);
   drawDialogue(ctx);
   SPR.drawLetterbox(ctx, G.letterbox);
   if (G.areaFade > 0) {
@@ -3308,7 +3491,7 @@ let tickle = { energy: 0, last: null, cool: 0 };
 function onMove(ev) {
   const p = toLogical(ev);
   const fr = toScreenPixels(ev);
-  if (G.menu) { G.menu.sel = menuRowAt(fr.x, fr.y); cv.style.cursor = G.menu.sel >= -1 ? 'pointer' : 'default'; return; }
+  if (panelOpen()) { cv.style.cursor = panelMove(fr.x, fr.y) ? 'pointer' : 'default'; return; }
   let onSign = false;
   for (const sg of signs) { sg.hover = signAt(fr.x, fr.y) === sg; onSign = onSign || sg.hover; }
   const ar = arrowAt(fr.x, fr.y);
@@ -3391,6 +3574,7 @@ function onRelease() {
   grab = null;
   if (G.holdT > 0) { G.holdT = 0; if (!save.ach.hug1) elHint.className = 'hidden'; }
   if (G.holding) {
+    if (G.holding.fromBag) return;      // clicked out of the bag: wait for the next click
     const t = G.holding;
     G.holding = null;
     cv.style.cursor = 'default';
@@ -3421,6 +3605,12 @@ window.addEventListener('mouseup', onRelease);
 window.addEventListener('touchend', onRelease);
 
 cv.addEventListener('wheel', ev => {
+  if (panelOpen()) {
+    ev.preventDefault();
+    PANEL.target = Math.max(0, Math.min(Math.max(0, PANEL.contentH - PANEL.viewH),
+                                        PANEL.target + (ev.deltaY + ev.deltaX) * 0.5));
+    return;
+  }
   if (G.scene === 'garden') {
     ev.preventDefault();
     G.garden.target += (ev.deltaY + ev.deltaX) * 0.6;
@@ -3444,22 +3634,8 @@ function onPress(ev) {
   SFX.kick();
   const fr = toScreenPixels(ev);
 
-  // a menu swallows everything while it is open
-  if (G.menu) {
-    const r = menuRowAt(fr.x, fr.y);
-    if (r === -1) { closeMenu(); return; }
-    if (r >= 0) {
-      const row = G.menu.rows[r];
-      const kind = G.menu.kind;
-      row.act();
-      if (!G.menu) return;
-      if (kind === 'board') openQuestBoard();
-      else if (kind === 'journal') openJournal();
-      return;
-    }
-    closeMenu();
-    return;
-  }
+  // a scroll swallows everything while it is open
+  if (panelOpen()) { panelPress(fr.x, fr.y); return; }
 
   const sg = signAt(fr.x, fr.y);
   if (sg) { SFX.click(); sg.act(); return; }
@@ -3486,6 +3662,17 @@ function onPress(ev) {
 
   if (G.cine) { skipStage(); return; }
   const p = toLogical(ev);
+
+  // something taken out of the bag is used by clicking whatever it is for
+  if (G.holding && G.holding.fromBag) {
+    const t = G.holding;
+    G.holding = null;
+    cv.style.cursor = 'default';
+    elHint.className = 'hidden';
+    if (!useTool(t.id, p.x, p.y)) SFX.deny();
+    refreshHUD();
+    return;
+  }
 
   if (G.scene === 'game') {
     // the sound switch, bottom right
@@ -3616,25 +3803,22 @@ function eraseEverything() {
     }, 'bad']]);
 }
 
-$('modalclose').onclick = () => { SFX.click(); closeModal(); };
-$('chatsend').onclick = (e) => { e.stopPropagation(); sendChat(); };
-elChatInput.addEventListener('keydown', e => {
-  if (e.key === 'Enter') { e.preventDefault(); sendChat(); }
-});
-$('bagclose').onclick = (e) => { e.stopPropagation(); SFX.click(); closeBag(); };
-$('chatclose').onclick = (e) => { e.stopPropagation(); SFX.click(); closeChat(); };
-$('postclose').onclick = (e) => { e.stopPropagation(); SFX.click(); closePost(); };
-$('setclose').onclick = (e) => { e.stopPropagation(); SFX.click(); closeSettings(); };
-elPost.addEventListener('mousedown', e => { if (e.target === elPost) closePost(); });
-elModal.addEventListener('mousedown', e => { if (e.target === elModal && !G.flags.confirming) closeModal(); });
+/* the transparent input: Enter sends, and every character it catches is
+   redrawn in 5x7 pixels on the paper */
+if (elTyping) {
+  elTyping.addEventListener('keydown', e => {
+    if (e.key === 'Enter') { e.preventDefault(); sendChat(); }
+    else if (e.key === 'Escape') { e.preventDefault(); closeChat(); }
+  });
+  elTyping.addEventListener('blur', () => {
+    if (panelIs('chat') && !G.cine) setTimeout(() => { if (panelIs('chat')) elTyping.focus(); }, 60);
+  });
+}
 
 document.addEventListener('keydown', e => {
   const tag = (e.target && e.target.tagName) || '';
   if (!started) { if (!tag || tag === 'BODY') beginGame(); return; }
-  if (tag === 'INPUT' || tag === 'TEXTAREA') {
-    if (e.key === 'Escape') { e.target.blur(); closeChat(); }
-    return;
-  }
+  if (tag === 'INPUT' || tag === 'TEXTAREA') return;
   if (G.scene === 'garden') {
     if (e.key === 'ArrowRight') G.garden.target += 60;
     if (e.key === 'ArrowLeft') G.garden.target -= 60;
@@ -3647,7 +3831,7 @@ document.addEventListener('keydown', e => {
     if (e.key === 'Escape') closeHall();
     return;
   }
-  if (e.key === 'Escape') { if (G.menu) closeMenu(); closeModal(); closeBag(); closeChat(); closePost(); closeSettings(); }
+  if (e.key === 'Escape') closePanel();
   if (e.key === ' ') { e.preventDefault(); if (!skipType() && G.scene === 'game') talkToTree(); }
   if (e.key === 'ArrowLeft') travel(-1);
   if (e.key === 'ArrowRight') travel(1);
@@ -3729,10 +3913,10 @@ if (/[?&]debug/.test(location.search)) {
   window.OAK = { G, save, ACH, reachEnding, startBurning, goHeaven, reincarnate,
                  refreshHUD, dropLeaf, triggerSneeze, maybeSpawnSquirrel, persist,
                  skipAll: () => { if (G.cine) { G.cine.i = G.cine.stages.length - 1; skipStage(); } },
-                 parkMargin, parkIncome, menuBox, closeMenu, openQuestBoard, openJournal, acceptQuest, checkQuests, questStatus, plotPos, hitTest,
+                 parkMargin, parkIncome, PANEL, openPanel, closePanel, panelIs, panelOpen, openQuestBoard, openJournal, acceptQuest, checkQuests, questStatus, plotPos, hitTest,
                  travel, takePickup, seedPickups, openChat, closeChat, sendChat, openBag, closeBag,
                  agreePlan, completePlan, planById, areaId, wakeHim, AREAS,
-                 openPost, closePost, openSettings, openCredits, openGarden, closeGarden, buildGarden, snailName, unroll, rollUp, finishQuest, questById, questProgress,
+                 openPost, closePost, openSettings, openCredits, openGarden, closeGarden, buildGarden, snailName, finishQuest, questById, questProgress,
                  snailNotes: () => snails.map(s => ({ id: s.note && s.note.id, opened: s.opened })),
                  signLabels: () => signs.map(s => s.label), signFor: (l) => signs.find(s => s.label === l),
                  dlgText: () => DLG.text, DLG, snails: () => snails.length, toastQueue };

@@ -1612,6 +1612,105 @@ function drawBackpackSprite(c, x, y, s) {
 }
 
 /* a 3x5 pixel numeral set, for the leaf tally */
+/* =========================================================================
+   THE SCROLL, IN PIXELS
+   Every panel in the game is this: a sheet of laid paper with a turned rod at
+   each end. Drawn at logical resolution in the same 5x7 font as everything
+   else, so it belongs to the world instead of sitting on top of it.
+   ========================================================================= */
+const PAPER = {
+  lit:  '#f8ecd0', mid: '#efdcb2', dim: '#e2cb9a', deep: '#c9ad78',
+  ink:  '#3a2410', ink2: '#6b5334', ink3: '#8f7853',
+  rod:  '#c9a86a', rodLit: '#e6d3a6', rodDark: '#8a6a3a',
+  gold: '#8a5a10', plum: '#5a2a7a', leaf: '#3f6b1f', rust: '#9a3410',
+  wax:  '#c9453b', waxDark: '#8a2a24'
+};
+
+/* the paper itself, with a laid tooth and the curl darkening at each end */
+function drawSheet(c, x, y, w, h) {
+  if (h <= 0) return;
+  px(c, x, y, w, h, PAPER.mid);
+  // laid paper: a dithered tooth rather than ruled lines, so it reads as
+  // handmade rather than as a notepad
+  for (let i = 0; i < h; i++) {
+    if (i & 1) continue;                                   // every other row only
+    for (let j = (i & 2) ? 0 : 3; j < w; j += 6) px(c, x + j, y + i, 1, 1, PAPER.lit);
+  }
+  // two faint fold creases, because it has been rolled up a long time
+  for (const fy of [Math.round(h * 0.34), Math.round(h * 0.71)]) {
+    if (fy > 2 && fy < h - 2) {
+      c.globalAlpha = 0.18;
+      px(c, x, y + fy, w, 1, PAPER.deep);
+      px(c, x, y + fy + 1, w, 1, PAPER.lit);
+      c.globalAlpha = 1;
+    }
+  }
+  // the curl: darker where the paper is still bending round the rods
+  for (let i = 0; i < Math.min(6, h); i++) {
+    c.globalAlpha = 0.30 - i * 0.05;
+    px(c, x, y + i, w, 1, PAPER.deep);
+    px(c, x, y + h - 1 - i, w, 1, PAPER.deep);
+    c.globalAlpha = 1;
+  }
+  // and a lit edge down the left, because the light is always upper-left
+  px(c, x, y, 1, h, PAPER.lit);
+  px(c, x + w - 1, y, 1, h, PAPER.dim);
+}
+
+/* a turned rod, with a knob past each end of the paper */
+function drawRod(c, x, y, w) {
+  px(c, x - 1, y, w + 2, 6, INK);
+  px(c, x, y + 1, w, 4, PAPER.rod);
+  px(c, x, y + 1, w, 1, PAPER.rodLit);
+  px(c, x, y + 4, w, 1, PAPER.rodDark);
+  for (const kx of [x - 4, x + w]) {
+    px(c, kx - 1, y - 2, 6, 10, INK);
+    px(c, kx, y - 1, 4, 8, '#a3794a');
+    px(c, kx, y - 1, 4, 2, PAPER.rod);
+    px(c, kx, y + 5, 4, 2, PAPER.rodDark);
+  }
+}
+
+/* the wax seal, whole and then in pieces */
+function drawSeal(c, cx, cy, crack) {
+  if (crack >= 1) return;
+  const drop = Math.round(crack * 22);
+  const spin = crack * 2.4;
+  c.globalAlpha = Math.max(0, 1 - crack * 1.15);
+  if (crack <= 0) {
+    pcircle(c, cx, cy, 4, INK);
+    pcircle(c, cx, cy, 3, PAPER.wax);
+    pcircle(c, cx + 1, cy + 1, 2, PAPER.waxDark);
+    dot(c, cx - 1, cy - 1, '#e8837a');
+  } else {
+    // two halves, turning over as they fall
+    for (const side of [-1, 1]) {
+      const ox = Math.round(side * crack * 5 + Math.sin(spin * side) * 2);
+      pcircle(c, cx + ox, cy + drop, 3, INK);
+      pcircle(c, cx + ox, cy + drop, 2, PAPER.wax);
+    }
+  }
+  c.globalAlpha = 1;
+}
+
+/* the whole object. h is the paper height; the rods sit outside it. */
+function drawScrollFrame(c, x, y, w, h, o) {
+  o = o || {};
+  // a soft shadow on whatever is behind it
+  c.globalAlpha = 0.28;
+  px(c, x + 2, y + h + 8, w, 2, '#0a0806');
+  c.globalAlpha = 1;
+
+  drawRod(c, x, y - 6, w);
+  if (h > 0) {
+    px(c, x - 1, y, 1, h, INK);
+    px(c, x + w, y, 1, h, INK);
+    drawSheet(c, x, y, w, h);
+  }
+  drawRod(c, x, y + h, w);
+  if (o.crack !== undefined) drawSeal(c, x + w / 2, y - 3, o.crack);
+}
+
 const DIGIT_BITS = ['111101101101111', '010110010010111', '111001111100111', '111001111001111',
                     '101101111001001', '111100111001111', '111100111101111', '111001010010010',
                     '111101111101111', '111101111001111'];
@@ -3113,7 +3212,7 @@ window.SPR = {
   drawBalloon, drawPanel, drawSnail, drawCursorTool, drawMoreArrow, roundRect, INK, drawAshScene, drawStump, drawItemIcon, drawLeafSprite,
   drawHall, drawTrophy, drawTrophyReflection, trophySprite, drawPlinth, drawHeaven, drawHeavenBackdrop, drawGhostTree, drawSoul,
   drawGarden, gardenSlotPos, gardenWidth, GARDEN, drawCloudTunnel, drawLetterbox, drawRays, drawGrowingTree, flame,
-  drawZzz, drawGear, drawSnailParcel, snailSkin, drawShell, SNAIL_SHELLS, SNAIL_PATTERNS, drawNoc, drawNocCamp, drawTravelArrow, travelArrowBox, drawAreaTitle, drawPickup,
+  drawZzz, drawGear, drawSnailParcel, drawScrollFrame, drawSheet, drawRod, drawSeal, PAPER, snailSkin, drawShell, SNAIL_SHELLS, SNAIL_PATTERNS, drawNoc, drawNocCamp, drawTravelArrow, travelArrowBox, drawAreaTitle, drawPickup,
   drawCosyFoliage, drawFallenLog, drawStandingStone, drawVines, drawHedgerow, drawLaneRoad,
   drawBackpackSprite, drawBagButton
 };

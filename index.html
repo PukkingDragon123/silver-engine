@@ -17,76 +17,11 @@
   <div id="halllabel" class="hidden"></div>
 </div>
 
-<div id="endingcard" class="hidden"></div>
-
-<!-- Every panel in the game is the same object: a scroll with a rod at each
-     end, a sheet that unrolls to the height of what is written on it, and a
-     wax seal that has to break first. -->
-
-<div id="modal" class="sp mid hidden" data-cap="82">
-  <div class="scroll">
-    <div class="rod top"><i class="knob l"></i><i class="knob r"></i><i class="seal"></i></div>
-    <div class="sheet"><div class="inner">
-      <h3 class="sptitle" id="modaltitle">TROPHY ROOM</h3>
-      <div id="modalbody"></div>
-    </div></div>
-    <div class="rod bot"><i class="knob l"></i><i class="knob r"></i>
-      <button id="modalclose" class="spclose" title="roll it back up">&times;</button></div>
-  </div>
-</div>
-
-<div id="bag" class="sp hidden" data-cap="56">
-  <div class="scroll">
-    <div class="rod top"><i class="knob l"></i><i class="knob r"></i><i class="seal"></i></div>
-    <div class="sheet"><div class="inner">
-      <h3 class="sptitle">YOUR BACKPACK</h3>
-      <div id="bagbody"></div>
-      <p class="spfoot">found, not bought &mdash; nobody here sells anything any more</p>
-    </div></div>
-    <div class="rod bot"><i class="knob l"></i><i class="knob r"></i>
-      <button id="bagclose" class="spclose" title="roll it back up">&times;</button></div>
-  </div>
-</div>
-
-<div id="chat" class="sp hidden">
-  <div class="scroll">
-    <div class="rod top"><i class="knob l"></i><i class="knob r"></i><i class="seal"></i></div>
-    <div class="sheet"><div class="inner">
-      <h3 class="sptitle" id="chatwho">TALKING TO NOC</h3>
-      <div id="chatlog"></div>
-      <div id="chatbar">
-        <input id="chatinput" type="text" autocomplete="off" autocapitalize="sentences" spellcheck="false"
-               placeholder="say something to Noc&hellip;" maxlength="400">
-        <button id="chatsend" class="act">SAY</button>
-      </div>
-      <p class="spfoot" id="chatfoot">type anything &middot; /help for the odd commands</p>
-    </div></div>
-    <div class="rod bot"><i class="knob l"></i><i class="knob r"></i>
-      <button id="chatclose" class="spclose" title="roll it back up">&times;</button></div>
-  </div>
-</div>
-
-<div id="post" class="sp mid hidden">
-  <div class="scroll">
-    <div class="rod top"><i class="knob l"></i><i class="knob r"></i><i class="seal"></i></div>
-    <div class="sheet"><div class="inner"><div id="postbody"></div></div></div>
-    <div class="rod bot"><i class="knob l"></i><i class="knob r"></i>
-      <button id="postclose" class="spclose" title="roll it back up">&times;</button></div>
-  </div>
-</div>
-
-<div id="settings" class="sp hidden" data-cap="60">
-  <div class="scroll">
-    <div class="rod top"><i class="knob l"></i><i class="knob r"></i><i class="seal"></i></div>
-    <div class="sheet"><div class="inner">
-      <h3 class="sptitle">THE SQUIRREL&rsquo;S SETTINGS</h3>
-      <div id="setbody"></div>
-      <p class="spfoot">he kept the gear off a lawnmower in 1998</p>
-    </div></div>
-    <div class="rod bot"><i class="knob l"></i><i class="knob r"></i>
-      <button id="setclose" class="spclose" title="roll it back up">&times;</button></div>
-  </div>
-</div>
+<!-- The only DOM in the game besides the canvas. It is transparent and sits
+     under the drawn talk box; it exists to raise a keyboard and collect
+     keystrokes, which are then redrawn in the game's own 5x7 pixel font. -->
+<input id="typing" type="text" autocomplete="off" autocapitalize="sentences"
+       autocorrect="off" spellcheck="false" maxlength="400" aria-label="say something">
 
 <script src="js/font.js"></script>
 <script src="js/data.js"></script>
