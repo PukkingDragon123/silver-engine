@@ -7,9 +7,11 @@ to run an unlicensed goods operation and has been put out of business by
 somebody being nice to people. There is a lighter lying in the grass in the
 lane, and nobody will stop you picking it up.
 
-**He is asleep when you arrive, and nothing wakes him but you.** The main menu
-is the wood itself at night, with him snoring in the middle of it; you walk in
-and poke him.
+**He is asleep when you arrive, and nothing wakes him but you.** There is no
+main menu — there is the wood, at night, filling the whole window, with him
+snoring in the middle of it and one line of pixels asking you in. Tap anywhere
+and the camera pushes through the trees into the game; nothing swaps, nothing
+fades between screens. Then you poke him.
 
 The park is three places wide. Signposts at the left and right edges of the
 frame walk you **west to the lane**, where **Noc** keeps the lamp lit, and
@@ -153,6 +155,12 @@ shell — a rolled scroll, a ribbon in the tier's colour, an unbroken wax seal
 and the trophy tied on top in miniature — and if you want to know what is in
 it you have to **stop him and open it**. Then you get the full card: the carved
 trophy at proper size, the tier, the name and what you did.
+
+It opens like a scroll, because it is one: the wax seal cracks and drops
+through, the sheet unrolls in fifteen discrete steps (pixel art does not ease)
+to exactly the height of what is written on it, the lower rod riding down with
+it, and the words are inked on once there is room to hold them. Closing it
+rolls it back up.
 
 Miss him and he crawls off the far edge with it. It is not lost — unopened post
 piles up in your bag until you get round to it.

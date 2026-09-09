@@ -1034,7 +1034,7 @@ function drawCritters(c, g) {
       for (const d of [-1, 1]) {
         px(c, k.x + d * 1, k.y - 2, d * w, 2, wing);                          // upper wing
         px(c, k.x + d * 1, k.y, d * Math.max(1, w - 1), 2, k.credit ? '#ff9a3a' : shade(mix(k.col, '#000000', 0.25)));
-        dot(c, k.x + d * (w - 0.5), k.y - 2, '#ffffff');
+        dot(c, k.x + d * (w - 0.5), k.y - 2, k.credit ? '#ffffff' : shade('#ffffff'));
         if (k.credit) dot(c, k.x + d * (w - 1.5), k.y, '#fff6d8');
       }
     } else if (k.kind === 'beetle') {

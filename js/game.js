@@ -68,7 +68,7 @@ const G = {
   noc: { x: 0, y: GROUND_Y + 8, look: 0, talking: 0, thinking: 0 },
   asleep: false, wakeT: 0,
   hasBag: false, bagOpen: false, bagHover: false, bagBadge: 0,
-  activePlan: null, chatWho: null,
+  activePlan: null, chatWho: null, veil: 0,
   hintText: '', hintShown: false, hintCine: false,
   sessionTime: 0, sinceTreeClick: 0, spamCount: 0, spamTimer: 0,
   sneezeTimer: 14 + Math.random() * 18,
@@ -133,11 +133,10 @@ dc.imageSmoothingEnabled = false;
 const elBag = $('bag'), elBagBody = $('bagbody');
 const elChat = $('chat'), elChatLog = $('chatlog'), elChatInput = $('chatinput');
 const elChatWho = $('chatwho'), elChatFoot = $('chatfoot');
-const elPost = $('post'), elPostBody = $('postbody');
+const elPost = $('post'), elPostBody = $('postbody'), elSheet = $('sheet');
 const elSet = $('settings'), elSetBody = $('setbody');
 const elModal = $('modal'), elModalBody = $('modalbody'), elModalTitle = $('modaltitle');
 const elEndingCard = $('endingcard');
-const elTitle = $('title');
 
 /* the one line of guidance the game ever shows, drawn in pixels */
 const elHint = {
@@ -152,14 +151,12 @@ const elHint = {
 };
 let started = false;
 
-/* the little oak on the title card, drawn with the real renderer */
-const logoCv = $('tlogo'), lctx = logoCv.getContext('2d');
-lctx.imageSmoothingEnabled = false;
 /* -------------------------------------------------------------------------
    THE MAIN MENU
-   Not a logo on a gradient: the actual forest, at night, with him asleep in
-   the middle of it. Drawn with the same renderer the game uses, so what you
-   see on the card is exactly the place you are about to walk into.
+   There is no menu. There is the wood, at night, with him asleep in the
+   middle of it, and one line of pixels asking you to come in. It is drawn
+   into the same canvas as the game, with the same renderer, so entering is
+   a camera move rather than a screen change.
    ------------------------------------------------------------------------- */
 const titleG = {
   t: 0, season: 'summer', timeOfDay: 0.74, mood: 'asleep', asleep: true, talking: false,
@@ -169,6 +166,11 @@ const titleG = {
   parkMotes: [], visitors: [], raining: 0, muted: false,
   squirrel: { active: false }, inv: { leaves: 0, items: {} }, tools: []
 };
+
+/* the menu's own camera: a slow breath in, and a lunge on the way through */
+const titleCam = { z: 1.16, y: -2, tz: 1.03, ty: 0 };
+let dawn = 1;        // fades up from black on load
+let leaving = 0;     // >0 once you have asked to go in
 
 function seedTitleCritters() {
   titleG.critters = [];
@@ -183,17 +185,9 @@ function seedTitleCritters() {
   titleG.critters.push({ kind: 'rabbit', x: 40, y: GROUND_Y + 22, dir: 1, moving: false, t: 2, ph: 0 });
 }
 
-function fitTitleScene() {
-  if (!logoCv) return;
-  logoCv.width = SPR.W;
-  logoCv.height = H;
-  lctx.imageSmoothingEnabled = false;
-  seedTitleCritters();
-}
+function fitTitleScene() { seedTitleCritters(); }
 
-function drawTitleLogo(dt) {
-  titleG.t += dt;
-  // he does not blink; he is asleep. Everything else in the wood moves.
+function updateTitleCritters(dt) {
   for (const k of titleG.critters) {
     if (k.kind === 'butterfly') {
       const sp = k.sp || 1;
@@ -213,26 +207,85 @@ function drawTitleLogo(dt) {
       }
     }
   }
+}
 
-  const c = lctx;
-  c.setTransform(1, 0, 0, 1, 0, 0);
-  c.clearRect(0, 0, logoCv.width, logoCv.height);
-  SPR.drawBackdrop(c, titleG);
-  SPR.drawGround(c, titleG);
-  SPR.drawCosyFoliage(c, titleG, 404, 0.7);
+/* the wordmark, in the game's own font, sitting in the dark of his canopy */
+function drawTitleWord(c) {
+  const cx = W() / 2;
+  const t = titleG.t;
+  const drift = Math.sin(t * 0.5) * 1.2;
+  const y = Math.round(28 + drift);
+
+  // the faintest breath of shade behind it, so gold reads on leaves and on sky
+  for (let i = 0; i < 46; i++) {
+    const k = Math.pow(1 - Math.abs(i - 23) / 23, 0.7);
+    c.globalAlpha = 0.30 * k;
+    SPR.px(c, cx - 104 * k, y - 10 + i, 208 * k, 1, '#05080c');
+    c.globalAlpha = 1;
+  }
+
+  F.drawTextCentered(c, cx, y - 3, 'T H E', '#9fb8d0', 1, '#000000');
+  F.drawTextCentered(c, cx, y + 6, 'WISE OAK', '#ffd24a', 3, '#3a2208');
+  F.drawTextCentered(c, cx, y + 32, 'T R E E', '#e8c98a', 2, '#3a2208');
+}
+
+/* one line, at the bottom, breathing */
+function drawTitlePrompt(c) {
+  const pulse = 0.55 + 0.45 * Math.sin(titleG.t * 2.2);
+  const msg = hadSave ? 'tap anywhere to go back in' : 'tap anywhere to enter the wood';
+  const fade = leaving > 0 ? Math.max(0, 1 - leaving * 2) : 1;
+  c.globalAlpha = fade * pulse;
+  F.drawTextCentered(c, W() / 2, H - 22, msg, '#f4ead6', 1, '#000000');
+  c.globalAlpha = 1;
+}
+
+function drawTitleFrame(dt) {
+  titleG.t += dt;
+  updateTitleCritters(dt);
+
+  // the camera settles, then pushes in when you ask to go through
+  if (leaving > 0) { titleCam.tz = 1.55; titleCam.ty = 16; }
+  const k = Math.min(1, dt * (leaving > 0 ? 3.2 : 0.9));
+  titleCam.z += (titleCam.tz - titleCam.z) * k;
+  titleCam.y += (titleCam.ty - titleCam.y) * k;
+
+  dc.setTransform(1, 0, 0, 1, 0, 0);
+  dc.clearRect(0, 0, W(), H);
+  SPR.drawBackdrop(dc, titleG);
+  SPR.drawGround(dc, titleG);
+  SPR.drawCosyFoliage(dc, titleG, 404, 0.7);
 
   const L = SPR.layerBegin();
   SPR.drawTree(L, titleG);
   SPR.drawCritters(L, titleG);
-  SPR.layerEnd(c, '#1a0f08');
+  SPR.layerEnd(dc, '#1a0f08');
 
-  SPR.drawZzz(c, titleG, SPR.CX + 34, 84, 1.4);
-  SPR.drawUndergrowth(c, titleG);
-  SPR.drawForeground(c, titleG);
-  SPR.drawVines(c, titleG, 51);
-  SPR.drawFrameFoliage(c, titleG);
-  SPR.drawBokeh(c, titleG);
-  SPR.drawOverlay(c, titleG);
+  SPR.drawZzz(dc, titleG, SPR.CX + 34, 84, 1.4);
+  SPR.drawUndergrowth(dc, titleG);
+  SPR.drawForeground(dc, titleG);
+  SPR.drawVines(dc, titleG, 51);
+  SPR.drawFrameFoliage(dc, titleG);
+  SPR.drawBokeh(dc, titleG);
+  SPR.drawOverlay(dc, titleG);
+
+  // blit through the menu camera
+  const sw = W() / titleCam.z, sh = H / titleCam.z;
+  const sx = Math.max(0, Math.min(W() - sw, (W() - sw) / 2));
+  const sy = Math.max(0, Math.min(H - sh, (H - sh) / 2 + titleCam.y));
+  ctx.setTransform(1, 0, 0, 1, 0, 0);
+  ctx.imageSmoothingEnabled = false;
+  ctx.clearRect(0, 0, W(), H);
+  ctx.drawImage(buf, sx, sy, sw, sh, 0, 0, W(), H);
+
+  drawTitleWord(ctx);
+  drawTitlePrompt(ctx);
+
+  const veil = Math.max(dawn, leaving);
+  if (veil > 0) {
+    ctx.globalAlpha = Math.min(1, veil);
+    SPR.px(ctx, 0, 0, W(), H, '#05080c');
+    ctx.globalAlpha = 1;
+  }
 }
 
 /* ---------------------------------------------------------------------
@@ -505,7 +558,13 @@ function updateToasts(dt) {
   }
 }
 
-/* opening the parcel */
+/* Opening the parcel. The seal cracks, then the sheet unrolls to exactly the
+   height of what is written on it — measured, not guessed, so a long name and
+   a short one both end up on a sheet that fits. */
+const REDUCED = (function () {
+  try { return window.matchMedia('(prefers-reduced-motion: reduce)').matches; } catch (e) { return false; }
+})();
+
 function openPost(note, fromBag) {
   if (!note) return;
   SFX.page(); ACH('openpost');
@@ -521,15 +580,17 @@ function openPost(note, fromBag) {
     '</div>';
   elPostBody.querySelector('.pname').textContent = note.name;
   elPostBody.querySelector('.pdesc').textContent = note.desc || '';
-  const cvs = elPostBody.querySelector('.ptro');
-  const cc = cvs.getContext('2d');
+  const cc = elPostBody.querySelector('.ptro').getContext('2d');
   cc.imageSmoothingEnabled = false;
   try {
     cc.drawImage(SPR.trophySprite(note.id || note.icon || 'end1'), 0, 0);
   } catch (e) {
     drawIcon(cc, note.icon || 'leaf', 16);
   }
+
   elPost.classList.remove('hidden');
+  unrollSheet();
+
   // remove it from the unopened pile
   if (save.unread) {
     save.unread = save.unread.filter(u => u.id !== note.id);
@@ -539,7 +600,40 @@ function openPost(note, fromBag) {
   if ((save.stats.postSent || 0) >= 6 && !(save.unread || []).length) ACH('allpost');
 }
 
-function closePost() { elPost.classList.add('hidden'); if (G.bagOpen) renderBag(); }
+/* measure, snap shut, then unroll in steps */
+function unrollSheet() {
+  elPost.classList.remove('open');
+  elSheet.style.transition = 'none';
+  elSheet.style.height = 'auto';
+  const full = elSheet.scrollHeight;
+  if (REDUCED) {
+    elSheet.style.height = full + 'px';
+    elPost.classList.add('open');
+    return;
+  }
+  elSheet.style.height = '6px';
+  void elSheet.offsetHeight;                       // commit the closed state
+  elSheet.style.transition = 'height .6s steps(15, end) .18s';
+  elPost.classList.add('open');
+  elSheet.style.height = full + 'px';
+  // the paper keeps rustling while it goes
+  setTimeout(() => SFX.page(), 220);
+  setTimeout(() => SFX.page(), 470);
+}
+
+/* rolling it back up, which is the same animation backwards */
+function closePost() {
+  if (elPost.classList.contains('hidden')) return;
+  if (REDUCED) { elPost.classList.remove('open'); elPost.classList.add('hidden'); if (G.bagOpen) renderBag(); return; }
+  elPost.classList.remove('open');
+  elSheet.style.transition = 'height .34s steps(9, end)';
+  elSheet.style.height = '6px';
+  SFX.page();
+  setTimeout(() => {
+    elPost.classList.add('hidden');
+    if (G.bagOpen) renderBag();
+  }, 340);
+}
 
 /* a poke makes him hurry along */
 function snailAt(x, y) {
@@ -2903,6 +2997,7 @@ function render() {
   ctx.drawImage(buf, sx, sy, sw, sHt, 0, 0, W(), H);
 
   if (G.flash > 0) { ctx.globalAlpha = Math.min(1, G.flash); SPR.px(ctx, 0, 0, W(), H, '#ffffff'); ctx.globalAlpha = 1; }
+  if (G.veil > 0) { ctx.globalAlpha = Math.min(1, G.veil); SPR.px(ctx, 0, 0, W(), H, '#05080c'); ctx.globalAlpha = 1; }
   if (!G.cine && G.scene === 'game') { drawArrows(ctx); SPR.drawHud(ctx, G); }
   if (G.areaTitle > 0 && !G.cine) SPR.drawAreaTitle(ctx, G, AREAS[G.area].name, AREAS[G.area].sub, Math.min(1, G.areaTitle));
   if (!G.cine) drawPost(ctx);
@@ -3198,6 +3293,7 @@ function toolAt(x, y) {
 }
 
 function onPress(ev) {
+  if (!started) { beginGame(); return; }
   SFX.kick();
   const fr = toScreenPixels(ev);
 
@@ -3375,6 +3471,7 @@ elModal.addEventListener('mousedown', e => { if (e.target === elModal && !G.flag
 
 document.addEventListener('keydown', e => {
   const tag = (e.target && e.target.tagName) || '';
+  if (!started) { if (!tag || tag === 'BODY') beginGame(); return; }
   if (tag === 'INPUT' || tag === 'TEXTAREA') {
     if (e.key === 'Escape') { e.target.blur(); closeChat(); }
     return;
@@ -3416,17 +3513,23 @@ G.muted = save.muted;
 refreshHUD();
 persist();
 
-/* the title card holds until you tap it */
+/* The menu holds until you tap anywhere. Tapping does not swap a screen; it
+   pushes the camera in through the wood and hands you the same frame. */
 function beginGame() {
-  if (started) return;
-  started = true;
+  if (started || leaving > 0) return;
+  leaving = 0.001;
   SFX.kick(); SFX.ach();
-  elTitle.classList.add('out');
-  setTimeout(() => elTitle.classList.add('hidden'), 520);
-  // he was asleep on the card, so he is asleep in the world too
+}
+
+/* the far side of the push-in */
+function enterWood() {
+  started = true;
+  leaving = 0;
+  G.veil = 1;
+  // he was asleep on the menu, so he is asleep in the world
   G.asleep = true; G.mood = 'asleep'; G.blink = 1; G.blinkTimer = 999;
   if (hadSave) {
-    setTimeout(() => { if (G.asleep) nudge('he is asleep \u2014 poke him', 30); }, 900);
+    setTimeout(() => { if (G.asleep) nudge('he is asleep \u2014 poke him', 30); }, 700);
   } else {
     startIntroCine();
   }
@@ -3453,9 +3556,7 @@ function wakeHim() {
     else if (!save.bag) setTimeout(() => nudge('there is a bag somewhere east of here', 10), 8000);
   }, 700);
 }
-$('tstart').onclick = beginGame;
-elTitle.addEventListener('mousedown', beginGame);
-elTitle.addEventListener('touchstart', beginGame, { passive: true });
+
 
 /* Debug hooks, only when the page is opened with ?debug — used by the
    automated smoke test to reach the late game without playing for an hour. */
@@ -3476,7 +3577,15 @@ let last = performance.now();
 function loop(now) {
   const dt = Math.min(0.05, (now - last) / 1000);
   last = now;
-  if (!started) drawTitleLogo(dt);
+  if (!started) {
+    dawn = Math.max(0, dawn - dt * 1.6);
+    if (leaving > 0) {
+      leaving += dt * 2.2;
+      if (leaving >= 1) enterWood();
+    }
+    if (!started) { drawTitleFrame(dt); requestAnimationFrame(loop); return; }
+  }
+  G.veil = Math.max(0, G.veil - dt * 1.8);
   update(dt);
   render();
   requestAnimationFrame(loop);

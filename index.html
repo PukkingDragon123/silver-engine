@@ -17,19 +17,6 @@
   <div id="halllabel" class="hidden"></div>
 </div>
 
-<!-- the title card -->
-<div id="title">
-  <div class="tcard">
-    <div class="tscene">
-      <canvas id="tlogo" width="512" height="192"></canvas>
-      <h1><span>THE</span><b>WISE OAK</b><span>TREE</span></h1>
-    </div>
-    <p class="tsub">nine hundred years old &middot; asleep in the middle of the wood<br>go in and poke him &mdash; he has a great deal to say once he is up</p>
-    <button id="tstart">enter the wood</button>
-    <p class="tfoot">signposts walk you west and east &middot; the squirrel keeps the settings &middot; follow the bright butterfly</p>
-  </div>
-</div>
-
 <div id="endingcard" class="hidden"></div>
 
 <div id="modal" class="hidden">
@@ -57,10 +44,11 @@
 </div>
 
 <div id="post" class="hidden">
-  <div class="postbox">
-    <div class="paneltop">SIGNED FOR <button id="postclose">&times;</button></div>
-    <div id="postbody"></div>
-    <div class="panelfoot">the snail is already halfway across the park</div>
+  <div class="scroll">
+    <div class="rod top"><i class="knob l"></i><i class="knob r"></i><i class="seal"></i></div>
+    <div class="sheet" id="sheet"><div id="postbody"></div></div>
+    <div class="rod bot"><i class="knob l"></i><i class="knob r"></i>
+      <button id="postclose" title="roll it back up">&times;</button></div>
   </div>
 </div>
 
