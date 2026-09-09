@@ -1711,6 +1711,57 @@ function drawScrollFrame(c, x, y, w, h, o) {
   if (o.crack !== undefined) drawSeal(c, x + w / 2, y - 3, o.crack);
 }
 
+/* =========================================================================
+   CARTOON
+   Squash, impact rings, dust, speed lines and hand-lettered noises. None of
+   it is information; all of it is timing.
+   ========================================================================= */
+
+/* a jagged burst with a word in it, the way a comic writes a noise */
+function drawWordPop(c, x, y, text, k, col) {
+  if (!text) return;
+  const ease = k < 0.25 ? k / 0.25 : 1;                 // snap out, then hold
+  const fade = k > 0.75 ? 1 - (k - 0.75) / 0.25 : 1;
+  const sc = 1 + (k < 0.25 ? (1 - ease) * 0.8 : 0);
+  const w = F.textWidth(text, 1) * sc, h = 7 * sc;
+  const cx = Math.round(x), cy = Math.round(y - k * 14);
+  c.globalAlpha = fade;
+  // the burst: spikes all the way round
+  const spikes = 11;
+  for (let i = 0; i < spikes; i++) {
+    const a = i / spikes * 6.28;
+    const r = (i % 2 ? 1.45 : 1.05) * ease;
+    px(c, cx + Math.cos(a) * (w / 2 + 3) * r - 1, cy + Math.sin(a) * (h / 2 + 3) * r - 1, 3, 3, '#fff6d8');
+  }
+  pellipse(c, cx, cy, w / 2 + 4, h / 2 + 3, '#fff6d8');
+  pellipse(c, cx, cy, w / 2 + 2, h / 2 + 1.5, col || '#ffd24a');
+  F.drawTextCentered(c, cx, cy - 3, text, '#3a2208', 1);
+  c.globalAlpha = 1;
+}
+
+/* the classic four-line impact cross, for a poke */
+function drawImpactLines(c, x, y, k, col) {
+  const fade = Math.max(0, 1 - k);
+  c.globalAlpha = fade;
+  for (let i = 0; i < 8; i++) {
+    const a = i / 8 * 6.28 + 0.4;
+    const r0 = 6 + k * 10, r1 = r0 + 5 + (1 - k) * 5;
+    for (let r = r0; r < r1; r++) {
+      px(c, x + Math.cos(a) * r, y + Math.sin(a) * r, 1, 1, col || '#fff6d8');
+    }
+  }
+  c.globalAlpha = 1;
+}
+
+/* squash and stretch: 1 is at rest, positive squashes, negative stretches */
+function squashTransform(c, cx, baseY, amount) {
+  const sx = 1 + amount * 0.22, sy = 1 - amount * 0.26;
+  c.save();
+  c.translate(cx, baseY);
+  c.scale(sx, sy);
+  c.translate(-cx, -baseY);
+}
+
 const DIGIT_BITS = ['111101101101111', '010110010010111', '111001111100111', '111001111001111',
                     '101101111001001', '111100111001111', '111100111101111', '111001010010010',
                     '111101111101111', '111101111001111'];
@@ -1862,6 +1913,40 @@ function drawParticles(c, g) {
     } else if (p.kind === 'soul') {
       c.globalAlpha = Math.max(0, p.life / p.max);
       glow(c, p.x, p.y, 5, '#bfe8ff', 0.5); px(c, p.x, p.y, 1, 1, '#ffffff'); c.globalAlpha = 1;
+    } else if (p.kind === 'puff') {
+      // a dust puff: grows, thins, and drifts up
+      const k = 1 - p.life / p.max;
+      c.globalAlpha = Math.max(0, 1 - k) * 0.8;
+      const r = 1.5 + k * (p.s + 3);
+      pcircle(c, p.x, p.y, r, '#f2ead8');
+      pcircle(c, p.x - r * 0.3, p.y - r * 0.3, r * 0.55, '#ffffff');
+      c.globalAlpha = 1;
+    } else if (p.kind === 'ring') {
+      // an impact ring, drawn as a broken hoop so it reads as ink
+      const k = 1 - p.life / p.max;
+      const r = 3 + k * 22 * (p.s || 1);
+      c.globalAlpha = Math.max(0, 1 - k) * 0.9;
+      for (let a = 0; a < 24; a++) {
+        if ((a % 4) === 3) continue;
+        const A = a / 24 * 6.28;
+        px(c, p.x + Math.cos(A) * r, p.y + Math.sin(A) * r * 0.75, 2, 2, p.col || '#fff6d8');
+      }
+      c.globalAlpha = 1;
+    } else if (p.kind === 'zip') {
+      // a speed line
+      c.globalAlpha = Math.max(0, p.life / p.max);
+      px(c, p.x, p.y, 5 + p.s * 3, 1, p.col || '#ffffff');
+      c.globalAlpha = 1;
+    } else if (p.kind === 'sweat') {
+      c.globalAlpha = Math.max(0, p.life / p.max);
+      pcircle(c, p.x, p.y, 2, '#9fd8f0');
+      px(c, p.x, p.y - 3, 1, 2, '#9fd8f0');
+      dot(c, p.x - 1, p.y - 1, '#ffffff');
+      c.globalAlpha = 1;
+    } else if (p.kind === 'lines') {
+      drawImpactLines(c, p.x, p.y, 1 - p.life / p.max, p.col);
+    } else if (p.kind === 'word') {
+      drawWordPop(c, p.x, p.y, p.text, 1 - p.life / p.max, p.col);
     }
   }
 }
@@ -3212,7 +3297,7 @@ window.SPR = {
   drawBalloon, drawPanel, drawSnail, drawCursorTool, drawMoreArrow, roundRect, INK, drawAshScene, drawStump, drawItemIcon, drawLeafSprite,
   drawHall, drawTrophy, drawTrophyReflection, trophySprite, drawPlinth, drawHeaven, drawHeavenBackdrop, drawGhostTree, drawSoul,
   drawGarden, gardenSlotPos, gardenWidth, GARDEN, drawCloudTunnel, drawLetterbox, drawRays, drawGrowingTree, flame,
-  drawZzz, drawGear, drawSnailParcel, drawScrollFrame, drawSheet, drawRod, drawSeal, PAPER, snailSkin, drawShell, SNAIL_SHELLS, SNAIL_PATTERNS, drawNoc, drawNocCamp, drawTravelArrow, travelArrowBox, drawAreaTitle, drawPickup,
+  drawZzz, drawGear, drawSnailParcel, drawWordPop, drawImpactLines, squashTransform, drawScrollFrame, drawSheet, drawRod, drawSeal, PAPER, snailSkin, drawShell, SNAIL_SHELLS, SNAIL_PATTERNS, drawNoc, drawNocCamp, drawTravelArrow, travelArrowBox, drawAreaTitle, drawPickup,
   drawCosyFoliage, drawFallenLog, drawStandingStone, drawVines, drawHedgerow, drawLaneRoad,
   drawBackpackSprite, drawBagButton
 };

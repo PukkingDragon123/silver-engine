@@ -11,7 +11,14 @@ lane, and nobody will stop you picking it up.
 main menu — there is the wood, at night, filling the whole window, with him
 snoring in the middle of it and one line of pixels asking you in. Tap anywhere
 and the camera pushes through the trees into the game; nothing swaps, nothing
-fades between screens. Then you poke him.
+fades between screens, and there is no opening cutscene. You land in front of a
+sleeping tree in an empty field, and the only instruction is **poke him**.
+
+**The park starts as one tree in grass.** No noticeboard, no cottage, no
+hedges, no undergrowth, no bushes, nothing. The board turns up once he has
+actually told you something. The cottage turns up once there is anything in the
+park worth writing down. Everything else arrives as you earn it, and everything
+arrives with a puff of dust and a bounce.
 
 The park is three places wide. Signposts at the left and right edges of the
 frame walk you **west to the lane**, where **Noc** keeps the lamp lit, and
@@ -221,13 +228,26 @@ corner (or press `B`). Everything you pick up and everything Noc gives you
 lives in it, along with your leaves and the plans you have made. Take a thing
 out of the bag and you are holding it; drop it on him to use it.
 
+## Cartooning
+
+Everything that happens, happens like a cartoon. He **squashes and stretches**
+on a spring hinged at his roots — a poke squashes him, waking and sneezing
+stretch him tall, and it overshoots on the way back the way rubber does. Every
+part of him answers with a **hand-lettered noise** in a spiky burst: OW! for an
+eye, BOOP for the nose, NOM for the mouth, RUSTLE for the canopy, TAP TAP for a
+root, SQUEEZE for a hug, AH-CHOO! for a sneeze, HEEHEE when tickled. Impacts
+throw a broken ink ring and a radiating cross of lines. Dust puffs at his roots
+when he moves, under the rabbit when it thumps, behind the squirrel when it
+scurries, and under anything that has just arrived. Travelling kicks up dust
+and speed lines at the frame edge. A poke in the eye raises a sweat drop.
+
 ## The park
 
 The tree is not the only thing here. Leaves are a currency, and the park is a
-business — a quieter and emptier one than it used to be. There are fewer plots
-and they are further apart, and the space between them has been filled with
-bushes, ferns, tall grass, mushroom rings, hanging vines and fireflies rather
-than with more things to click.
+business — but it opens completely bare and fills in only as you earn it. There
+are two plots before any expansion, they are far apart, and the undergrowth,
+bushes, hedges and vines each appear only once the park has enough in it to
+justify them.
 
 Everything in it produces leaves, forever, at its own rate — saplings grow and
 earn more as they age, and the lamp post is the only reason the park keeps

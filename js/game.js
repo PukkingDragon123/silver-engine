@@ -67,7 +67,8 @@ const G = {
   // where you are standing, and the walk between places
   area: 1, areaFade: 0, areaFadeDir: 0, areaTitle: 0, arrows: [], pickups: [],
   noc: { x: 0, y: GROUND_Y + 8, look: 0, talking: 0, thinking: 0 },
-  asleep: false, wakeT: 0,
+  asleep: false, wakeT: 0, squash: 0, squashV: 0,
+  boardPop: 0, cottagePop: 0,
   hasBag: false, bagOpen: false, bagHover: false, bagBadge: 0,
   activePlan: null, chatWho: null, veil: 0,
   hintText: '', hintShown: false, hintCine: false,
@@ -202,6 +203,7 @@ function updateTitleCritters(dt) {
       } else if (k.t <= 0) {
         k.moving = true; k.t = 0.8 + Math.random() * 1.2;
         k.dir = Math.random() > 0.5 ? 1 : -1;
+        puff(k.x, k.y + 2, 2);
       }
     }
   }
@@ -1427,8 +1429,10 @@ function drawHint(c) {
     F.drawText(c, W() - w - 8, 8, G.hintText, '#c8b89a', 1, '#000000');
   } else {
     const y = signs.length ? H - 34 : H - 14;
-    SPR.roundRect(c, W() / 2 - w / 2 - 5, y - 3, w + 10, 13, 3, 'rgba(10,8,7,0.65)');
-    F.drawTextCentered(c, W() / 2, y, G.hintText, '#e8dcc0', 1);
+    const pulse = 0.72 + 0.28 * Math.sin(G.t * 2.4);
+    c.globalAlpha = pulse;
+    F.drawTextCentered(c, W() / 2, y, G.hintText, '#f4ead6', 1, '#000000');
+    c.globalAlpha = 1;
   }
 }
 
@@ -1521,6 +1525,7 @@ function talkToTree() {
 
   if (skipType()) return;
   G.sinceTreeClick = 0;
+  squash(0.16);
 
   // spam detection
   G.spamCount++; G.spamTimer = 0;
@@ -1553,6 +1558,7 @@ function talkToTree() {
 }
 
 function triggerSneeze() {
+  if (!G.dead && G.scene === 'game') { squash(-0.7); pop('AH-CHOO!', CX(), 78, '#bfe8ff'); }
   if (G.dead || G.scene !== 'game') return;
   G.shake = 4; G.mood = 'shock';
   SFX.sneeze();
@@ -1582,6 +1588,7 @@ function dropLeaf(x, y, collectible) {
 
 function doHug() {
   if (G.dead) return;
+  squash(0.55); ring(CX(), 120, '#ff9ab0', 1.4); pop('SQUEEZE', CX(), 96, '#ff9ab0');
   save.stats.hugs++; persist();
   SFX.hug();
   spawnParticles('heart', CX(), 110, 8);
@@ -1856,6 +1863,8 @@ function canTravel(dir) {
 
 function travel(dir) {
   if (!canTravel(dir) || G.areaFadeDir) return;
+  puff(dir < 0 ? 14 : W() - 14, GROUND_Y + 20, 5);
+  zips(dir < 0 ? 40 : W() - 40, GROUND_Y - 4, dir, 4);
   G.areaFadeDir = dir;
   G.areaFade = 0.001;
   hideBubble();
@@ -1900,6 +1909,9 @@ function seedPickups() {
 function takePickup(p) {
   SFX.pickup();
   spawnParticles('star', p.x + 8, p.y + 6, 8);
+  ring(p.x + 8, p.y + 6, '#fff6d8', 1.1);
+  puff(p.x + 8, p.y + 10, 4);
+  pop('GOT IT!', p.x + 8, p.y - 8, '#ffd24a');
   save.taken[p.id] = 1;
   if (p.id === 'backpack') {
     save.bag = true; G.hasBag = true; G.bagBadge = 1;
@@ -1975,6 +1987,9 @@ function agreePlan(id) {
 }
 
 function completePlan(p) {
+  ring(G.noc.x, GROUND_Y, '#ffcf6a', 1.5);
+  pop('AGREED', G.noc.x, GROUND_Y - 44, '#ffcf6a');
+  puff(G.noc.x, GROUND_Y + 6, 5);
   if (p.need.leaves) G.inv.leaves -= p.need.leaves;
   save.planDone[p.id] = 1;
   delete save.plans[p.id];
@@ -2254,6 +2269,55 @@ function reincarnate() { startRebirthCine(); }
 /* ---------------------------------------------------------------------
    PARTICLES
    --------------------------------------------------------------------- */
+/* =========================================================================
+   CARTOON
+   Short, loud, and over before you can look at it properly.
+   ========================================================================= */
+function puff(x, y, n) {
+  for (let i = 0; i < (n || 4); i++) {
+    G.particles.push({ kind: 'puff', x: x + (Math.random() * 2 - 1) * 6, y: y + (Math.random() * 2 - 1) * 3,
+                       vx: (Math.random() * 2 - 1) * 22, vy: -8 - Math.random() * 14,
+                       life: 0.45 + Math.random() * 0.25, max: 0.7, s: 1 + Math.random() * 2 });
+  }
+}
+
+function lines(x, y, col) {
+  G.particles.push({ kind: 'lines', x, y, vx: 0, vy: 0, life: 0.3, max: 0.3, s: 1, col });
+}
+
+function ring(x, y, col, s) {
+  G.particles.push({ kind: 'ring', x, y, vx: 0, vy: 0, life: 0.36, max: 0.36, s: s || 1, col });
+}
+
+function zips(x, y, dir, n) {
+  for (let i = 0; i < (n || 3); i++) {
+    G.particles.push({ kind: 'zip', x: x - dir * (4 + i * 5), y: y - 6 + i * 5,
+                       vx: -dir * 90, vy: 0, life: 0.22, max: 0.22, s: Math.random() * 2, col: '#ffffff' });
+  }
+}
+
+function sweat(x, y) {
+  G.particles.push({ kind: 'sweat', x, y, vx: 12 + Math.random() * 10, vy: -26,
+                     life: 0.7, max: 0.7, s: 1 });
+}
+
+/* a hand-lettered noise, comic style */
+function pop(text, x, y, col) {
+  G.particles.push({ kind: 'word', text, x, y, vx: 0, vy: 0, life: 0.95, max: 0.95, s: 1, col });
+}
+
+/* squash him, and let it spring back */
+function squash(amount) { G.squash = amount; G.squashV = 0; }
+
+function updateSquash(dt) {
+  // a spring, so it overshoots the way rubber does
+  const k = 220, damp = 13;
+  G.squashV += (-G.squash * k) * dt;
+  G.squashV -= G.squashV * damp * dt;
+  G.squash += G.squashV * dt;
+  if (Math.abs(G.squash) < 0.002 && Math.abs(G.squashV) < 0.02) { G.squash = 0; G.squashV = 0; }
+}
+
 function spawnParticles(kind, x, y, n) {
   for (let i = 0; i < n; i++) {
     G.particles.push({
@@ -2289,6 +2353,7 @@ function updateParticles(dt) {
 }
 
 function collectLeaf(i) {
+  { const l = G.groundLeaves[i]; if (l) { puff(l.x + 3, l.y + 3, 2); ring(l.x + 3, l.y + 3, '#d8f0a0', 0.5); } }
   G.groundLeaves.splice(i, 1);
   G.inv.leaves++;
   save.stats.leavesTotal++; persist();
@@ -2399,22 +2464,6 @@ function startDeathCine() {
 }
 
 /* ---- the opening: the wood, then the tree, then he notices you ---- */
-function startIntroCine() {
-  G.mood = 'asleep'; G.asleep = true; G.blinkTimer = 99; G.blink = 1;
-  playCine('intro', [
-    { id: 'wide', dur: 3.4, cam: [-18, -4, 1.28], snap: true, caption: 'There is a tree in this park. It is asleep.' },
-    { id: 'near', dur: 3.2, cam: [0, 8, 1.35], caption: 'Nobody remembers planting it. Nobody alive, anyway.' },
-    { id: 'wake', dur: 3.2, cam: [0, 18, 1.75], caption: 'He has been asleep for a very long time.',
-      enter: () => { G.mood = 'asleep'; G.asleep = true; G.blink = 1; } },
-    { id: 'settle', dur: 2.2, cam: [0, 5, 1.09], caption: 'Go on. Poke him.' }
-  ], () => {
-    G.scene = 'game';
-    G.asleep = true; G.mood = 'asleep'; G.blink = 1; G.blinkTimer = 999;
-    refreshHUD(); refreshActions();
-    nudge('poke him', 30);
-  });
-}
-
 /* ---- the squirrel hands over the lighter ---- */
 function startLighterCine() {
   playCine('lighter', [
@@ -2496,6 +2545,7 @@ function update(dt) {
   G.sessionTime += dt;
   updateDialogue(dt);
   updatePanel(dt);
+  updateSquash(dt);
   updateToasts(dt);
   updateParticles(dt);
 
@@ -2600,7 +2650,18 @@ function update(dt) {
     }
 
     updateCritters(dt);
-    if (atOak()) { updatePark(dt); updateVisitors(dt); }
+    if (atOak()) {
+      updatePark(dt); updateVisitors(dt);
+      // things that have just turned up are still bouncing
+      if (boardHere() && G.boardPop < 1) {
+        if (G.boardPop === 0) { puff(W() - parkMargin() - 26, GROUND_Y + 16, 5); SFX.plant(); }
+        G.boardPop = Math.min(1, G.boardPop + dt * 1.6);
+      }
+      if (cottageHere() && G.cottagePop < 1) {
+        if (G.cottagePop === 0) { puff(parkMargin() + 26, GROUND_Y + 14, 6); SFX.plant(); }
+        G.cottagePop = Math.min(1, G.cottagePop + dt * 1.4);
+      }
+    }
     if (tickle.cool > 0) tickle.cool -= dt;
 
     // a long press on his trunk is a hug
@@ -2634,7 +2695,10 @@ function update(dt) {
     if (s.moving) {
       const d = s.targetX - s.x;
       if (Math.abs(d) < 2) { s.moving = false; s.face = 1; }
-      else { s.x += Math.sign(d) * 46 * dt; s.dir = Math.sign(d); }
+      else {
+        s.x += Math.sign(d) * 46 * dt; s.dir = Math.sign(d);
+        if (Math.random() < dt * 9) puff(s.x - s.dir * 6, s.y + 3, 1);
+      }
     } else if (Math.random() < dt * 0.25) {
       s.targetX = inset() + 20 + Math.random() * Math.max(40, W() - inset() * 2 - 40);
       if (Math.abs(s.targetX - s.x) > 20) s.moving = true;
@@ -2667,6 +2731,31 @@ function update(dt) {
    itself grows outward as you can afford it.
    --------------------------------------------------------------------- */
 const BUILD_BY_ID = {}; DATA.build.forEach(b => BUILD_BY_ID[b.id] = b);
+
+/* =========================================================================
+   HOW FULL THE PARK IS
+   It starts as one tree standing in grass. Nothing else is here yet: no
+   noticeboard, no cottage, barely any undergrowth. Everything arrives later,
+   and everything arrives with a bounce.
+   ========================================================================= */
+function parkFill() {
+  const things = save.park.props.length;
+  const jobs = Object.keys(save.questDone).length;
+  const plans = plansDone();
+  return Math.min(1, (things * 0.14) + (jobs * 0.07) + (plans * 0.05) + save.park.expansions * 0.06);
+}
+
+/* the board turns up once he has spoken to you at all; the cottage once
+   there is anything in the park worth writing down */
+function boardHere() { return heardCount() >= 1; }
+function cottageHere() { return save.park.props.length > 0 || Object.keys(save.questDone).length > 0; }
+
+/* 0 while it is arriving, 1 once it has settled — a squashy pop-in */
+function popScale(t) {
+  if (t >= 1) return 1;
+  const k = Math.max(0, t);
+  return 1 + Math.sin(k * Math.PI * 1.5) * 0.35 * (1 - k);
+}
 
 function parkMargin() {
   const step = [0.16, 0.105, 0.055, 0.015][Math.min(3, save.park.expansions)];
@@ -2882,6 +2971,8 @@ function finishQuest(q) {
   delete save.quests[q.id];
   SFX.ach(); G.flash = 0.4;
   spawnParticles('star', CX(), 110, 12);
+  squash(-0.45); ring(CX(), 112, '#fff6d8', 1.8);
+  pop('JOB DONE!', CX(), 80, '#b8e86a');
   ACH('questdone');
   if (DATA.quests.every(x => save.questDone[x.id])) { ACH('questall'); reachEnding('gardener'); }
 
@@ -2907,7 +2998,11 @@ function grantProp(type) {
   const plot = free[Math.floor(Math.random() * free.length)];
   save.park.props.push({ type, plot, age: 0 });
   SFX.plant();
-  spawnParticles('star', plotPos(plot).x, GROUND_Y + 4, 8);
+  const at = plotPos(plot);
+  spawnParticles('star', at.x, GROUND_Y + 4, 8);
+  puff(at.x, at.y, 7);
+  ring(at.x, at.y - 6, '#d8f0a0', 1.2);
+  pop('TA-DA!', at.x, at.y - 22, '#b8e86a');
   return true;
 }
 
@@ -3014,6 +3109,9 @@ function touchCritter(k) {
   if (k.kind === 'bird' && !k.flying) { k.flying = true; k.t = 2.4; k.vx = (Math.random() > .5 ? 1 : -1) * 44; k.vy = -18; }
   if (k.kind === 'rabbit') { k.moving = true; k.t = 1.4; k.dir = k.x < CX() ? -1 : 1; }
   ACH('critter');
+  pop(k.kind === 'rabbit' ? 'BOING' : k.kind === 'bird' ? 'TWEET' : k.kind === 'beetle' ? 'SKITTER' : 'FLUTTER',
+      k.x, k.y - 10, '#ffe9a0');
+  puff(k.x, k.y + 4, 3);
   save.stats.crittersMet = save.stats.crittersMet || {};
   save.stats.crittersMet[k.kind] = 1;
   persist();
@@ -3068,8 +3166,9 @@ function drawWorld(opts) {
   }
   SPR.drawGround(dc, G);
   SPR.drawPond(dc, G);
-  SPR.drawBoundary(dc, G, parkMargin());
-  SPR.drawCosyFoliage(dc, G, 404, 0.7);
+  const fill = parkFill();
+  if (fill > 0.05) SPR.drawBoundary(dc, G, parkMargin());
+  if (fill > 0.02) SPR.drawCosyFoliage(dc, G, 404, 0.15 + fill * 0.85);
   SPR.drawFireGlow(dc, G);
 
   // everything solid in the foreground shares one dark contour
@@ -3087,15 +3186,35 @@ function drawWorld(opts) {
   } else if (o.growing !== undefined) {
     SPR.drawGrowingTree(L, G, o.growing);
   } else {
+    // squash and stretch, hinged at his roots
+    SPR.squashTransform(L, CX(), GROUND_Y + 6, G.squash);
     SPR.drawTree(L, G);
     SPR.drawWatchers(L, G);
+    L.restore();
   }
   // the park you have built
   if (!o.fall && o.growing === undefined) {
-    SPR.drawCottage(L, G, parkMargin() + 26, GROUND_Y + 12);
-    SPR.drawNoticeBoard(L, G, W() - parkMargin() - 26, GROUND_Y + 14);
+    if (cottageHere()) {
+      const k = popScale(G.cottagePop);
+      L.save();
+      L.translate(parkMargin() + 26, GROUND_Y + 12); L.scale(k, k);
+      L.translate(-(parkMargin() + 26), -(GROUND_Y + 12));
+      SPR.drawCottage(L, G, parkMargin() + 26, GROUND_Y + 12);
+      L.restore();
+    }
+    if (boardHere()) {
+      const k = popScale(G.boardPop);
+      const bx = W() - parkMargin() - 26;
+      L.save();
+      L.translate(bx, GROUND_Y + 14); L.scale(k, k); L.translate(-bx, -(GROUND_Y + 14));
+      SPR.drawNoticeBoard(L, G, bx, GROUND_Y + 14);
+      L.restore();
+    }
     for (const pr of save.park.props) {
       const pos = plotPos(pr.plot);
+      const grown = popScale(pr.age / 0.8);
+      L.save();
+      L.translate(pos.x, pos.y); L.scale(grown, grown); L.translate(-pos.x, -pos.y);
       if (pr.type === 'sapling') {
         const h = Math.min(30, 6 + pr.age * 0.25);
         const sway = Math.sin(G.t * 1.5 + pr.plot) * 1.2;
@@ -3108,6 +3227,7 @@ function drawWorld(opts) {
       else if (pr.type === 'bath') SPR.drawBirdbath(L, G, pos.x, pos.y);
       else if (pr.type === 'hive') SPR.drawHive(L, G, pos.x, pos.y);
       else if (pr.type === 'lamp') SPR.drawLamp(L, G, pos.x, pos.y);
+      L.restore();
     }
     for (const v of G.visitors) SPR.drawVisitor(L, G, v);
   }
@@ -3124,10 +3244,10 @@ function drawWorld(opts) {
     SPR.drawLeafSprite(dc, m.x, m.y, '#8fd95a', '#3a7a28');
     dc.globalAlpha = 1;
   }
-  SPR.drawUndergrowth(dc, G);
-  SPR.drawForeground(dc, G);
+  if (fill > 0.1) SPR.drawUndergrowth(dc, G);
+  if (fill > 0.25) SPR.drawForeground(dc, G);
   drawPickups(dc);
-  SPR.drawVines(dc, G, 51);
+  if (fill > 0.4) SPR.drawVines(dc, G, 51);
   SPR.drawFrameFoliage(dc, G);
   SPR.drawBokeh(dc, G);
   SPR.drawOverlay(dc, G);
@@ -3215,16 +3335,8 @@ function drawCineFrame() {
   const st = cineStage(), p = cineProgress();
   const name = G.cine.name;
 
-  if (name === 'intro' || name === 'lighter' || name === 'mercy' || name === 'grove') {
+  if (name === 'lighter' || name === 'mercy' || name === 'grove') {
     drawWorld();
-    if (name === 'intro' && st === 'wide') {
-      dc.globalAlpha = Math.max(0, 1 - p * 2.2);
-      SPR.px(dc, 0, 0, W(), H, '#000000');
-      dc.globalAlpha = 1;
-    }
-    if (name === 'intro' && st === 'wake' && p > 0.45 && p < 0.75) {
-      SPR.drawRays(dc, G, (p - 0.45) * 2, CX(), 106);
-    }
     if (name === 'mercy' && st === 'throw' && p < 0.6) {
       // the lighter turning over in the air on its way to the water
       const k = p / 0.6;
@@ -3398,9 +3510,9 @@ function hitTest(x, y) {
 
   // the cottage and the noticeboard are solid objects, checked before him
   if (G.scene === 'game' && !G.dead) {
-    if (Math.abs(x - (parkMargin() + 26)) < 24 && y > GROUND_Y - 34 && y < GROUND_Y + 14)
+    if (cottageHere() && Math.abs(x - (parkMargin() + 26)) < 24 && y > GROUND_Y - 34 && y < GROUND_Y + 14)
       return { kind: 'house', i: -1 };
-    if (Math.abs(x - (W() - parkMargin() - 26)) < 14 && y > GROUND_Y - 22 && y < GROUND_Y + 16)
+    if (boardHere() && Math.abs(x - (W() - parkMargin() - 26)) < 14 && y > GROUND_Y - 22 && y < GROUND_Y + 16)
       return { kind: 'board', i: -1 };
     for (const pr of save.park.props) {
       const pos = plotPos(pr.plot);
@@ -3463,12 +3575,16 @@ function touchPart(part) {
   if (!t) { talkToTree(); return; }
   partCount[part] = (partCount[part] || 0) + 1;
   if (partAch[part]) ACH(partAch[part]);
-  if (part === 'eye') { G.shake = 3; SFX.deny(); G.blink = 0.5; }
-  else if (part === 'nose') { SFX.squeak(); if (Math.random() < 0.35) setTimeout(triggerSneeze, 900); }
-  else if (part === 'mouth') { G.stare = 1; G.stareHold = 2.2; SFX.boom(); }
-  else if (part === 'canopy') { SFX.pickup(); for (let i = 0; i < 4; i++) dropLeaf(100 + Math.random() * 56, 40 + Math.random() * 30, i < 2); }
-  else if (part === 'root') { SFX.click(); }
-  else SFX.click();
+  const POKE = { eye: ['OW!', '#ff9a6a'], nose: ['BOOP', '#ffd8f0'], mouth: ['NOM', '#ffb0b0'],
+                 beard: ['RUFFLE', '#d8f0a0'], root: ['TAP TAP', '#e8d0a0'], canopy: ['RUSTLE', '#b8e86a'] };
+  const noise = POKE[part];
+  if (noise) pop(noise[0], CX() + (part === 'eye' ? 18 : 0), 92, noise[1]);
+  if (part === 'eye') { G.shake = 3; SFX.deny(); G.blink = 0.5; squash(0.5); ring(CX() + 13, 104, '#ffd8b0'); sweat(CX() + 26, 88); }
+  else if (part === 'nose') { SFX.squeak(); squash(0.7); ring(CX(), 114, '#ffd8f0'); if (Math.random() < 0.35) setTimeout(triggerSneeze, 900); }
+  else if (part === 'mouth') { G.stare = 1; G.stareHold = 2.2; SFX.boom(); squash(0.35); ring(CX(), 138, '#ffb0b0', 1.3); }
+  else if (part === 'canopy') { SFX.pickup(); squash(-0.35); puff(CX(), 60, 4); for (let i = 0; i < 5; i++) dropLeaf(100 + Math.random() * 56, 40 + Math.random() * 30, i < 2); }
+  else if (part === 'root') { SFX.click(); squash(0.25); puff(CX() + (Math.random() * 2 - 1) * 40, GROUND_Y + 4, 3); }
+  else { SFX.click(); squash(0.3); }
   say('THE WISE OAK TREE', t.lines[partCount[part] % t.lines.length], t.mood);
 }
 
@@ -3515,6 +3631,7 @@ function onMove(ev) {
     if (grab.moved > 70 && !grab.paid) {
       grab.paid = true;
       ACH('shake'); SFX.sneeze();
+      squash(-0.55); pop('WOAH!', CX(), 84, '#ffd24a'); puff(CX(), GROUND_Y + 4, 6);
       for (let i = 0; i < 5; i++) dropLeaf(96 + Math.random() * 64, 40 + Math.random() * 40, i < 3);
       for (let i = 0; i < 10; i++) dropLeaf(90 + Math.random() * 76, 30 + Math.random() * 50, false);
       say('THE WISE OAK TREE', DATA.shakeLines[Math.floor(Math.random() * DATA.shakeLines.length)], 'shock');
@@ -3536,6 +3653,7 @@ function onMove(ev) {
       ACH('tickle');
       G.mood = 'laugh'; G.moodTimer = 6; G.shake = 3;
       SFX.hug();
+      squash(0.5); pop('HEEHEE', CX() + 20, 88, '#ffd8f0');
       spawnParticles('heart', CX(), 110, 5);
       for (let i = 0; i < 6; i++) dropLeaf(96 + Math.random() * 64, 40 + Math.random() * 40, i < 2);
       say('THE WISE OAK TREE', DATA.tickleLines[Math.floor(Math.random() * DATA.tickleLines.length)], 'laugh');
@@ -3877,11 +3995,8 @@ function enterWood() {
   G.veil = 1;
   // he was asleep on the menu, so he is asleep in the world
   G.asleep = true; G.mood = 'asleep'; G.blink = 1; G.blinkTimer = 999;
-  if (hadSave) {
-    setTimeout(() => { if (G.asleep) nudge('he is asleep \u2014 poke him', 30); }, 700);
-  } else {
-    startIntroCine();
-  }
+  refreshHUD(); refreshActions();
+  setTimeout(() => { if (G.asleep) nudge(hadSave ? 'he is asleep \u2014 poke him' : 'poke him', 30); }, 700);
 }
 
 /* the actual waking: a shudder, a blink, and nine hundred years of opinions */
@@ -3892,8 +4007,14 @@ function wakeHim() {
   ACH('hello');
   G.blink = 0.45; G.shake = 3.6; G.mood = 'shock'; G.moodTimer = 5;
   SFX.sneeze();
-  for (let i = 0; i < 7; i++) dropLeaf(90 + Math.random() * 76, 40 + Math.random() * 40, i < 2);
-  spawnParticles('star', CX(), 96, 6);
+  // he comes awake like a cartoon: stretches tall, rains leaves, shouts
+  squash(-0.8);
+  ring(CX(), 112, '#fff6d8', 1.6);
+  lines(CX(), 108, '#fff6d8');
+  pop('WHUMPH!', CX(), 82, '#ffd24a');
+  puff(CX() - 40, GROUND_Y + 4, 5); puff(CX() + 40, GROUND_Y + 4, 5);
+  for (let i = 0; i < 10; i++) dropLeaf(90 + Math.random() * 76, 40 + Math.random() * 40, i < 3);
+  spawnParticles('star', CX(), 96, 8);
   setTimeout(() => {
     if (G.dead || G.cine) return;
     G.mood = 'sleepy';
@@ -3913,10 +4034,10 @@ if (/[?&]debug/.test(location.search)) {
   window.OAK = { G, save, ACH, reachEnding, startBurning, goHeaven, reincarnate,
                  refreshHUD, dropLeaf, triggerSneeze, maybeSpawnSquirrel, persist,
                  skipAll: () => { if (G.cine) { G.cine.i = G.cine.stages.length - 1; skipStage(); } },
-                 parkMargin, parkIncome, PANEL, openPanel, closePanel, panelIs, panelOpen, openQuestBoard, openJournal, acceptQuest, checkQuests, questStatus, plotPos, hitTest,
+                 parkMargin, parkIncome, parkFill, boardHere, cottageHere, puff, ring, pop, squash, PANEL, openPanel, closePanel, panelIs, panelOpen, openQuestBoard, openJournal, acceptQuest, checkQuests, questStatus, plotPos, hitTest,
                  travel, takePickup, seedPickups, openChat, closeChat, sendChat, openBag, closeBag,
                  agreePlan, completePlan, planById, areaId, wakeHim, AREAS,
-                 openPost, closePost, openSettings, openCredits, openGarden, closeGarden, buildGarden, snailName, finishQuest, questById, questProgress,
+                 openPost, closePost, openSettings, openCredits, openTrophies, openEndings, openGarden, closeGarden, buildGarden, snailName, finishQuest, questById, questProgress,
                  snailNotes: () => snails.map(s => ({ id: s.note && s.note.id, opened: s.opened })),
                  signLabels: () => signs.map(s => s.label), signFor: (l) => signs.find(s => s.label === l),
                  dlgText: () => DLG.text, DLG, snails: () => snails.length, toastQueue };
