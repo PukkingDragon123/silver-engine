@@ -64,7 +64,246 @@ html, body {
 #halllabel span { color: var(--ink-dim); font-size: 10px; }
 #halllabel.locked b { color: #9aa8b8; }
 
-/* ---------------- ending card ---------------- */
+/* ==========================================================================
+   THE SCROLL
+   One object, used for every panel in the game. A turned rod at each end, a
+   sheet of laid paper between them, and a wax seal that breaks before
+   anything opens. The sheet's height is measured from its content and
+   animated in fifteen discrete steps, because pixel art does not ease.
+   ========================================================================== */
+:root {
+  --paper:     #f4e4bf;
+  --paper-lit: #fbf1d8;
+  --paper-dim: #e6d3a6;
+  --ink-1:     #35210e;
+  --ink-2:     #6b5334;
+  --ink-3:     #8f7853;
+  --rod:       #c9a86a;
+  --rod-lit:   #e6d3a6;
+  --rod-dark:  #8a6a3a;
+  --edge:      #1a1008;
+  --wax:       #c9453b;
+  --ink-gold:  #8a5a10;
+  --ink-plum:  #5a2a7a;
+  --ink-leaf:  #3f6b1f;
+  --ink-rust:  #9a3410;
+}
+
+/* --- placement: each panel keeps its own corner of the wood --- */
+.sp { position: absolute; z-index: 28; }
+.sp.mid {
+  position: fixed; inset: 0; z-index: 55;
+  display: flex; align-items: center; justify-content: center; padding: 18px;
+  background: rgba(6,4,3,0); transition: background .45s ease;
+}
+.sp.mid.open { background: rgba(6,4,3,.74); }
+.sp.mid .scroll { width: min(430px, 100%); }
+#modal.sp.mid .scroll { width: min(660px, 100%); }
+
+#bag      { left: 18px;  bottom: 62px; width: min(330px, calc(100vw - 40px)); }
+#settings { right: 18px; bottom: 62px; width: min(360px, calc(100vw - 40px)); }
+#chat     { left: 50%; bottom: 16px; transform: translateX(-50%); z-index: 30;
+            width: min(470px, calc(100vw - 40px)); }
+
+.scroll { display: flex; flex-direction: column; align-items: stretch; }
+.sp.open .scroll { animation: settle .5s steps(4) .62s; }
+@keyframes settle { 40% { transform: translateY(1px); } }
+
+/* --- the rods --- */
+.rod {
+  position: relative; height: 18px; flex: none;
+  background: var(--rod);
+  border: 3px solid var(--edge);
+  box-shadow: inset 0 4px 0 var(--rod-lit), inset 0 -5px 0 var(--rod-dark);
+  z-index: 2;
+}
+.rod.top { border-bottom-width: 2px; }
+.rod.bot { border-top-width: 2px; }
+.rod .knob {
+  position: absolute; top: -6px; width: 10px; height: 24px;
+  background: #a3794a; border: 3px solid var(--edge);
+  box-shadow: inset 0 4px 0 var(--rod); 
+}
+.rod .knob.l { left: -13px; }
+.rod .knob.r { right: -13px; }
+
+/* --- the seal, which breaks before anything unrolls --- */
+.rod.top .seal {
+  position: absolute; left: 50%; top: 4px; width: 16px; height: 16px;
+  margin-left: -8px; background: var(--wax);
+  border: 3px solid var(--edge); border-radius: 50%;
+  box-shadow: inset -3px -3px 0 #8a2a24;
+  z-index: 3; opacity: 0;
+}
+.sp.open .rod.top .seal { animation: crack .55s steps(6) forwards; }
+@keyframes crack {
+  0%   { opacity: 1; transform: none; }
+  35%  { opacity: 1; transform: translateY(2px) scale(1.18); }
+  100% { opacity: 0; transform: translateY(28px) rotate(40deg) scale(.65); }
+}
+
+/* --- the sheet. Its height is set in JS from the measured content. --- */
+.sheet {
+  height: 6px; overflow: hidden; position: relative;
+  border-left: 3px solid var(--edge); border-right: 3px solid var(--edge);
+  background:
+    linear-gradient(rgba(120,88,36,.30), rgba(120,88,36,0) 26px),
+    linear-gradient(to top, rgba(120,88,36,.30), rgba(120,88,36,0) 26px),
+    repeating-linear-gradient(rgba(0,0,0,0) 0 3px, rgba(154,120,60,.055) 3px 4px),
+    linear-gradient(100deg, #f1dfb6, var(--paper-lit) 45%, #efdcb2);
+  will-change: height;
+}
+.sheet.scrolly { overflow-y: auto; }
+.inner { padding: 0 0 2px; }
+.sp .inner > * { opacity: 0; }
+.sp.open .inner > * { animation: inkin .34s ease .28s forwards; }
+@keyframes inkin { from { opacity: 0; transform: translateY(-5px); } to { opacity: 1; transform: none; } }
+
+/* --- inked headings and feet --- */
+.sptitle {
+  margin: 0; padding: 11px 14px 8px;
+  font-size: 11px; font-weight: 700; letter-spacing: 3px; text-align: center;
+  color: var(--ink-1);
+  border-bottom: 1px solid rgba(120,88,36,.28);
+  box-shadow: 0 2px 0 -1px rgba(120,88,36,.16);
+}
+.spfoot {
+  margin: 0; padding: 7px 14px 10px;
+  font-size: 10px; font-style: italic; text-align: center; color: var(--ink-3);
+  border-top: 1px solid rgba(120,88,36,.22);
+}
+.spclose {
+  position: absolute; right: 2px; top: -2px;
+  font-size: 16px; line-height: 1; padding: 0 6px;
+  background: none; border: none; color: #4a3220; cursor: pointer;
+}
+.spclose:hover { color: var(--edge); }
+
+/* --- buttons, inked rather than boxed --- */
+.act, .buy {
+  font-family: var(--font); cursor: pointer; text-transform: uppercase;
+  color: var(--ink-1); background: var(--paper-dim);
+  border: 2px solid var(--edge);
+  box-shadow: inset 0 2px 0 rgba(255,255,255,.5), 0 2px 0 var(--rod-dark);
+  letter-spacing: 1px;
+}
+.act { font-size: 11px; padding: 7px 13px; }
+.buy { font-size: 10px; padding: 5px 8px; }
+.act:hover, .buy:hover { background: var(--paper-lit); }
+.act:active, .buy:active { transform: translateY(2px); box-shadow: inset 0 2px 0 rgba(255,255,255,.4); }
+.act.bad { color: #8a1f14; border-color: #6b1a10; }
+.act.good { color: var(--ink-leaf); border-color: #2f5216; }
+
+/* --- rows: hairlines, not boxes --- */
+.bagrow, .setrow, .planrow {
+  display: flex; align-items: center; gap: 9px;
+  padding: 7px 13px;
+  border-bottom: 1px dashed rgba(120,88,36,.30);
+}
+.planrow { display: block; }
+.bagrow:last-child, .setrow:last-child { border-bottom: 0; }
+.shopinfo, .setrow > div { flex: 1; display: flex; flex-direction: column; min-width: 0; }
+.shopinfo b, .setrow b, .planrow b { font-size: 12px; color: var(--ink-1); }
+.shopinfo span, .setrow span, .planrow span { font-size: 10px; color: var(--ink-3); }
+.planrow b { display: block; }
+.planrow.kept b { color: var(--ink-leaf); }
+.setrow.bad b { color: #8a1f14; }
+.setrow .act { white-space: nowrap; }
+.itemicon { width: 20px; height: 20px; image-rendering: pixelated; flex: none; }
+
+.bagtop {
+  display: flex; justify-content: space-between; align-items: baseline; gap: 8px;
+  padding: 9px 13px; border-bottom: 1px solid rgba(120,88,36,.28);
+}
+.bagtop .leaves { color: var(--ink-leaf); font-size: 12px; letter-spacing: 1px; }
+.bagtop .dim { color: var(--ink-3); font-size: 10px; text-align: right; }
+.bagempty { margin: 0; padding: 13px; font-size: 11px; color: var(--ink-2); line-height: 1.65; }
+.bagsec {
+  font-size: 9px; letter-spacing: 3px; color: var(--ink-gold);
+  padding: 10px 13px 5px; border-top: 1px solid rgba(120,88,36,.28);
+}
+
+/* --- the post card --- */
+.pcard { text-align: center; padding: 20px 18px 22px; }
+.pcard canvas.ptro {
+  width: 128px; height: 128px; image-rendering: pixelated;
+  display: block; margin: 0 auto 2px;
+  filter: drop-shadow(0 3px 0 rgba(120,90,40,.35));
+}
+.ptier { margin: 0; font-size: 9px; letter-spacing: 4px; color: var(--ink-gold); }
+.pname {
+  margin: 6px 0 0; font-size: 17px; letter-spacing: 2px;
+  color: #6b3410; text-shadow: 1px 1px 0 rgba(255,255,255,.5);
+}
+.pdesc { margin: 10px auto 0; max-width: 32ch; font-size: 11.5px; line-height: 1.65; color: var(--ink-2); }
+.pby {
+  margin: 14px auto 0; max-width: 34ch; font-size: 10px; line-height: 1.6; color: var(--ink-3);
+  padding-top: 10px; border-top: 1px dashed rgba(120,88,36,.35);
+}
+.pby b { color: var(--ink-1); letter-spacing: 1px; }
+.pby i { color: var(--ink-2); }
+.pcard.chal .pname { color: var(--ink-plum); }
+.pcard.ending .pname { color: var(--ink-rust); }
+
+/* --- the trophy room and the credits, on paper --- */
+#modalbody { padding: 12px 13px; line-height: 1.6; color: var(--ink-2); }
+#modalbody p { margin: 0 0 10px; }
+.small { font-size: 11px; color: var(--ink-3); }
+.modalbtns { display: flex; gap: 8px; margin-top: 12px; flex-wrap: wrap; justify-content: center; }
+.grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(215px, 1fr)); gap: 6px; }
+.tro {
+  display: flex; gap: 8px; align-items: flex-start;
+  background: rgba(255,255,255,.34);
+  border: 1px solid rgba(120,88,36,.35);
+  border-left: 4px solid var(--ink-leaf);
+  padding: 6px 8px; line-height: 1.3;
+}
+.tro.goal { border-left-color: var(--ink-gold); }
+.tro.chal { border-left-color: var(--ink-plum); }
+.tro.locked { border-left-color: rgba(120,88,36,.35); opacity: .5; }
+.tro b { font-size: 11px; display: block; color: var(--ink-1); }
+.tro span { font-size: 10px; color: var(--ink-3); }
+.troicon { width: 22px; height: 22px; image-rendering: pixelated; flex: none; }
+
+/* --- talking, on paper --- */
+#chatlog {
+  height: min(250px, 40vh); overflow-y: auto; padding: 9px 13px;
+  display: flex; flex-direction: column; gap: 8px;
+}
+.cline { font-size: 11.5px; line-height: 1.55; }
+.cline b { display: block; font-size: 9px; letter-spacing: 2px; margin-bottom: 1px; }
+.cline.them b { color: var(--ink-gold); }
+.cline.them span { color: var(--ink-1); }
+.cline.you { text-align: right; }
+.cline.you b { color: #2a5a7a; }
+.cline.you span { color: var(--ink-2); }
+.cline.sys { font-size: 10px; color: var(--ink-3); font-style: italic; }
+.cbtns { display: flex; gap: 6px; margin-top: 6px; flex-wrap: wrap; }
+.cbtns .act { font-size: 10px; padding: 5px 9px; }
+#chatbar {
+  display: flex; gap: 7px; padding: 9px 13px;
+  border-top: 1px solid rgba(120,88,36,.28);
+}
+#chatinput {
+  flex: 1; min-width: 0; font-family: var(--font); font-size: 12px;
+  color: var(--ink-1); background: rgba(255,255,255,.42);
+  border: 0; border-bottom: 2px solid rgba(120,88,36,.55);
+  padding: 7px 4px;
+}
+#chatinput:focus { outline: none; border-bottom-color: var(--ink-gold); background: rgba(255,255,255,.7); }
+#chatinput::placeholder { color: var(--ink-3); }
+
+/* the oak's scroll is older paper than Noc's */
+#chat.oak .sheet {
+  background:
+    linear-gradient(rgba(120,70,20,.34), rgba(120,70,20,0) 26px),
+    linear-gradient(to top, rgba(120,70,20,.34), rgba(120,70,20,0) 26px),
+    repeating-linear-gradient(rgba(0,0,0,0) 0 3px, rgba(140,100,40,.07) 3px 4px),
+    linear-gradient(100deg, #e8d0a2, #f4e2bc 45%, #e6cd9c);
+}
+#chat.oak .cline.them b { color: #7a4410; }
+
+/* --- the ending card, which is the grandest scroll of all --- */
 #endingcard {
   position: fixed; inset: 0; z-index: 70;
   background: rgba(4,3,2,.94);
@@ -73,238 +312,25 @@ html, body {
 }
 .ecard {
   width: min(560px, 100%); text-align: center;
-  border: 3px solid var(--gold); background: #1a1512;
-  box-shadow: 0 0 0 3px #000, 0 0 40px rgba(255,210,74,.15);
-  padding: 22px 20px;
-}
-.ecard canvas { width: 48px; height: 48px; image-rendering: pixelated; }
-.etop { font-size: 10px; letter-spacing: 4px; color: var(--ink-dim); margin: 8px 0 4px; }
-.ename { font-size: 20px; letter-spacing: 3px; color: var(--gold); text-shadow: 2px 2px 0 #000; }
-.etitle { font-size: 13px; color: var(--ink); margin-top: 10px; }
-.ebody { font-size: 12px; color: var(--ink-dim); line-height: 1.7; margin: 12px 0 18px; text-align: left; }
-.act {
-  font-family: var(--font); font-size: 12px; letter-spacing: 1px; cursor: pointer;
-  color: var(--ink); background: #3a2e26; border: 2px solid #000;
-  box-shadow: inset -2px -2px 0 rgba(0,0,0,.35), inset 2px 2px 0 rgba(255,255,255,.08);
-  padding: 8px 14px; text-transform: uppercase;
-}
-.act:hover { background: #4a3b30; }
-.act.bad { color: #ffc9c9; border-bottom: 3px solid #7a2a2a; }
-.act.good { border-bottom: 3px solid #3f7a28; }
-
-/* ---------------- panels kept for heaven ---------------- */
-#modal {
-  position: fixed; inset: 0; background: rgba(6,4,3,.85); z-index: 50;
-  display: flex; align-items: center; justify-content: center; padding: 16px;
-}
-.modalbox {
-  background: #2a211c; border: 3px solid #000; box-shadow: 0 8px 0 rgba(0,0,0,.5);
-  width: min(680px, 100%); max-height: 86vh; display: flex; flex-direction: column;
-}
-.paneltop {
-  display: flex; justify-content: space-between; align-items: center;
-  background: #3a2e26; padding: 6px 8px; font-size: 11px; letter-spacing: 2px;
-  color: var(--gold); border-bottom: 2px solid #000;
-}
-.paneltop button { padding: 0 6px; font-size: 15px; line-height: 1; background: none; border: none; color: var(--ink); cursor: pointer; }
-#modalbody { padding: 12px; overflow-y: auto; line-height: 1.6; }
-#modalbody p { margin: 0 0 10px; }
-.small { font-size: 11px; color: var(--ink-dim); }
-.modalbtns { display: flex; gap: 8px; margin-top: 12px; flex-wrap: wrap; }
-.grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 6px; }
-.tro {
-  display: flex; gap: 8px; align-items: flex-start; background: #1e1815;
-  border: 2px solid #000; border-left: 4px solid var(--green); padding: 6px 8px; line-height: 1.3;
-}
-.tro.goal { border-left-color: var(--gold); }
-.tro.chal { border-left-color: var(--purple); }
-.tro.locked { border-left-color: #4a4038; opacity: .55; }
-.tro b { font-size: 11px; display: block; color: var(--ink); }
-.tro span { font-size: 10px; color: var(--ink-dim); }
-.troicon { width: 22px; height: 22px; image-rendering: pixelated; flex: none; }
-
-/* ---------------- the backpack ---------------- */
-#bag {
-  position: absolute; left: 14px; bottom: 60px; width: min(320px, calc(100vw - 28px));
-  background: #2a211c; border: 3px solid #000; box-shadow: 0 6px 0 rgba(0,0,0,.4);
-  line-height: 1.4; z-index: 25;
-}
-#bagbody { max-height: min(320px, 52vh); overflow-y: auto; }
-.bagtop {
-  display: flex; justify-content: space-between; align-items: baseline; gap: 8px;
-  padding: 7px 9px; border-bottom: 2px solid #1a1411; background: #211a16;
-}
-.bagtop .leaves { color: var(--green); font-size: 12px; letter-spacing: 1px; }
-.bagtop .dim { color: var(--ink-dim); font-size: 10px; }
-.bagempty { margin: 0; padding: 12px 10px; font-size: 11px; color: var(--ink-dim); line-height: 1.6; }
-.bagrow { display: flex; align-items: center; gap: 8px; padding: 6px 8px; border-bottom: 1px solid #1a1411; }
-.bagsec {
-  font-size: 10px; letter-spacing: 2px; color: var(--gold);
-  padding: 7px 9px 4px; border-top: 2px solid #1a1411; background: #241d18;
-}
-.planrow { padding: 5px 9px; border-bottom: 1px solid #1a1411; }
-.planrow b { display: block; font-size: 11px; color: var(--ink); }
-.planrow span { font-size: 10px; color: var(--ink-dim); }
-.planrow.kept b { color: var(--green); }
-
-.shopinfo { flex: 1; display: flex; flex-direction: column; }
-.shopinfo b { font-size: 12px; color: var(--ink); }
-.shopinfo span { font-size: 10px; color: var(--ink-dim); }
-.buy {
-  font-family: var(--font); font-size: 10px; padding: 5px 7px; cursor: pointer;
-  color: var(--gold); background: #3a2e26; border: 2px solid #000; letter-spacing: 1px;
-}
-.buy:hover { background: #4a3b30; }
-.itemicon { width: 20px; height: 20px; image-rendering: pixelated; flex: none; }
-.panelfoot { font-size: 10px; color: var(--ink-dim); padding: 6px 8px; border-top: 2px solid #000; }
-
-/* ---------------- talking to Noc ---------------- */
-#chat {
-  position: absolute; left: 50%; bottom: 14px; transform: translateX(-50%);
-  width: min(460px, calc(100vw - 24px));
-  background: #201a26; border: 3px solid #000; box-shadow: 0 6px 0 rgba(0,0,0,.45);
-  z-index: 30; display: flex; flex-direction: column;
-}
-#chat .paneltop { background: #2c2436; color: #ffcf6a; }
-#chatlog {
-  height: min(260px, 42vh); overflow-y: auto; padding: 8px 9px;
-  display: flex; flex-direction: column; gap: 7px;
-}
-.cline { font-size: 11.5px; line-height: 1.55; }
-.cline b { display: block; font-size: 9px; letter-spacing: 2px; margin-bottom: 1px; }
-.cline.them b { color: #ffcf6a; }
-.cline.them span { color: #f0e6d4; }
-.cline.you { text-align: right; }
-.cline.you b { color: #8fc2e8; }
-.cline.you span { color: #c9d8e4; }
-.cline.sys { font-size: 10px; color: #8a7f9a; font-style: italic; }
-.cbtns { display: flex; gap: 6px; margin-top: 6px; flex-wrap: wrap; }
-.cbtns .act { font-size: 10px; padding: 5px 9px; }
-#chatbar { display: flex; gap: 6px; padding: 7px; border-top: 2px solid #000; background: #171220; }
-#chatinput {
-  flex: 1; min-width: 0; font-family: var(--font); font-size: 12px;
-  color: var(--ink); background: #0f0c15; border: 2px solid #000; padding: 8px 9px;
-}
-#chatinput:focus { outline: none; border-color: #6b5a8a; }
-#chatinput::placeholder { color: #6b6178; }
-#chatsend {
-  font-family: var(--font); font-size: 11px; letter-spacing: 1px; cursor: pointer;
-  color: #2b1c10; background: var(--gold); border: 2px solid #000; padding: 0 14px;
-}
-#chatsend:active { transform: translateY(2px); }
-@media (max-width: 520px) { #chatlog { height: 34vh; } #bag { bottom: 54px; } }
-
-/* ---------------- the post, unrolled ----------------
-   The snail's parcel is a scroll, so it opens like one: the seal cracks, the
-   sheet unrolls in steps (pixel art does not ease), and the lower rod is
-   carried down by the sheet's own height rather than faked with a transform. */
-#post {
-  position: fixed; inset: 0; z-index: 55; background: rgba(6,4,3,0);
-  display: flex; align-items: center; justify-content: center; padding: 18px;
-  transition: background .45s ease;
-}
-#post.open { background: rgba(6,4,3,.74); }
-
-.scroll { width: min(400px, 100%); display: flex; flex-direction: column; align-items: stretch; }
-
-/* the two rods */
-.rod {
-  position: relative; height: 18px; flex: none;
-  background: #c9a86a;
-  border: 3px solid #1a1008;
-  box-shadow: inset 0 4px 0 #e0cb9c, inset 0 -5px 0 #8a6a3a;
-  z-index: 2;
-}
-.rod.top { border-bottom-width: 2px; }
-.rod.bot { border-top-width: 2px; }
-.rod .knob {
-  position: absolute; top: -6px; width: 10px; height: 24px;
-  background: #a3794a; border: 3px solid #1a1008;
-  box-shadow: inset 0 4px 0 #c9a86a, inset 0 -4px 0 #6b4a28;
-}
-.rod .knob.l { left: -13px; }
-.rod .knob.r { right: -13px; }
-
-/* the wax seal, which has to break before anything can unroll */
-.rod.top .seal {
-  position: absolute; left: 50%; top: 4px; width: 16px; height: 16px;
-  margin-left: -8px; background: #c9453b;
-  border: 3px solid #1a1008; border-radius: 50%;
-  box-shadow: inset -3px -3px 0 #8a2a24;
-  z-index: 3;
-}
-#post.open .rod.top .seal { animation: crack .5s steps(5) forwards; }
-@keyframes crack {
-  0%   { transform: none; opacity: 1; }
-  40%  { transform: translateY(2px) scale(1.15); }
-  100% { transform: translateY(26px) rotate(38deg) scale(.7); opacity: 0; }
-}
-
-/* the sheet. Its height is animated in JS, from the measured content. */
-.sheet {
-  height: 6px; overflow: hidden; position: relative;
-  border-left: 3px solid #1a1008; border-right: 3px solid #1a1008;
-  /* laid paper: faint horizontal tooth, and the curl darkening each end */
+  border: 3px solid var(--edge);
   background:
-    linear-gradient(rgba(120,88,36,.30), rgba(120,88,36,0) 26px),
-    linear-gradient(to top, rgba(120,88,36,.30), rgba(120,88,36,0) 26px),
-    repeating-linear-gradient(rgba(0,0,0,0) 0 3px, rgba(154,120,60,.055) 3px 4px),
-    linear-gradient(100deg, #f3e2bc, #f8ebcd 45%, #f1dfb6);
-  will-change: height;
+    repeating-linear-gradient(rgba(0,0,0,0) 0 3px, rgba(154,120,60,.06) 3px 4px),
+    linear-gradient(100deg, #efdcb2, var(--paper-lit) 45%, #ecd7a8);
+  box-shadow: 0 0 0 3px var(--rod), 0 0 40px rgba(255,210,74,.18), 0 10px 0 rgba(0,0,0,.4);
+  padding: 22px 20px;
+  animation: ecardin .6s steps(9) both;
 }
-#postbody { padding: 0; }
+@keyframes ecardin { from { transform: scaleY(.06); opacity: .4; } to { transform: none; opacity: 1; } }
+.ecard canvas { width: 48px; height: 48px; image-rendering: pixelated; }
+.etop { font-size: 10px; letter-spacing: 4px; color: var(--ink-gold); margin: 8px 0 4px; }
+.ename { font-size: 20px; letter-spacing: 3px; color: #6b3410; text-shadow: 1px 1px 0 rgba(255,255,255,.55); }
+.etitle { font-size: 13px; color: var(--ink-1); margin-top: 10px; }
+.ebody { font-size: 12px; color: var(--ink-2); line-height: 1.7; margin: 12px 0 18px; text-align: left; }
 
-.pcard { text-align: center; padding: 20px 18px 24px; }
-.pcard canvas.ptro {
-  width: 128px; height: 128px; image-rendering: pixelated;
-  display: block; margin: 0 auto 2px;
-  filter: drop-shadow(0 3px 0 rgba(120,90,40,.35));
+@media (max-width: 520px) {
+  #chatlog { height: 32vh; }
+  #bag, #settings { bottom: 56px; left: 14px; right: 14px; width: auto; }
 }
-.ptier { margin: 0; font-size: 9px; letter-spacing: 4px; color: #a06a2a; }
-.pname {
-  margin: 6px 0 0; font-size: 17px; letter-spacing: 2px;
-  color: #6b3410; text-shadow: 1px 1px 0 rgba(255,255,255,.5);
-}
-.pdesc { margin: 10px auto 0; max-width: 32ch; font-size: 11.5px; line-height: 1.65; color: #5a4630; }
-.pcard.chal .pname { color: #5a2a7a; }
-.pcard.ending .pname { color: #9a3410; }
-
-/* the words are inked on once the sheet is open enough to hold them */
-#post .pcard { opacity: 0; }
-#post.open .pcard { animation: inkin .35s ease .3s forwards; }
-@keyframes inkin { from { opacity: 0; transform: translateY(-5px); } to { opacity: 1; transform: none; } }
-
-/* rolling it back up */
-#postclose {
-  position: absolute; right: 2px; top: -1px;
-  font-size: 15px; line-height: 1; padding: 0 5px;
-  background: none; border: none; color: #4a3220; cursor: pointer;
-}
-#postclose:hover { color: #1a1008; }
-
-/* ---------------- the squirrel's settings ---------------- */
-#settings {
-  position: absolute; right: 14px; bottom: 60px; width: min(360px, calc(100vw - 28px));
-  background: #26201b; border: 3px solid #000; box-shadow: 0 6px 0 rgba(0,0,0,.4); z-index: 28;
-}
-#setbody { max-height: min(340px, 56vh); overflow-y: auto; }
-.setrow {
-  display: flex; align-items: center; gap: 10px;
-  padding: 8px 9px; border-bottom: 1px solid #1a1411;
-}
-.setrow div { flex: 1; display: flex; flex-direction: column; }
-.setrow b { font-size: 12px; color: var(--ink); }
-.setrow span { font-size: 10px; color: var(--ink-dim); }
-.setrow .act { font-size: 10px; padding: 6px 9px; white-space: nowrap; }
-.setrow.bad b { color: #ffc9c9; }
-
-/* the oak's side of the talk box is warmer than Noc's */
-#chat.oak { background: #241c18; }
-#chat.oak .paneltop { background: #33271f; color: #ffd88a; }
-#chat.oak #chatbar { background: #1a1310; }
-#chat.oak #chatinput { background: #120d0a; }
-#chat.oak #chatinput:focus { border-color: #8a6a3a; }
-#chat.oak .cline.them b { color: #ffd88a; }
 
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation-duration: .01ms !important; transition-duration: .01ms !important; }

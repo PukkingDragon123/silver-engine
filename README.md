@@ -160,10 +160,37 @@ It opens like a scroll, because it is one: the wax seal cracks and drops
 through, the sheet unrolls in fifteen discrete steps (pixel art does not ease)
 to exactly the height of what is written on it, the lower rod riding down with
 it, and the words are inked on once there is room to hold them. Closing it
-rolls it back up.
+rolls it back up. **Every panel in the game is that same object** — the
+backpack, the talk box, the settings, the trophy room, the ending cards — one
+scroll component with a turned rod at each end, a sheet of laid paper between
+them, and a seal that has to break first. Nothing in the game is a dark
+rectangle with a title bar any more.
+
+**Every achievement has its own snail, and it is always the same snail.** The
+shell palette, the pattern on it (bands, spots, spiral, chevron, marbled,
+pearl), the body colour, the length of its eye stalks and its name are all
+derived from the achievement's id by a fixed hash, so the snail that brings
+you *Good Listener* will be that snail forever. **Size comes from the tier**: a
+plain task sends a small one, a goal a bigger one, a challenge one wearing a
+purple ribbon, and an ending sends something the size of a dinner plate in a
+gold crown. Bigger parcels travel slower. The card names the animal that
+carried it.
+
+The round only runs while you are in the park, so nothing is ever delivered to
+an empty screen.
 
 Miss him and he crawls off the far edge with it. It is not lost — unopened post
 piles up in your bag until you get round to it.
+
+## The snail garden
+
+**When you die, you find out where they all went.** Heaven has a sign for it
+next to the Hall of Trophies. The garden is a still, bright pool under a white
+sky, and every snail that ever delivered to you is out there on its own lily
+pad among the reeds — at the size its news deserved, in the shell it was born
+with, still crawling and still getting nowhere. The grandest post is at the
+head of the round; drag or scroll to walk the water. Click one and it hands you
+its parcel again.
 
 ## The settings, and the credits
 
@@ -208,7 +235,7 @@ promise.
 
 **You cannot get in until you die.** Death is not the end of the collection. In heaven there is a marble gallery
 under vaulted arches, with a red carpet running away into the light and a
-plinth for every one of the **96 achievements** — each with its own carved
+plinth for every one of the **98 achievements** — each with its own carved
 trophy on a gold mount: a stone tissue for the sneeze, a leaf vault for the
 hoarder, a lighter sinking into water for the one who threw it away, a film
 reel for the whole canon. Chandeliers burn overhead, a skylight throws shafts

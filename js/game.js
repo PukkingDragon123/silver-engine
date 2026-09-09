@@ -17,7 +17,7 @@ const defaultSave = () => ({
   ach: {}, endings: {}, heard: {}, muted: false, sessions: 0,
   park: { props: [], upgrades: {}, expansions: 0, earned: 0 },
   bag: false, items: {}, taken: {}, plans: {}, planDone: {},
-  quests: {}, questDone: {}, unread: [], metNoc: false,
+  quests: {}, questDone: {}, unread: [], snails: {}, metNoc: false,
   stats: { leavesTotal: 0, sneezes: 0, hugs: 0, waters: 0, plants: 0, trades: 0,
            sqChats: 0, rebirths: 0, flicks: 0, seasons: {}, boughtAll: false }
 });
@@ -34,6 +34,7 @@ try {
     save.plans = p.plans || {}; save.planDone = p.planDone || {};
     save.quests = p.quests || {}; save.questDone = p.questDone || {};
     save.unread = Array.isArray(p.unread) ? p.unread : [];
+    save.snails = p.snails || {};
   }
 } catch (e) { /* corrupt save: start fresh, no drama */ }
 
@@ -83,7 +84,9 @@ const G = {
   cine: null, letterbox: 0,
   // the hall of trophies
   hall: { scroll: 0, target: 0, order: [], unlocked: {}, tier: {},
-          dragIndex: -1, dragX: 0, dragY: 0, grabbed: false, hover: -1, from: 'heaven' }
+          dragIndex: -1, dragX: 0, dragY: 0, grabbed: false, hover: -1, from: 'heaven' },
+  // heaven keeps every snail that ever brought you anything
+  garden: { scroll: 0, target: 0, list: [], hover: -1 }
 };
 
 /* ---------------------------------------------------------------------
@@ -133,7 +136,7 @@ dc.imageSmoothingEnabled = false;
 const elBag = $('bag'), elBagBody = $('bagbody');
 const elChat = $('chat'), elChatLog = $('chatlog'), elChatInput = $('chatinput');
 const elChatWho = $('chatwho'), elChatFoot = $('chatfoot');
-const elPost = $('post'), elPostBody = $('postbody'), elSheet = $('sheet');
+const elPost = $('post'), elPostBody = $('postbody');
 const elSet = $('settings'), elSetBody = $('setbody');
 const elModal = $('modal'), elModalBody = $('modalbody'), elModalTitle = $('modaltitle');
 const elEndingCard = $('endingcard');
@@ -521,17 +524,41 @@ function checkMetaAchievements() {
    --------------------------------------------------------------------- */
 let snails = [];
 
+/* A parcel gets its snail the moment it is posted, not when the snail happens
+   to reach the screen — so the garden ends up holding everything you ever
+   earned, including deliveries that arrived while you were three fields away. */
 function pushNote(kind, title, desc, icon, id) {
   toastQueue.push({ kind, name: title, desc, icon, id });
+  if (id && !save.snails[id]) {
+    save.snails[id] = { kind, name: title, desc, icon, at: Date.now() };
+    if (Object.keys(save.snails).length >= 12) ACH('snails12');
+    persist();
+  }
+}
+
+/* a snail's name is as fixed as its shell */
+function snailName(id) {
+  const h = SPR.snailSkin(id, 'task').seed;
+  return DATA.snailTitles[h % DATA.snailTitles.length] + ' ' +
+         DATA.snailNames[(h >>> 7) % DATA.snailNames.length];
+}
+function snailNote(id) {
+  const h = SPR.snailSkin(id, 'task').seed;
+  return DATA.snailNotes[(h >>> 11) % DATA.snailNotes.length];
 }
 
 /* Post arrives sealed. The snail carries it across the park with the trophy
    tied on top and does not read it out; you stop him and open it yourself. */
 function updateToasts(dt) {
+  // the round waits for you: nothing crawls across heaven or a cutscene
+  if (G.scene !== 'game' || G.cine) return;
   if (toastQueue.length && snails.length < 2 && (!snails.length || snails[snails.length - 1].x > 96)) {
     const n = toastQueue.shift();
+    const skin = SPR.snailSkin(n.id || n.name, n.kind);
     snails.push({
-      x: -26, y: H - 14, dir: 1, speed: 22, note: n, kind: n.kind,
+      x: -26, y: H - 14 - (skin.scale - 1) * 5, dir: 1,
+      speed: 26 / Math.max(0.7, skin.scale),        // a bigger parcel is a slower snail
+      note: n, kind: n.kind, skin, scale: skin.scale,
       opened: false, life: 0, hint: 0
     });
     save.stats.postSent = (save.stats.postSent || 0) + 1;
@@ -577,19 +604,24 @@ function openPost(note, fromBag) {
       '<p class="ptier">' + head + '</p>' +
       '<h2 class="pname"></h2>' +
       '<p class="pdesc"></p>' +
+      '<p class="pby">brought to you by <b></b><br><i></i></p>' +
     '</div>';
   elPostBody.querySelector('.pname').textContent = note.name;
   elPostBody.querySelector('.pdesc').textContent = note.desc || '';
+  elPostBody.querySelector('.pby b').textContent = snailName(note.id || note.name);
+  elPostBody.querySelector('.pby i').textContent = snailNote(note.id || note.name);
   const cc = elPostBody.querySelector('.ptro').getContext('2d');
   cc.imageSmoothingEnabled = false;
+  // achievements have carved trophies of their own; endings borrow their icon's
+  const art = SPR.TROPHY_ART || {};
+  const key = art[note.id] ? note.id : (art[note.icon] ? note.icon : note.id);
   try {
-    cc.drawImage(SPR.trophySprite(note.id || note.icon || 'end1'), 0, 0);
+    cc.drawImage(SPR.trophySprite(key || 'end1'), 0, 0);
   } catch (e) {
     drawIcon(cc, note.icon || 'leaf', 16);
   }
 
-  elPost.classList.remove('hidden');
-  unrollSheet();
+  unroll(elPost);
 
   // remove it from the unopened pile
   if (save.unread) {
@@ -600,40 +632,60 @@ function openPost(note, fromBag) {
   if ((save.stats.postSent || 0) >= 6 && !(save.unread || []).length) ACH('allpost');
 }
 
-/* measure, snap shut, then unroll in steps */
-function unrollSheet() {
-  elPost.classList.remove('open');
-  elSheet.style.transition = 'none';
-  elSheet.style.height = 'auto';
-  const full = elSheet.scrollHeight;
+/* =========================================================================
+   OPENING AND SHUTTING A SCROLL
+   Every panel in the game is the same object, so they all open the same way:
+   measure the content, snap the sheet shut, then unroll to exactly that
+   height in fifteen steps while the seal cracks and the words are inked on.
+   ========================================================================= */
+function unroll(el) {
+  const sheet = el.querySelector('.sheet');
+  if (!sheet) return;
+  const inner = sheet.querySelector('.inner');
+  el.classList.remove('hidden');
+  el.classList.remove('open');
+  sheet.classList.remove('scrolly');
+  sheet.style.transition = 'none';
+  sheet.style.height = 'auto';
+  const natural = inner ? inner.scrollHeight : sheet.scrollHeight;
+  const capVh = parseFloat(el.getAttribute('data-cap') || '0');
+  const cap = capVh ? window.innerHeight * capVh / 100 : Infinity;
+  const full = Math.min(natural, cap);
+  clearTimeout(el._rollT);
+
   if (REDUCED) {
-    elSheet.style.height = full + 'px';
-    elPost.classList.add('open');
+    sheet.style.height = full + 'px';
+    el.classList.add('open');
+    if (natural > cap) sheet.classList.add('scrolly');
     return;
   }
-  elSheet.style.height = '6px';
-  void elSheet.offsetHeight;                       // commit the closed state
-  elSheet.style.transition = 'height .6s steps(15, end) .18s';
-  elPost.classList.add('open');
-  elSheet.style.height = full + 'px';
-  // the paper keeps rustling while it goes
-  setTimeout(() => SFX.page(), 220);
-  setTimeout(() => SFX.page(), 470);
+  sheet.style.height = '6px';
+  void sheet.offsetHeight;                        // commit the shut state
+  sheet.style.transition = 'height .6s steps(15, end) .16s';
+  el.classList.add('open');
+  sheet.style.height = full + 'px';
+  // the paper keeps rustling the whole way down
+  SFX.page();
+  setTimeout(() => SFX.page(), 240);
+  setTimeout(() => SFX.page(), 500);
+  // once it has stopped moving, content taller than the cap may scroll
+  el._rollT = setTimeout(() => { if (natural > cap) sheet.classList.add('scrolly'); }, 820);
 }
 
-/* rolling it back up, which is the same animation backwards */
-function closePost() {
-  if (elPost.classList.contains('hidden')) return;
-  if (REDUCED) { elPost.classList.remove('open'); elPost.classList.add('hidden'); if (G.bagOpen) renderBag(); return; }
-  elPost.classList.remove('open');
-  elSheet.style.transition = 'height .34s steps(9, end)';
-  elSheet.style.height = '6px';
+function rollUp(el, done) {
+  const sheet = el.querySelector('.sheet');
+  if (!sheet || el.classList.contains('hidden')) { if (done) done(); return; }
+  clearTimeout(el._rollT);
+  sheet.classList.remove('scrolly');
+  el.classList.remove('open');
+  if (REDUCED) { el.classList.add('hidden'); if (done) done(); return; }
+  sheet.style.transition = 'height .34s steps(9, end)';
+  sheet.style.height = '6px';
   SFX.page();
-  setTimeout(() => {
-    elPost.classList.add('hidden');
-    if (G.bagOpen) renderBag();
-  }, 340);
+  el._rollT = setTimeout(() => { el.classList.add('hidden'); if (done) done(); }, 340);
 }
+
+function closePost() { rollUp(elPost, () => { if (G.bagOpen) renderBag(); }); }
 
 /* a poke makes him hurry along */
 function snailAt(x, y) {
@@ -804,18 +856,32 @@ function refreshActions() {
   if (G.cine || G.scene === 'burning' || G.scene === 'game') return;
   const labels = G.scene === 'hall'
     ? [['BACK', closeHall], ['SORT', sortHall]]
-    : G.scene === 'heaven'
-      ? [['THE HALL', () => openHall('heaven')], ['ENDINGS', openEndings], ['BE BORN AGAIN', reincarnate]]
-      : [];
+    : G.scene === 'garden'
+      ? [['BACK', closeGarden]]
+      : G.scene === 'heaven'
+        ? [['THE HALL', () => openHall('heaven')], ['THE GARDEN', openGarden],
+           ['ENDINGS', openEndings], ['BE BORN AGAIN', reincarnate]]
+        : [];
   if (!labels.length) return;
   const pad = 8;
   const widths = labels.map(([t]) => F.textWidth(t, 1) + 16);
-  const total = widths.reduce((a, b) => a + b, 0) + pad * (labels.length - 1);
-  let x = Math.round(W() / 2 - total / 2);
+  // wrap onto a second row rather than running off a narrow screen
+  const rows = [[]];
+  let used = 0;
   for (let i = 0; i < labels.length; i++) {
-    signs.push({ label: labels[i][0], act: labels[i][1], x, y: H - 22, w: widths[i], h: 15, hover: false });
-    x += widths[i] + pad;
+    if (used && used + pad + widths[i] > W() - 12) { rows.push([]); used = 0; }
+    rows[rows.length - 1].push(i);
+    used += (used ? pad : 0) + widths[i];
   }
+  rows.forEach((row, r) => {
+    const total = row.reduce((a, i) => a + widths[i], 0) + pad * (row.length - 1);
+    let x = Math.round(W() / 2 - total / 2);
+    const y = H - 22 - (rows.length - 1 - r) * 20;
+    for (const i of row) {
+      signs.push({ label: labels[i][0], act: labels[i][1], x, y, w: widths[i], h: 15, hover: false });
+      x += widths[i] + pad;
+    }
+  });
 }
 
 /* one line of guidance, and it takes itself away again */
@@ -1185,10 +1251,10 @@ function clickSquirrel() {
    --------------------------------------------------------------------- */
 function openSettings() {
   ACH('gear');
-  elSet.classList.remove('hidden');
   renderSettings();
+  unroll(elSet);
 }
-function closeSettings() { elSet.classList.add('hidden'); }
+function closeSettings() { rollUp(elSet); }
 
 function renderSettings() {
   if (!elSetBody) return;
@@ -1241,6 +1307,70 @@ function openCredits() {
     '<p class="small">Thank you for standing still long enough to read this. ' +
       'He noticed. He notices everything.</p>'
   ].join(''));
+}
+
+/* =========================================================================
+   THE SNAIL GARDEN
+   Reached from heaven. Every snail that ever delivered to you is out here on
+   its own lily pad, at the size its news deserved, still going nowhere.
+   ========================================================================= */
+function buildGarden() {
+  const list = [];
+  for (const id in (save.snails || {})) {
+    const rec = save.snails[id];
+    list.push({
+      id, kind: rec.kind || 'task', name: rec.name || id, desc: rec.desc || '',
+      icon: rec.icon, at: rec.at || 0, snailName: snailName(id)
+    });
+  }
+  // the grandest post at the head of the round, then oldest first
+  const rank = { ending: 0, chal: 1, goal: 2, task: 3 };
+  list.sort((a, b) => (rank[a.kind] - rank[b.kind]) || (a.at - b.at));
+  G.garden.list = list;
+  return list;
+}
+
+function openGarden() {
+  buildGarden();
+  G.garden.scroll = 0; G.garden.target = 0; G.garden.hover = -1;
+  G.scene = 'garden';
+  hideBubble();
+  elHint.className = 'hidden';
+  ACH('garden');
+  refreshActions();
+  SFX.page();
+  if (G.garden.list.length) {
+    setTimeout(() => say('THE SHIFT MANAGER',
+      DATA.gardenLines[Math.floor(Math.random() * DATA.gardenLines.length)], null, 'heaven'), 600);
+  }
+}
+
+function closeGarden() {
+  G.scene = 'heaven';
+  G.garden.hover = -1;
+  hideBubble();
+  refreshActions();
+  SFX.click();
+}
+
+function gardenMax() { return Math.max(0, SPR.gardenWidth(G.garden.list.length) - W()); }
+
+function updateGarden(dt) {
+  const gd = G.garden;
+  gd.target = Math.max(0, Math.min(gardenMax(), gd.target));
+  gd.scroll += (gd.target - gd.scroll) * Math.min(1, dt * 6);
+}
+
+function gardenSlotAt(x, y) {
+  const gd = G.garden;
+  for (let i = 0; i < gd.list.length; i++) {
+    const p = SPR.gardenSlotPos(i);
+    const skin = SPR.snailSkin(gd.list[i].id, gd.list[i].kind);
+    const k = skin.scale * p.depth;
+    const sx = p.x - gd.scroll;
+    if (Math.abs(x - sx) < 14 * Math.max(1, k) && y > p.y - 26 * k && y < p.y + 10) return i;
+  }
+  return -1;
 }
 
 /* =========================================================================
@@ -1414,7 +1544,7 @@ function openChat(who) {
   who = who === 'oak' ? 'oak' : 'noc';
   if (G.chatWho && G.chatWho !== who) CHAT_LOGS[G.chatWho] = elChatLog.innerHTML;
   G.chatWho = who;
-  elChat.classList.remove('hidden');
+  const wasShut = elChat.classList.contains('hidden');
   elChat.classList.toggle('oak', who === 'oak');
   elChatWho.textContent = who === 'oak' ? 'TALKING TO THE OAK' : 'TALKING TO NOC';
   elChatInput.placeholder = who === 'oak' ? 'say something to him\u2026' : 'say something to Noc\u2026';
@@ -1430,13 +1560,14 @@ function openChat(who) {
       chatLine('them', save.metNoc ? DATA.nocLines[Math.floor(Math.random() * DATA.nocLines.length)] : DATA.nocIntro[0]);
     }
   }
-  setTimeout(() => elChatInput.focus(), 30);
+  if (wasShut) unroll(elChat); else elChat.classList.add('open');
+  setTimeout(() => elChatInput.focus(), REDUCED ? 30 : 540);
   ACH(who === 'oak' ? 'oakchat' : 'talknoc');
 }
 
 function closeChat() {
   if (G.chatWho) CHAT_LOGS[G.chatWho] = elChatLog.innerHTML;
-  elChat.classList.add('hidden');
+  rollUp(elChat);
 }
 
 /* whoever is standing in front of you */
@@ -1567,11 +1698,11 @@ async function sendChat() {
 function openBag() {
   if (!save.bag || G.cine) return;
   G.bagOpen = true; G.bagBadge = 0;
-  elBag.classList.remove('hidden');
   renderBag();
+  unroll(elBag);
   SFX.pickup();
 }
-function closeBag() { G.bagOpen = false; elBag.classList.add('hidden'); }
+function closeBag() { G.bagOpen = false; rollUp(elBag); }
 function toggleBag() { G.bagOpen ? closeBag() : openBag(); }
 
 function renderBag() {
@@ -1695,9 +1826,9 @@ function openModal(title, html, buttons) {
     bar.appendChild(b);
   });
   elModalBody.appendChild(bar);
-  elModal.classList.remove('hidden');
+  unroll(elModal);
 }
-function closeModal() { elModal.classList.add('hidden'); G.flags.confirming = false; }
+function closeModal() { rollUp(elModal); G.flags.confirming = false; }
 
 function openTrophies() {
   const done = DATA.achievements.filter(a => save.ach[a.id]).length;
@@ -1892,7 +2023,8 @@ function playCine(name, stages, onDone) {
   G.cine = { name, stages, i: 0, t: 0, done: onDone || null };
   G.scene = 'cine';
   hideBubble();
-  closeBag(); closeChat(); closePost(); closeSettings();
+  for (const el of [elBag, elChat, elPost, elSet, elModal]) { el.classList.remove('open'); el.classList.add('hidden'); }
+  G.bagOpen = false;
   refreshActions();
   enterStage();
 }
@@ -2093,6 +2225,7 @@ function update(dt) {
   }
   G.letterbox = Math.max(0, G.letterbox - dt * 3);
 
+  if (G.scene === 'garden') { updateGarden(dt); return; }
   if (G.scene === 'hall') { updateHall(dt); return; }
   if (G.scene === 'heaven') { G.flash = Math.max(0, G.flash - dt * 0.7); return; }
 
@@ -2708,7 +2841,7 @@ function touchCritter(k) {
 /* camera easing — cinematics move it, everything else leaves it alone */
 function updateCam(dt) {
   if (!G.cine) {
-    const rest = (G.scene === 'hall' || G.scene === 'heaven') ? [0, 0, 1] : [0, 5, 1.09];
+    const rest = (G.scene === 'hall' || G.scene === 'heaven' || G.scene === 'garden') ? [0, 0, 1] : [0, 5, 1.09];
     G.cam.tx = rest[0]; G.cam.ty = rest[1]; G.cam.tz = rest[2];
   }
   const k = Math.min(1, dt * 2.4);
@@ -2979,6 +3112,7 @@ function render() {
   dc.clearRect(0, 0, W(), H);
 
   if (G.cine) drawCineFrame();
+  else if (G.scene === 'garden') SPR.drawGarden(dc, G);
   else if (G.scene === 'hall') SPR.drawHall(dc, G);
   else if (G.scene === 'heaven') SPR.drawHeaven(dc, G);
   else drawWorld();
@@ -3000,7 +3134,7 @@ function render() {
   if (G.veil > 0) { ctx.globalAlpha = Math.min(1, G.veil); SPR.px(ctx, 0, 0, W(), H, '#05080c'); ctx.globalAlpha = 1; }
   if (!G.cine && G.scene === 'game') { drawArrows(ctx); SPR.drawHud(ctx, G); }
   if (G.areaTitle > 0 && !G.cine) SPR.drawAreaTitle(ctx, G, AREAS[G.area].name, AREAS[G.area].sub, Math.min(1, G.areaTitle));
-  if (!G.cine) drawPost(ctx);
+  if (!G.cine && G.scene === 'game') drawPost(ctx);
   drawHint(ctx);
   drawSigns(ctx);
   if (G.menu) drawMenu(ctx);
@@ -3063,6 +3197,7 @@ function showHallLabel(i) {
 
 function hitTest(x, y) {
   if (G.scene === 'hall') return { kind: 'hall', i: hallSlotAt(x, y) };
+  if (G.scene === 'garden') return { kind: 'garden', i: gardenSlotAt(x, y) };
 
   // away from the oak there is no oak to click, only what is actually there
   if (G.scene === 'game' && !atOak()) {
@@ -3224,6 +3359,13 @@ function onMove(ev) {
     }
   }
 
+  if (G.scene === 'garden') {
+    if (pan) { G.garden.target = pan.startScroll + (pan.startX - p.x); cv.style.cursor = 'grabbing'; return; }
+    G.garden.hover = gardenSlotAt(p.x, p.y);
+    cv.style.cursor = G.garden.hover >= 0 ? 'pointer' : 'default';
+    return;
+  }
+
   if (G.scene === 'hall') {
     const h = G.hall;
     if (h.dragIndex >= 0) {
@@ -3279,6 +3421,11 @@ window.addEventListener('mouseup', onRelease);
 window.addEventListener('touchend', onRelease);
 
 cv.addEventListener('wheel', ev => {
+  if (G.scene === 'garden') {
+    ev.preventDefault();
+    G.garden.target += (ev.deltaY + ev.deltaX) * 0.6;
+    return;
+  }
   if (G.scene !== 'hall') return;
   ev.preventDefault();
   G.hall.target += (ev.deltaY + ev.deltaX) * 0.6;
@@ -3353,6 +3500,18 @@ function onPress(ev) {
       elHint.className = '';
       return;
     }
+  }
+
+  if (G.scene === 'garden') {
+    const i = gardenSlotAt(p.x, p.y);
+    if (i >= 0) {
+      const rec = G.garden.list[i];
+      SFX.pickup();
+      openPost({ kind: rec.kind, name: rec.name, desc: rec.desc, icon: rec.icon, id: rec.id }, true);
+    } else {
+      pan = { startX: p.x, startScroll: G.garden.target };
+    }
+    return;
   }
 
   if (G.scene === 'hall') {
@@ -3476,6 +3635,12 @@ document.addEventListener('keydown', e => {
     if (e.key === 'Escape') { e.target.blur(); closeChat(); }
     return;
   }
+  if (G.scene === 'garden') {
+    if (e.key === 'ArrowRight') G.garden.target += 60;
+    if (e.key === 'ArrowLeft') G.garden.target -= 60;
+    if (e.key === 'Escape') closeGarden();
+    return;
+  }
   if (G.scene === 'hall') {
     if (e.key === 'ArrowRight') G.hall.target += 60;
     if (e.key === 'ArrowLeft') G.hall.target -= 60;
@@ -3567,7 +3732,7 @@ if (/[?&]debug/.test(location.search)) {
                  parkMargin, parkIncome, menuBox, closeMenu, openQuestBoard, openJournal, acceptQuest, checkQuests, questStatus, plotPos, hitTest,
                  travel, takePickup, seedPickups, openChat, closeChat, sendChat, openBag, closeBag,
                  agreePlan, completePlan, planById, areaId, wakeHim, AREAS,
-                 openPost, closePost, openSettings, openCredits, finishQuest, questById, questProgress,
+                 openPost, closePost, openSettings, openCredits, openGarden, closeGarden, buildGarden, snailName, unroll, rollUp, finishQuest, questById, questProgress,
                  snailNotes: () => snails.map(s => ({ id: s.note && s.note.id, opened: s.opened })),
                  signLabels: () => signs.map(s => s.label), signFor: (l) => signs.find(s => s.label === l),
                  dlgText: () => DLG.text, DLG, snails: () => snails.length, toastQueue };

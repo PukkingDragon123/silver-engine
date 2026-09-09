@@ -263,6 +263,8 @@ DATA.shop = [
    Unlocked by the engine via ACH('id').
    ------------------------------------------------------------------------- */
 DATA.achievements = [
+  { id: 'garden',      kind: 'task', icon: 'leaf',    name: 'The Snail Garden',      desc: "Find where heaven keeps the postal service." },
+  { id: 'snails12',    kind: 'goal', icon: 'paper',   name: 'A Full Round',          desc: "Have twelve different snails deliver to you." },
   // the post, the settings squirrel, the credits butterfly
   { id: 'openpost',    kind: 'task', icon: 'paper',   name: 'Signed For It',         desc: "Stop a snail and read what it is carrying." },
   { id: 'allpost',     kind: 'goal', icon: 'paper',   name: 'Nothing Left Unread',   desc: "Open every piece of post before it crawls off the edge." },
@@ -976,4 +978,37 @@ DATA.oakMusings = [
   "I will still be thinking about that in a hundred years, long after you have stopped.",
   "That is the sort of thing people say to me in November and then never come back to explain.",
   "I cannot move, so everything you tell me stays exactly where you put it."
+];
+
+
+/* =========================================================================
+   THE SNAILS
+   Names are picked by the same hash that picks the shell, so a snail's name
+   is as fixed as its pattern. Nobody chose these. They came with the snails.
+   ========================================================================= */
+DATA.snailTitles = [
+  'POSTMASTER', 'COURIER', 'RUNNER', 'BEARER', 'HERALD', 'CARRIER',
+  'DEPUTY', 'BRIGADIER', 'JUNIOR', 'SENIOR', 'RELIEF', 'NIGHT'
+];
+DATA.snailNames = [
+  'Pebble', 'Marjorie', 'Slick', 'Thimble', 'Bramble', 'Gastropod',
+  'Wilhelmina', 'Trundle', 'Ossian', 'Doris', 'Mercury', 'Nutmeg',
+  'Halfpenny', 'Copperfield', 'Winnifred', 'Grommet', 'Perry', 'Tuppence',
+  'Barnaby', 'Clementine', 'Sludge', 'Fennel', 'Roswell', 'Peaseblossom'
+];
+DATA.snailNotes = [
+  "Carried it the whole way without stopping. Nine hours. Sixty centimetres.",
+  "Refuses to be rushed. Has never once been rushed.",
+  "Left a trail all the way from the lane and expects no thanks for it.",
+  "Delivered in the rain. Delivered in the snow. Delivered extremely slowly.",
+  "Has opinions about the postal service and will share them at length.",
+  "Retired twice. Came back twice. Nobody asked it to.",
+  "Fastest on the round, which is a sentence doing an enormous amount of work.",
+  "Ate part of the previous letter. We do not discuss the previous letter."
+];
+
+DATA.gardenLines = [
+  "This is where they go. Every snail that ever brought you anything.",
+  "They do not mind being dead. They were never in a hurry to begin with.",
+  "Bigger post, bigger snail. That is the whole system. Nobody designed it."
 ];

@@ -1333,81 +1333,219 @@ function drawPanel(c, x, y, w, h, title) {
    THE POSTAL SNAIL
    Achievements are not notifications. They are delivered.
    ========================================================================= */
-function drawSnail(c, g, s) {
-  const x = Math.round(s.x), y = Math.round(s.y);
-  const bob = Math.sin(g.t * 5) * 0.7;
-  const dir = s.dir;
+/* =========================================================================
+   THE POSTAL SNAILS
+   Every achievement has its own snail, and it is always the same snail: the
+   shell palette, the pattern on it, the body colour, the length of its eye
+   stalks and its name are all derived from the achievement's id, so the one
+   that brings you a trophy is the one that will be in your garden forever.
+   Size comes from the tier — a plain task sends a small snail, an ending
+   sends something the size of a dinner plate wearing a crown.
+   ========================================================================= */
+const SNAIL_SHELLS = [
+  { name: 'amber',    deep: '#8a4a18', mid: '#c9762e', lit: '#e8a04a', rim: '#ffd89a' },
+  { name: 'jade',     deep: '#12463a', mid: '#1d6b52', lit: '#2f9670', rim: '#a8ecd0' },
+  { name: 'plum',     deep: '#3a1a4a', mid: '#6b3a8a', lit: '#a06ac0', rim: '#e8c0ff' },
+  { name: 'slate',    deep: '#2a2f3a', mid: '#4a5262', lit: '#7a8496', rim: '#cdd8e8' },
+  { name: 'rose',     deep: '#6b1a2a', mid: '#a83a4a', lit: '#d9707c', rim: '#ffc9d0' },
+  { name: 'brass',    deep: '#5a4210', mid: '#9a7a20', lit: '#d9b23a', rim: '#fff0b0' },
+  { name: 'ink',      deep: '#14161c', mid: '#2a2e38', lit: '#4a5060', rim: '#98a2b8' },
+  { name: 'moss',     deep: '#2a3a12', mid: '#4a6b20', lit: '#7a9a3a', rim: '#d0e8a0' },
+  { name: 'copper',   deep: '#5a2a12', mid: '#96502a', lit: '#c97a4a', rim: '#f0c9a0' },
+  { name: 'tide',     deep: '#123a5a', mid: '#1d5f8a', lit: '#3a90c0', rim: '#b0e0ff' },
+  { name: 'bone',     deep: '#6b6250', mid: '#9a9280', lit: '#c9c2b0', rim: '#f6f0e0' },
+  { name: 'wine',     deep: '#3a0e1a', mid: '#6b1a2e', lit: '#9a3a4a', rim: '#e0a0b0' }
+];
+const SNAIL_BODIES = [
+  { skin: '#e8c9a8', lit: '#f6e2c8', dark: '#c9a684' },
+  { skin: '#d8b8d0', lit: '#efdcea', dark: '#b494ac' },
+  { skin: '#c8d8c0', lit: '#e4efdc', dark: '#a4b89c' },
+  { skin: '#e0cfa8', lit: '#f2e8c8', dark: '#bfae86' },
+  { skin: '#c8c4d8', lit: '#e4e0ef', dark: '#a4a0b8' },
+  { skin: '#e8b8a0', lit: '#f6d6c4', dark: '#c99480' }
+];
+const SNAIL_PATTERNS = ['bands', 'spots', 'spiral', 'chevron', 'marbled', 'pearl'];
+const SNAIL_TIER_SCALE = { task: 0.8, goal: 1.05, chal: 1.3, ending: 1.7 };
 
-  // slime trail
-  c.globalAlpha = 0.35;
-  for (let i = 0; i < 26; i++) {
-    px(c, x - dir * (6 + i * 3), y + 5 + Math.sin(i * 0.6) * 0.6, 3, 1, '#bfe8d8');
+/* a stable 32-bit hash, so an id always makes the same snail */
+function snailHash(str) {
+  let h = 2166136261;
+  for (let i = 0; i < String(str).length; i++) {
+    h ^= String(str).charCodeAt(i);
+    h = (h * 16777619) >>> 0;
   }
-  c.globalAlpha = 1;
-
-  // foot
-  pellipse(c, x, y + 4, 9, 3, '#e8c9a8');
-  pellipse(c, x - dir, y + 3, 7, 2, '#f6e2c8');
-  // shell
-  pcircle(c, x - dir * 3, y - 2 + bob, 7, INK);
-  pcircle(c, x - dir * 3, y - 2 + bob, 6, '#c9762e');
-  pcircle(c, x - dir * 3, y - 2 + bob, 4, '#e8a04a');
-  pcircle(c, x - dir * 2, y - 1 + bob, 2, '#c9762e');
-  for (let a = 0; a < 12; a++) {
-    const A = a / 12 * 6.28;
-    dot(c, x - dir * 3 + Math.cos(A) * 5.5, y - 2 + bob + Math.sin(A) * 5.5, '#8a4a18');
-  }
-  // head and eye stalks
-  pellipse(c, x + dir * 5, y + 1 + bob * 0.4, 4, 3, '#e8c9a8');
-  for (const st of [-1, 1]) {
-    const sx = x + dir * (5 + st * 1.5), sy = y - 3 + bob * 0.4;
-    px(c, sx, sy, 1, 4, '#e8c9a8');
-    pcircle(c, sx, sy - 1, 1.5, '#f6e2c8');
-    dot(c, sx, sy - 1, INK);
-  }
-  // the parcel: a rolled scroll strapped across the shell, sealed, unread
-  drawSnailParcel(c, g, s, x, y, bob, dir);
+  return h >>> 0;
 }
 
-/* What the snail is actually carrying. It is not opened until you stop him,
-   so this has to say "there is news in here" without saying what the news is. */
-function drawSnailParcel(c, g, s, x, y, bob, dir) {
-  const px2 = Math.round(x - dir * 3), py = Math.round(y - 9 + bob);
+const _skinCache = new Map();
+function snailSkin(id, tier) {
+  const key = id + '|' + tier;
+  let hit = _skinCache.get(key);
+  if (hit) return hit;
+  const h = snailHash(id || 'anon');
+  const rnd = mulberry(h % 100000);
+  const shell = SNAIL_SHELLS[h % SNAIL_SHELLS.length];
+  const body = SNAIL_BODIES[(h >>> 5) % SNAIL_BODIES.length];
+  const skin = {
+    shell, body,
+    pattern: SNAIL_PATTERNS[(h >>> 9) % SNAIL_PATTERNS.length],
+    whorls: 8 + ((h >>> 13) % 7),
+    stalk: 3 + ((h >>> 17) % 4),
+    lean: ((h >>> 21) % 3) - 1,
+    scale: SNAIL_TIER_SCALE[tier] || 1,
+    tier: tier || 'task',
+    seed: h
+  };
+  _skinCache.set(key, skin);
+  return skin;
+}
+
+/* the shell, which is where all the personality lives */
+function drawShell(c, cx, cy, r, skin, t) {
+  const S = skin.shell;
+  const rnd = mulberry(skin.seed % 65536);
+  pcircle(c, cx, cy, r + 1, INK);
+  pcircle(c, cx, cy, r, S.mid);
+
+  if (skin.pattern === 'bands') {
+    for (let i = 0; i < 4; i++) {
+      const rr = r * (1 - i * 0.22);
+      pcircle(c, cx, cy, rr, i % 2 ? S.deep : S.lit);
+    }
+  } else if (skin.pattern === 'spots') {
+    pcircle(c, cx, cy, r * 0.74, S.lit);
+    const n = 5 + (skin.seed % 4);
+    for (let i = 0; i < n; i++) {
+      const a = rnd() * 6.28, d = rnd() * r * 0.7;
+      pcircle(c, cx + Math.cos(a) * d, cy + Math.sin(a) * d, Math.max(1, r * 0.16), S.deep);
+    }
+  } else if (skin.pattern === 'spiral') {
+    pcircle(c, cx, cy, r * 0.8, S.lit);
+    for (let i = 0; i < 48; i++) {
+      const p = i / 48;
+      const a = p * 6.28 * 2.2 + (t || 0) * 0.0;
+      const d = r * (0.14 + p * 0.78);
+      px(c, cx + Math.cos(a) * d, cy + Math.sin(a) * d, Math.max(1, r * 0.22), Math.max(1, r * 0.22), S.deep);
+    }
+  } else if (skin.pattern === 'chevron') {
+    pcircle(c, cx, cy, r * 0.82, S.lit);
+    for (let i = 0; i < skin.whorls; i++) {
+      const a = i / skin.whorls * 6.28;
+      for (let d = r * 0.2; d < r * 0.92; d += 1) {
+        dot(c, cx + Math.cos(a + d * 0.06) * d, cy + Math.sin(a + d * 0.06) * d, S.deep);
+      }
+    }
+  } else if (skin.pattern === 'marbled') {
+    for (let i = 0; i < r * r * 2.4; i++) {
+      const a = rnd() * 6.28, d = rnd() * r * 0.94;
+      dot(c, cx + Math.cos(a) * d, cy + Math.sin(a) * d, rnd() > 0.5 ? S.lit : S.deep);
+    }
+  } else {   // pearl
+    pcircle(c, cx, cy, r * 0.86, S.lit);
+    pcircle(c, cx - r * 0.2, cy - r * 0.2, r * 0.5, S.rim);
+    pcircle(c, cx + r * 0.3, cy + r * 0.3, r * 0.34, S.mid);
+  }
+
+  // the whorl at the centre and a lit rim on the upper left, always
+  pcircle(c, cx - r * 0.12, cy - r * 0.12, Math.max(1, r * 0.24), S.deep);
+  for (let a = 0; a < 20; a++) {
+    const A = a / 20 * 6.28;
+    if (Math.cos(A - 2.4) > 0.2) dot(c, cx + Math.cos(A) * (r - 0.6), cy + Math.sin(A) * (r - 0.6), S.rim);
+  }
+
+  // rank, worn on the shell
+  if (skin.tier === 'chal') {
+    px(c, cx - r, cy - 1, r * 2, Math.max(1, r * 0.22), '#b183e8');
+    px(c, cx - r, cy - 1, r * 2, 1, '#e8d0ff');
+  } else if (skin.tier === 'ending') {
+    // a small crown, because an ending is an occasion
+    const cw = Math.max(5, r * 0.9);
+    px(c, cx - cw / 2, cy - r - 3, cw, 2, '#1a1008');
+    px(c, cx - cw / 2, cy - r - 2, cw, 2, '#ffd24a');
+    for (let i = 0; i < 3; i++) {
+      const px2 = cx - cw / 2 + i * (cw / 2.4);
+      px(c, px2, cy - r - 5, 2, 3, '#ffd24a');
+      dot(c, px2, cy - r - 6, '#fff6d0');
+    }
+  }
+}
+
+/* the whole animal, at any size */
+function drawSnail(c, g, s) {
+  const skin = s.skin || snailSkin(s.note && s.note.id, s.kind);
+  const k = (s.scale || skin.scale || 1);
+  const x = Math.round(s.x), y = Math.round(s.y);
+  const bob = Math.sin(g.t * 5 / Math.max(0.6, k)) * 0.7 * k;
+  const dir = s.dir === undefined ? 1 : s.dir;
+  const B = skin.body;
+  const r = 7 * k;
+
+  // slime trail
+  if (!s.noTrail) {
+    c.globalAlpha = 0.35;
+    for (let i = 0; i < 26; i++) {
+      px(c, x - dir * (6 * k + i * 3), y + 5 * k + Math.sin(i * 0.6) * 0.6, 3, Math.max(1, k), '#bfe8d8');
+    }
+    c.globalAlpha = 1;
+  }
+
+  // foot
+  pellipse(c, x, y + 4 * k, 9 * k, 3 * k, B.skin);
+  pellipse(c, x - dir, y + 3 * k, 7 * k, 2 * k, B.lit);
+  px(c, x - 8 * k, y + 6 * k, 16 * k, Math.max(1, k * 0.8), B.dark);
+
+  // head and eye stalks, before the shell so the shell sits over the neck
+  pellipse(c, x + dir * 5 * k, y + 1 * k + bob * 0.4, 4 * k, 3 * k, B.skin);
+  pellipse(c, x + dir * 5 * k, y + 0.4 * k + bob * 0.4, 3 * k, 2 * k, B.lit);
+  for (const st of [-1, 1]) {
+    const sx = x + dir * (5 * k + st * 1.6 * k), sy = y - 3 * k + bob * 0.4;
+    const len = skin.stalk * k;
+    px(c, sx, sy - len + 4 * k, Math.max(1, k), len, B.skin);
+    pcircle(c, sx, sy - len + 3 * k, Math.max(1, 1.5 * k), B.lit);
+    dot(c, sx, sy - len + 3 * k, INK);
+  }
+  // a mouth, on the big ones only — there is no room on a small one
+  if (k >= 1.2) px(c, x + dir * 7 * k, y + 2 * k + bob * 0.4, 2 * k, Math.max(1, k * 0.6), B.dark);
+
+  drawShell(c, x - dir * 3 * k, y - 2 * k + bob, r, skin, g.t);
+
+  // the parcel, if he is still carrying one
+  if (s.note) drawSnailParcel(c, g, s, x, y, bob, dir, k);
+}
+
+/* What the snail is actually carrying. It stays sealed until you stop him, so
+   this has to say "there is news in here" without saying what the news is. */
+function drawSnailParcel(c, g, s, x, y, bob, dir, k) {
+  k = k || 1;
+  const cx = Math.round(x - dir * 3 * k), cy = Math.round(y - 10 * k + bob);
   const tier = s.kind === 'ending' ? 'end' : s.kind === 'chal' ? 'chal' : s.kind === 'goal' ? 'goal' : 'task';
   const ribbon = tier === 'end' ? '#ffd24a' : tier === 'chal' ? '#b183e8' : tier === 'goal' ? '#ffd24a' : '#7cc44a';
-  const opened = s.opened;
+  const w = Math.round(17 * k), h = Math.max(4, Math.round(6 * k));
+  const unit = Math.max(1, Math.round(k));
 
-  // the rolled scroll, lying across the shell
-  px(c, px2 - 8, py - 3, 17, 6, INK);
-  px(c, px2 - 7, py - 2, 15, 4, '#f6e7c4');
-  px(c, px2 - 7, py - 2, 15, 1, '#fdf6e3');
-  px(c, px2 - 7, py + 1, 15, 1, '#e0cb9c');
-  // rolled ends
-  px(c, px2 - 9, py - 3, 2, 6, '#c9a86a');
-  px(c, px2 + 8, py - 3, 2, 6, '#c9a86a');
-  dot(c, px2 - 9, py, '#8a6a3a'); dot(c, px2 + 9, py, '#8a6a3a');
+  // the rolled scroll, strapped across the shell
+  px(c, cx - w / 2 - 1, cy - h / 2 - 1, w + 2, h + 2, INK);
+  px(c, cx - w / 2, cy - h / 2, w, h, '#f6e7c4');
+  px(c, cx - w / 2, cy - h / 2, w, unit, '#fdf6e3');
+  px(c, cx - w / 2, cy + h / 2 - unit, w, unit, '#e0cb9c');
+  px(c, cx - w / 2 - 2, cy - h / 2 - 1, 2, h + 2, '#c9a86a');
+  px(c, cx + w / 2, cy - h / 2 - 1, 2, h + 2, '#c9a86a');
 
-  if (opened) {
-    // a broken seal and a tick, so you can see at a glance you have read it
-    px(c, px2 - 2, py - 1, 5, 1, '#8a7a5a');
-    px(c, px2 - 2, py, 3, 1, '#8a7a5a');
-  } else {
-    // ribbon and wax seal, still intact
-    px(c, px2 - 1, py - 3, 2, 6, ribbon);
-    pcircle(c, px2, py, 2.4, '#a83229');
-    pcircle(c, px2, py - 0.5, 1.6, '#c9453b');
-    // and it glints, because unopened post should ask to be opened
-    const tw = (g.t * 2 + s.x * 0.05) % 2;
-    if (tw < 0.55) {
-      c.globalAlpha = 1 - tw / 0.55;
-      star(c, px2 + 7, py - 6, 3, '#fff6d8', '#ffffff');
-      c.globalAlpha = 1;
-    }
-    // the trophy itself, tied on top in miniature, silhouetted so it reads as
-    // "something is in here" rather than spoiling which one
-    pcircle(c, px2 + 5, py - 5, 3, INK);
-    pcircle(c, px2 + 5, py - 5, 2.2, ribbon);
-    px(c, px2 + 4, py - 3, 3, 2, INK);
+  if (s.opened) {
+    // a broken seal, so you can see at a glance you have read it
+    px(c, cx - 2 * k, cy - unit, 5 * k, unit, '#8a7a5a');
+    return;
+  }
+  // ribbon and wax seal, intact
+  px(c, cx - unit / 2, cy - h / 2 - 1, unit, h + 2, ribbon);
+  pcircle(c, cx, cy, Math.max(2, 2.4 * k), '#a83229');
+  pcircle(c, cx, cy - 0.5, Math.max(1, 1.6 * k), '#c9453b');
+  // and it glints, because unopened post should ask to be opened
+  const tw = (g.t * 2 + s.x * 0.05) % 2;
+  if (tw < 0.55) {
+    c.globalAlpha = 1 - tw / 0.55;
+    star(c, cx + w / 2, cy - 5 * k, 3 * Math.min(1.6, k), '#fff6d8', '#ffffff');
+    c.globalAlpha = 1;
   }
 }
 
@@ -2367,6 +2505,126 @@ function drawGhostTree(c, g, gx, fy, alpha) {
 }
 
 /* a rising soul: bright core, comet trail, little orbiting motes */
+/* =========================================================================
+   THE SNAIL GARDEN
+   Heaven keeps them. Every snail that ever brought you anything is here, on
+   its own lily pad, at the size the post deserved, still going nowhere.
+   ========================================================================= */
+const GARDEN = { pad: 54, gap: 60, rowFront: 152, rowBack: 116 };
+
+function gardenSlotPos(i) {
+  const back = i % 2 === 0;
+  return {
+    x: GARDEN.pad + i * (GARDEN.gap / 2),
+    y: back ? GARDEN.rowBack : GARDEN.rowFront,
+    depth: back ? 0.78 : 1,
+    back
+  };
+}
+function gardenWidth(n) { return GARDEN.pad * 2 + n * (GARDEN.gap / 2); }
+
+/* a lily pad on still water */
+function drawLilyPad(c, g, x, y, r, i) {
+  const wob = Math.sin(g.t * 0.8 + i) * 0.8;
+  c.globalAlpha = 0.30;
+  pellipse(c, x, y + 4, r * 1.25, r * 0.42, '#5a8aa8');
+  c.globalAlpha = 1;
+  pellipse(c, x + wob, y, r, r * 0.36, '#1d6b52');
+  pellipse(c, x + wob, y - 1, r * 0.92, r * 0.30, '#2f9670');
+  pellipse(c, x + wob - r * 0.2, y - 2, r * 0.5, r * 0.16, '#5cc79a');
+  // the notch every lily pad has
+  px(c, x + wob + r * 0.55, y - 1, r * 0.5, 3, '#1a3a52');
+  for (let k = 0; k < 5; k++) {
+    const a = -0.5 + k * 0.55;
+    px(c, x + wob + Math.cos(a) * r * 0.6, y - 1 + Math.sin(a) * r * 0.2, 1, 1, '#12463a');
+  }
+}
+
+function drawGarden(c, g) {
+  const scroll = g.garden.scroll;
+  const list = g.garden.list;
+
+  // a still, bright pool under a white sky
+  px(c, 0, 0, W, H, '#dceeff');
+  px(c, 0, 48, W, H, '#eef6ff');
+  const rnd = mulberry(41);
+  for (let i = 0; i < 18; i++) {
+    const x = (rnd() * (W + 60) + g.t * (1 + rnd() * 3)) % (W + 60) - 30;
+    const y = rnd() * 70, r = 7 + rnd() * 13;
+    pcircle(c, x, y, r, '#ffffff'); pcircle(c, x + 6, y + 2, r * 0.7, '#f2f8ff');
+  }
+  // the water, in bands, with the sky sitting on it
+  px(c, 0, 96, W, H, '#bfe0f2');
+  px(c, 0, 128, W, H, '#a8d2ea');
+  px(c, 0, 164, W, H, '#94c2de');
+  for (let y = 96; y < H; y += 4) {
+    const ph = Math.sin(g.t * 0.7 + y * 0.2);
+    c.globalAlpha = 0.35;
+    px(c, (ph * 12 + y * 3) % W - 20, y, 22, 1, '#ffffff');
+    px(c, (ph * -9 + y * 7 + 120) % W - 20, y + 2, 14, 1, '#eaf6ff');
+    c.globalAlpha = 1;
+  }
+  // reeds along the back, with blades
+  for (let i = 0; i < 22; i++) {
+    const x = (i * 43 + 11) % W;
+    const h = 12 + (i % 5) * 6;
+    const sway = Math.sin(g.t * 0.9 + i) * 1.6;
+    for (let k = 0; k < h; k++) px(c, x + sway * (k / h), 97 - k, 1, 1, k > h - 5 ? '#5cc79a' : '#2f9670');
+    // two blades per reed, growing out of the stem and arching over
+    for (const side of [-1, 1]) {
+      const base = 4 + (i % 3) * 4;
+      const bx = x + sway * (base / h);
+      for (let b = 0; b <= 7; b++) {
+        const lift = b * 1.1 - b * b * 0.20;      // up, then over
+        px(c, Math.round(bx + side * b), Math.round(97 - base - lift), 1, 1, b > 5 ? '#5cc79a' : '#2f9670');
+      }
+    }
+    if (i % 4 === 0) {
+      // a seed head
+      px(c, x + sway - 1, 97 - h - 4, 3, 5, '#8a6a3a');
+      px(c, x + sway, 97 - h - 5, 1, 1, '#c9a86a');
+    }
+  }
+  F.drawTextCentered(c, W / 2, 12, 'THE SNAIL GARDEN', '#3a6a88', 1, '#ffffff');
+  F.drawTextCentered(c, W / 2, 22, list.length + (list.length === 1 ? ' delivery' : ' deliveries') + ' \u00b7 every one of them kept',
+                     '#6a9ab4', 1, '#ffffff');
+
+  if (!list.length) {
+    F.drawTextCentered(c, W / 2, 88, 'NO POST HAS EVER REACHED YOU', '#5a7a94', 1);
+    F.drawTextCentered(c, W / 2, 100, 'go back and earn something', '#7a9ab4', 1);
+    return;
+  }
+
+  // pads and their tenants, back row first
+  const draw = [];
+  for (let i = 0; i < list.length; i++) {
+    const p = gardenSlotPos(i);
+    draw.push({ i, p, sx: p.x - scroll });
+  }
+  draw.sort((a, b) => (a.p.back === b.p.back ? 0 : a.p.back ? -1 : 1));
+
+  for (const d of draw) {
+    if (d.sx < -60 || d.sx > W + 60) continue;
+    const rec = list[d.i];
+    const skin = snailSkin(rec.id, rec.kind);
+    const k = skin.scale * d.p.depth;
+    const hot = g.garden.hover === d.i;
+    drawLilyPad(c, g, d.sx, d.p.y + 6, 15 * Math.max(0.9, k), d.i);
+    if (hot) glow(c, d.sx, d.p.y - 4, 22 * k, '#ffffff', 0.55);
+    // it still crawls, it just never gets anywhere
+    const crawl = Math.sin(g.t * 0.5 + d.i * 1.7) * 4;
+    drawSnail(c, g, {
+      x: d.sx + crawl, y: d.p.y, dir: crawl > 0 ? 1 : -1,
+      skin, scale: k, noTrail: true, opened: true, kind: rec.kind,
+      note: null
+    });
+    if (hot) {
+      const nm = rec.snailName || '';
+      F.drawTextCentered(c, d.sx, d.p.y - 30 * k - 10, nm, '#2a4a62', 1, '#ffffff');
+    }
+  }
+}
+
 function drawSoul(c, g, x, y, scale) {
   for (let i = 14; i > 0; i--) {
     const p = i / 14;
@@ -2854,8 +3112,8 @@ window.SPR = {
   drawVisitor, drawBoundary,
   drawBalloon, drawPanel, drawSnail, drawCursorTool, drawMoreArrow, roundRect, INK, drawAshScene, drawStump, drawItemIcon, drawLeafSprite,
   drawHall, drawTrophy, drawTrophyReflection, trophySprite, drawPlinth, drawHeaven, drawHeavenBackdrop, drawGhostTree, drawSoul,
-  drawCloudTunnel, drawLetterbox, drawRays, drawGrowingTree, flame,
-  drawZzz, drawGear, drawSnailParcel, drawNoc, drawNocCamp, drawTravelArrow, travelArrowBox, drawAreaTitle, drawPickup,
+  drawGarden, gardenSlotPos, gardenWidth, GARDEN, drawCloudTunnel, drawLetterbox, drawRays, drawGrowingTree, flame,
+  drawZzz, drawGear, drawSnailParcel, snailSkin, drawShell, SNAIL_SHELLS, SNAIL_PATTERNS, drawNoc, drawNocCamp, drawTravelArrow, travelArrowBox, drawAreaTitle, drawPickup,
   drawCosyFoliage, drawFallenLog, drawStandingStone, drawVines, drawHedgerow, drawLaneRoad,
   drawBackpackSprite, drawBagButton
 };
