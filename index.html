@@ -20,11 +20,11 @@
 <!-- the title card -->
 <div id="title">
   <div class="tcard">
-    <canvas id="tlogo" width="180" height="120"></canvas>
+    <canvas id="tlogo" width="264" height="180"></canvas>
     <h1><span>THE</span><b>WISE OAK</b><span>TREE</span></h1>
-    <p class="tsub">he has been standing here for four hundred years<br>and he has a great deal to say about it</p>
+    <p class="tsub">nine hundred years old &middot; fast asleep<br>he has a great deal to say about it, once he is up</p>
     <button id="tstart">tap to wake him</button>
-    <p class="tfoot">headphones recommended &middot; he does not repeat himself</p>
+    <p class="tfoot">headphones recommended &middot; arrows walk you west and east &middot; noc is out there somewhere</p>
   </div>
 </div>
 
@@ -37,14 +37,26 @@
   </div>
 </div>
 
-<div id="shop" class="panel hidden">
-  <div class="paneltop">SQUIRREL'S GOODS <button id="shopclose">&times;</button></div>
-  <div id="shoplist"></div>
-  <div class="panelfoot">leaves only. no refunds. no memory of this conversation.</div>
+<div id="bag" class="panel hidden">
+  <div class="paneltop">YOUR BACKPACK <button id="bagclose">&times;</button></div>
+  <div id="bagbody"></div>
+  <div class="panelfoot">found, not bought. nobody here sells anything any more.</div>
+</div>
+
+<div id="chat" class="panel hidden">
+  <div class="paneltop">TALKING TO NOC <button id="chatclose">&times;</button></div>
+  <div id="chatlog"></div>
+  <div id="chatbar">
+    <input id="chatinput" type="text" autocomplete="off" autocapitalize="sentences" spellcheck="false"
+           placeholder="say something to Noc…" maxlength="400">
+    <button id="chatsend">SAY</button>
+  </div>
+  <div class="panelfoot">type anything &middot; /help for the odd commands</div>
 </div>
 
 <script src="js/font.js"></script>
 <script src="js/data.js"></script>
+<script src="js/ai.js"></script>
 <script src="js/audio.js"></script>
 <script src="js/sprites.js"></script>
 <script src="js/game.js"></script>

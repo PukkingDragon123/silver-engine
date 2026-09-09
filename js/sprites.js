@@ -487,7 +487,8 @@ const MOODS = {
   sleepy: { lid: 0.72, brow:  2, tilt:  0, mouth: 'flat',  pupil: 1.1, squint: 0.0 },
   think:  { lid: 0.34, brow: -1, tilt:  2, mouth: 'flat',  pupil: 1.0, squint: 0.0 },
   creepy: { lid: -0.30, brow: -1, tilt: 0, mouth: 'wide',  pupil: 0.35, squint: 0.0 },
-  dead:   { lid: 0.0,  brow:  1, tilt:  0, mouth: 'flat',  pupil: 1.0, squint: 0.0 }
+  dead:   { lid: 0.0,  brow:  1, tilt:  0, mouth: 'flat',  pupil: 1.0, squint: 0.0 },
+  asleep: { lid: 1.0,  brow:  1, tilt:  0, mouth: 'flat',  pupil: 1.1, squint: 0.0 }
 };
 
 /* a slightly wavy horizontal groove — bark is never straight */
@@ -562,6 +563,73 @@ function drawTree(c, g) {
     const hw = trunkHalfWidth(y);
     const x = CX + off(y) + Math.floor((rnd() * 2 - 1) * (hw - 4));
     px(c, x, y, 1, 2 + Math.floor(rnd() * 4), rnd() > 0.45 ? B.lo : B.hi);
+  }
+
+  /* --- nine hundred years of weather ---
+     Age is not one effect. It is moss on the sunless side, lichen where the
+     rain sits, split bark that healed crooked, a hollow nobody filled in,
+     and burls that grew where something once went wrong. */
+  const age = mulberry(77);
+  // deep vertical fissures, healed crooked
+  for (let i = 0; i < 22; i++) {
+    const y0 = 92 + age() * 56;
+    const len = 6 + age() * 26;
+    const hw = trunkHalfWidth(y0);
+    const x0 = CX + off(y0) + (age() * 2 - 1) * (hw - 6);
+    for (let y = 0; y < len; y++) {
+      const wob = Math.round(Math.sin(y * 0.5 + i) * 1.2);
+      px(c, x0 + wob, y0 + y, 1, 1, B.deep);
+      px(c, x0 + wob + 1, y0 + y, 1, 1, mix(B.hi, B.mid, 0.4));
+    }
+  }
+  // burls — old wounds that grew round
+  for (const [by, bd] of [[104, -1], [131, 1], [146, -1]]) {
+    const hw = trunkHalfWidth(by);
+    const bx = CX + off(by) + bd * (hw - 7);
+    pcircle(c, bx, by, 5, B.lo);
+    pcircle(c, bx - 1, by - 1, 4, B.mid);
+    pcircle(c, bx - 2, by - 2, 2, mix(B.hi, B.mid, 0.3));
+    pcircle(c, bx, by, 1.5, B.deep);
+  }
+  // the hollow, low on the shadow side; something lives in there
+  {
+    const hy = 149, hw = trunkHalfWidth(hy);
+    const hx = CX + off(hy) + hw - 13;
+    pellipse(c, hx, hy, 6, 9, B.deep);
+    pellipse(c, hx, hy, 5, 8, '#160d06');
+    pellipse(c, hx - 1, hy - 6, 5, 2, B.lo);
+    if (!g.dead && Math.sin(g.t * 0.31) > 0.94) {
+      dot(c, hx - 1, hy, '#ffe066'); dot(c, hx + 2, hy, '#ffe066');
+    }
+  }
+  // moss creeping up the sunless side, and pale lichen where rain lingers
+  {
+    const mossCol = mix(mix('#3f6f2c', '#0a1226', dk * 0.7), '#7fb04a', 0.25);
+    const lich = mix(mix('#9fb0a0', '#0a1226', dk * 0.7), '#d8e4d0', 0.3);
+    for (let i = 0; i < 150; i++) {
+      const y = GROUND_Y + 4 - age() * age() * 62;
+      const hw = trunkHalfWidth(y);
+      const side = age() > 0.22 ? 1 : -1;
+      const x = CX + off(y) + side * (hw - 1 - age() * 9);
+      px(c, x, y, 1 + (age() > 0.7 ? 1 : 0), 1, age() > 0.72 ? mix(mossCol, '#8fd95a', 0.4) : mossCol);
+    }
+    for (let i = 0; i < 26; i++) {
+      const y = 90 + age() * 58;
+      const hw = trunkHalfWidth(y);
+      const x = CX + off(y) + (age() * 2 - 1) * (hw - 5);
+      c.globalAlpha = 0.55;
+      pcircle(c, x, y, 1 + age() * 2, lich);
+      c.globalAlpha = 1;
+    }
+  }
+  // a bracket fungus, the way they always come to the very old
+  {
+    const fy = 121, hw = trunkHalfWidth(fy);
+    const fx = CX + off(fy) - hw + 1;
+    pellipse(c, fx, fy, 6, 2, mix('#c08a3a', '#0a1226', dk * 0.7));
+    pellipse(c, fx, fy - 1, 5, 1.4, mix('#e0aa55', '#0a1226', dk * 0.7));
+    pellipse(c, fx, fy + 1, 5, 1, mix('#7a5220', '#0a1226', dk * 0.7));
+    pellipse(c, fx + 2, fy + 5, 4, 1.6, mix('#b07c34', '#0a1226', dk * 0.7));
   }
 
   // branches
@@ -680,6 +748,7 @@ function drawFace(c, g, off, B, dk) {
 
   let lid = M.lid * (1 - stare) + (-0.30) * stare;
   if (g.blink > 0 && !g.dead) lid = 1;
+  if (g.asleep) lid = 1;
   const brow = M.brow - stare * 2;
   const glowAmt = Math.max(dk, Math.max(stare * 0.9, (g.burn || 0) * 0.85));
   const LIT = mix(B.hi, '#ffe0b0', 0.25);      // sun side
@@ -1336,27 +1405,9 @@ function drawCursorTool(c, g, x, y, id) {
    IN-WORLD HUD — drawn in pixels, because the game has no other interface
    ------------------------------------------------------------------------- */
 function drawHud(c, g) {
-  const pad = 6;
-  // leaf tally on a little wooden sign
-  const n = String(g.inv.leaves);
-  const w = 26 + n.length * 6;
-  px(c, pad, pad, w, 15, '#1a0f08');
-  px(c, pad + 1, pad + 1, w - 2, 13, '#4a3423');
-  px(c, pad + 1, pad + 1, w - 2, 1, '#6b4a30');
-  drawLeafSprite(c, pad + 4, pad + 4, '#7cc44a', '#2d6b1f');
-  digits(c, pad + 15, pad + 5, n, '#f4ead6');
-
-  // season and time
-  const label = g.season.toUpperCase();
-  const sw = label.length * 4 + 14;
-  px(c, pad, pad + 18, sw, 12, '#1a0f08');
-  px(c, pad + 1, pad + 19, sw - 2, 10, '#3a2e26');
-  if (isNight(g.timeOfDay)) {
-    pcircle(c, pad + 6, pad + 24, 3, '#e9eeff'); pcircle(c, pad + 8, pad + 23, 3, '#3a2e26');
-  } else {
-    pcircle(c, pad + 6, pad + 24, 3, '#ffe066');
-  }
-  tinyText(c, pad + 11, pad + 21, label, '#c8b89a');
+  /* Almost nothing. The leaf tally used to live up here and it made the park
+     feel like a spreadsheet. Now the only permanent things on screen are the
+     sound switch and, once you have found it, your bag. */
 
   // sound toggle, bottom right
   const mx = W - 18, my = H - 16;
@@ -1366,6 +1417,38 @@ function drawHud(c, g) {
   for (let i = 0; i < 4; i++) px(c, mx + 4, my + 5 - i, 2, 2 + i * 2, '#f4ead6');
   if (g.muted) for (let i = 0; i < 5; i++) { dot(c, mx + 7 + i, my + 2 + i, '#ef5330'); dot(c, mx + 7 + i, my + 6 - i, '#ef5330'); }
   else { px(c, mx + 8, my + 3, 1, 4, '#f4ead6'); px(c, mx + 10, my + 1, 1, 8, '#f4ead6'); }
+
+  if (g.bagOpen !== undefined && g.hasBag) drawBagButton(c, g);
+}
+
+/* the bag, once you own one: bottom left, and it bulges when it is full */
+function drawBagButton(c, g) {
+  const x = 8, y = H - 22, hot = g.bagHover;
+  c.globalAlpha = 0.35; pellipse(c, x + 9, y + 19, 9, 2, '#000000'); c.globalAlpha = 1;
+  const bump = hot ? 1 : 0;
+  drawBackpackSprite(c, x, y - bump, 1);
+  if (g.bagBadge > 0) {
+    pcircle(c, x + 17, y - 1 - bump, 4, '#1a0f08');
+    pcircle(c, x + 17, y - 1 - bump, 3, '#ef8a30');
+    dot(c, x + 17, y - 3 - bump, '#ffe9b0'); px(c, x + 17, y - 2 - bump, 1, 3, '#ffe9b0');
+  }
+}
+
+/* an old canvas backpack, drawn once and used everywhere */
+function drawBackpackSprite(c, x, y, s) {
+  const cvs = '#8a6a3f', dkc = '#5f4726', lit = '#b08c58', strap = '#4a3620';
+  px(c, x + 2, y + 4, 14, 14, cvs);
+  px(c, x + 2, y + 4, 14, 2, lit);
+  px(c, x + 2, y + 16, 14, 2, dkc);
+  px(c, x + 1, y + 6, 1, 11, dkc); px(c, x + 16, y + 6, 1, 11, dkc);
+  px(c, x + 4, y + 1, 10, 5, cvs);            // the flap
+  px(c, x + 4, y + 1, 10, 1, lit);
+  px(c, x + 3, y + 6, 12, 2, dkc);
+  px(c, x + 8, y + 6, 3, 4, strap);           // buckle strap
+  px(c, x + 8, y + 8, 3, 2, '#c9a659');
+  px(c, x + 3, y + 10, 12, 5, mix(cvs, dkc, 0.35));   // front pocket
+  px(c, x + 3, y + 10, 12, 1, lit);
+  px(c, x + 5, y + 12, 8, 1, strap);
 }
 
 /* a 3x5 pixel numeral set, for the leaf tally */
@@ -1466,10 +1549,12 @@ function drawItemIcon(c, x, y, id) {
 function drawGroundItems(c, g) {
   const dk = darkness(g.timeOfDay);
   for (const it of g.groundLeaves) {
+    if (it.area && g.areaNow && it.area !== g.areaNow) continue;
     const bob = Math.sin(g.t * 3 + it.ph) * 0.5;
     c.globalAlpha = 0.3; pellipse(c, it.x + 3, it.y + 6, 5, 2, '#0d1a08'); c.globalAlpha = 1;
     drawLeafSprite(c, it.x, it.y + bob, mix(it.col, '#0a1226', dk * 0.6), mix(it.col2, '#0a1226', dk * 0.6));
   }
+  if (g.areaNow && g.areaNow !== 'oak') return;
   for (const sp of g.saplings) {
     const h = Math.min(26, sp.age * 0.7);
     const sway = Math.sin(g.t * 1.6 + sp.ph) * 1.2;
@@ -2345,6 +2430,382 @@ function drawGrowingTree(c, g, p) {
   glow(c, CX, GROUND_Y - 30 * k, 40 * k, '#c8f090', 0.35 * (1 - p * 0.6));
 }
 
+
+/* =========================================================================
+   SLEEP, NEIGHBOURS, AND THE ROAD OUT OF HERE
+   ========================================================================= */
+
+/* he snores in three sizes */
+function drawZzz(c, g, x, y, sc) {
+  sc = sc || 1;
+  for (let i = 0; i < 3; i++) {
+    const t = (g.t * 0.5 + i * 0.34) % 1;
+    const sz = Math.round((3 + i * 1.4) * sc);
+    const zx = Math.round(x + i * 9 * sc + Math.sin(g.t * 1.1 + i) * 2);
+    const zy = Math.round(y - t * 30 * sc);
+    const a = Math.max(0, Math.sin(t * Math.PI));
+    const w = Math.max(1, Math.round(sc));
+    const col = '#e8f0ff';
+    c.globalAlpha = a * 0.35;
+    px(c, zx - 1, zy - 1, sz + 2, sz + 2, '#0d1420');
+    c.globalAlpha = a * 0.95;
+    px(c, zx, zy, sz, w, col);
+    for (let k = 0; k < sz; k++) px(c, zx + sz - w - k * (sz - w) / Math.max(1, sz - 1), zy + k, w, 1, col);
+    px(c, zx, zy + sz - w, sz, w, col);
+    c.globalAlpha = 1;
+  }
+}
+
+/* -------------------------------------------------------------------------
+   NOC — lamp-keeper. Long coat, wide hat, one lantern, no shop.
+   ------------------------------------------------------------------------- */
+function drawNoc(c, g, n) {
+  const dk = darkness(g.timeOfDay);
+  const sh = col => mix(col, '#0a1226', dk * 0.7);
+  const x = Math.round(n.x), y = Math.round(n.y);
+  const breathe = Math.sin(g.t * 1.4) * 0.6;
+  const yy = Math.round(y + breathe);
+  const coat = sh('#3c4a63'), coatLo = sh('#28334a'), coatHi = sh('#55668a');
+  const skin = sh('#d8b089'), hat = sh('#2c3242');
+
+  // shadow
+  c.globalAlpha = 0.3; pellipse(c, x, y + 1, 10, 3, '#0d1a08'); c.globalAlpha = 1;
+
+  // coat, wide at the hem
+  for (let i = 0; i < 22; i++) {
+    const w = 6 + i * 0.5;
+    px(c, x - w / 2, yy - 22 + i, w, 1, i > 16 ? coatLo : coat);
+  }
+  px(c, x - 5, yy - 20, 3, 18, coatHi);            // lamp-lit edge
+  px(c, x - 1, yy - 18, 2, 14, coatLo);            // buttoned seam
+  for (let i = 0; i < 4; i++) dot(c, x, yy - 17 + i * 4, sh('#c9a659'));
+
+  // scarf
+  px(c, x - 4, yy - 24, 9, 3, sh('#8a4a4a'));
+  px(c, x + 3, yy - 22, 2, 6 + Math.sin(g.t * 2) * 1, sh('#7a3f3f'));
+
+  // head under a wide flat hat
+  pcircle(c, x, yy - 28, 4.6, skin);
+  px(c, x - 4, yy - 30, 8, 2, sh('#c39a72'));
+  px(c, x - 8, yy - 32, 17, 2, hat);               // brim
+  px(c, x - 5, yy - 36, 11, 4, hat);               // crown
+  px(c, x - 5, yy - 36, 11, 1, sh('#3f4759'));
+  px(c, x - 5, yy - 33, 11, 1, sh('#1c2130'));
+
+  // eyes: two calm lights under the brim
+  const blink = Math.sin(g.t * 0.9 + 1.7) > 0.985 ? 0 : 1;
+  if (blink) {
+    dot(c, x - 3 + n.look, yy - 28, '#f6f2df'); dot(c, x + 2 + n.look, yy - 28, '#f6f2df');
+    dot(c, x - 3 + n.look, yy - 28, n.talking ? '#ffe9a0' : '#f6f2df');
+  } else {
+    px(c, x - 3, yy - 28, 2, 1, sh('#8a6a4a')); px(c, x + 2, yy - 28, 2, 1, sh('#8a6a4a'));
+  }
+  px(c, x - 2, yy - 26, 4, 1, sh('#a8785a'));      // a mouth that mostly listens
+
+  // the lantern he keeps, always lit
+  const lx = x + 10, ly = yy - 16 + Math.sin(g.t * 1.1) * 0.8;
+  px(c, x + 4, yy - 20, 6, 1, coatLo);             // the arm
+  px(c, lx - 1, ly - 8, 2, 5, sh('#3a3a44'));      // hanger
+  px(c, lx - 4, ly - 3, 9, 2, sh('#4a4a56'));
+  px(c, lx - 3, ly - 1, 7, 8, sh('#5a5a66'));
+  px(c, lx - 2, ly, 5, 6, '#2a2418');
+  glow(c, lx, ly + 3, (7 + dk * 7) + Math.sin(g.t * 3) * 1.2, '#ffcf6a', 0.22 + dk * 0.5);
+  pcircle(c, lx, ly + 3, 2.2, '#ffe9a0');
+  pcircle(c, lx, ly + 3, 1.2, '#fffceb');
+  px(c, lx - 4, ly + 6, 9, 2, sh('#4a4a56'));
+
+  // the lantern throws light back on him
+  c.globalAlpha = 0.12 + dk * 0.3;
+  pellipse(c, x + 4, yy - 20, 5, 10, '#ffcf6a');
+  c.globalAlpha = 1;
+
+  // moths, because of course
+  for (let i = 0; i < 3; i++) {
+    const a = g.t * (1.1 + i * 0.4) + i * 2.1;
+    const mx2 = lx + Math.cos(a) * (7 + i * 3), my2 = ly + 3 + Math.sin(a * 1.3) * (5 + i * 2);
+    const flap = Math.sin(g.t * 18 + i) > 0 ? 1 : 2;
+    px(c, mx2, my2, 2, 1, sh('#e0d8c0'));
+    px(c, mx2 - 1, my2 - flap + 1, 1, flap, sh('#cfc6ac'));
+    px(c, mx2 + 2, my2 - flap + 1, 1, flap, sh('#cfc6ac'));
+  }
+}
+
+/* Noc's camp: a stool, a kettle on a ring, a crate of nothing for sale */
+function drawNocCamp(c, g, x, y) {
+  const dk = darkness(g.timeOfDay);
+  const sh = col => mix(col, '#0a1226', dk * 0.72);
+  // stool
+  px(c, x - 7, y - 8, 14, 3, sh('#7a5630'));
+  px(c, x - 7, y - 8, 14, 1, sh('#a3794a'));
+  px(c, x - 6, y - 5, 2, 5, sh('#5a3f22')); px(c, x + 4, y - 5, 2, 5, sh('#5a3f22'));
+  // fire ring and kettle
+  const fx = x + 22;
+  for (let i = 0; i < 7; i++) pcircle(c, fx - 8 + i * 2.6, y - 1, 1.6, sh('#6a6a72'));
+  const flick = Math.sin(g.t * 9) * 0.6;
+  glow(c, fx, y - 5, 9, '#ff9a3a', 0.4);
+  flame(c, fx, y - 3, 5 + flick, 3);
+  px(c, fx - 4, y - 11, 8, 6, sh('#4a4a52'));
+  px(c, fx - 4, y - 11, 8, 1, sh('#6a6a74'));
+  px(c, fx + 4, y - 10, 3, 2, sh('#4a4a52'));
+  px(c, fx - 1, y - 13, 2, 2, sh('#3a3a42'));
+  // steam
+  for (let i = 0; i < 3; i++) {
+    const t = (g.t * 0.6 + i * 0.33) % 1;
+    c.globalAlpha = (1 - t) * 0.5;
+    pcircle(c, fx - 1 + Math.sin(t * 6 + i) * 2, y - 15 - t * 12, 1 + t * 2, '#e8eef4');
+    c.globalAlpha = 1;
+  }
+  // the crate he no longer sells out of, lid nailed shut
+  px(c, x - 30, y - 9, 16, 9, sh('#6b4a2a'));
+  px(c, x - 30, y - 9, 16, 2, sh('#8a6338'));
+  px(c, x - 30, y - 3, 16, 1, sh('#4a3220'));
+  for (let i = 0; i < 3; i++) dot(c, x - 28 + i * 6, y - 8, sh('#c9c9c9'));
+  tinyText(c, x - 29, y - 7, 'SHUT', sh('#e8dcc0'));
+}
+
+/* -------------------------------------------------------------------------
+   WAYS OUT — a signpost arrow at each edge you can actually leave through
+   ------------------------------------------------------------------------- */
+function drawTravelArrow(c, g, side, label, hover) {
+  const dk = darkness(g.timeOfDay);
+  const y = Math.round(GROUND_Y - 26);
+  const w = Math.max(46, F.textWidth(label, 1) + 22);
+  const x = side < 0 ? 6 : W - 6 - w;
+  const bob = Math.sin(g.t * 2.2 + (side < 0 ? 0 : 1.6)) * (hover ? 1.6 : 0.8);
+  const yy = Math.round(y + bob);
+
+  // post
+  px(c, side < 0 ? x + 8 : x + w - 10, yy + 13, 2, 22, mix('#5a3a1e', '#0a1226', dk * 0.7));
+
+  // the board, cut to a point at the travelling end
+  const body = hover ? '#c39a63' : '#a0703c';
+  roundRect(c, x - 1, yy - 1, w + 2, 15, 3, INK);
+  roundRect(c, x, yy, w, 13, 2, mix(body, '#0a1226', dk * 0.55));
+  px(c, x + 2, yy + 2, w - 4, 1, mix('#c9a06a', '#0a1226', dk * 0.5));
+  for (let i = 0; i < 7; i++) {
+    const px2 = side < 0 ? x - 1 - i : x + w + i;
+    px(c, px2, yy + i, 1, 13 - i * 2, INK);
+    px(c, px2 + (side < 0 ? 1 : -1), yy + 1 + i, 1, 11 - i * 2, mix(body, '#0a1226', dk * 0.55));
+  }
+  F.drawTextCentered(c, x + w / 2 + (side < 0 ? 3 : -3), yy + 4, label, hover ? '#2b1c10' : '#ffe9b0', 1);
+
+  // a little walking arrow that nudges toward the edge
+  const ax = side < 0 ? x + 5 : x + w - 5;
+  const nudge = hover ? side * 2 : 0;
+  for (let i = 0; i < 4; i++) dot(c, ax + side * i + nudge, yy + 10 - i, hover ? '#2b1c10' : '#ffe9b0');
+  for (let i = 0; i < 4; i++) dot(c, ax + side * i + nudge, yy + 10 + i, hover ? '#2b1c10' : '#ffe9b0');
+}
+
+function travelArrowBox(side, label) {
+  const w = Math.max(46, F.textWidth(label, 1) + 22);
+  const x = side < 0 ? 0 : W - 12 - w;
+  return { x, y: GROUND_Y - 32, w: w + 12, h: 26 };
+}
+
+/* the name of wherever you have just walked into */
+function drawAreaTitle(c, g, name, sub, amount) {
+  if (amount <= 0) return;
+  c.globalAlpha = Math.min(1, amount);
+  const y = 22;
+  F.drawTextCentered(c, W / 2, y, name, '#f6ecd6', 1, '#000000');
+  F.drawTextCentered(c, W / 2, y + 10, sub, '#b9a88c', 1, '#000000');
+  px(c, W / 2 - 22, y + 25, 44, 1, '#6b5a3a');
+  c.globalAlpha = 1;
+}
+
+/* -------------------------------------------------------------------------
+   THINGS LYING ABOUT
+   ------------------------------------------------------------------------- */
+function drawPickup(c, g, p, hover) {
+  const bob = Math.sin(g.t * 2 + p.x) * 0.8;
+  const y = p.y + bob;
+  c.globalAlpha = 0.28; pellipse(c, p.x + 1, p.y + 7, 7, 2, '#0d1a08'); c.globalAlpha = 1;
+  if (hover) glow(c, p.x + 8, y + 8, 16, '#ffe9a0', 0.45);
+  if (p.id === 'backpack') drawBackpackSprite(c, p.x, y, 1);
+  else drawItemIcon(c, p.x + 8, y + 9, p.id);
+  // a soft sparkle so you can tell it is takeable
+  const sp = (g.t * 1.4 + p.x) % 3;
+  if (sp < 1) { c.globalAlpha = 1 - sp; dot(c, p.x + 15, y + 1 - sp * 4, '#fff6d8'); c.globalAlpha = 1; }
+}
+
+/* -------------------------------------------------------------------------
+   COSY — the park is meant to feel emptier and softer, not busier.
+   Big quiet shapes: hedges, a fallen log, mushroom rings, tall grass, vines.
+   ------------------------------------------------------------------------- */
+function drawCosyFoliage(c, g, seed, density) {
+  const dk = darkness(g.timeOfDay);
+  const s = SEASON[g.season];
+  const sh = col => mix(col, '#050c18', dk * 0.82);
+  const rnd = mulberry(seed || 404);
+  const n = Math.round((density === undefined ? 1 : density) * 14 * W / 256);
+
+  for (let i = 0; i < n; i++) {
+    const x = rnd() * W;
+    const y = GROUND_Y + 2 + rnd() * 30;
+    const r = 5 + rnd() * 9;
+    // a low soft bush
+    pellipse(c, x, y, r, r * 0.62, sh(s.dark));
+    pellipse(c, x - 1, y - 2, r * 0.85, r * 0.5, sh(s.t0));
+    pellipse(c, x - 2, y - 3, r * 0.5, r * 0.3, sh(s.t1));
+    if (rnd() > 0.6 && g.season !== 'winter') {
+      for (let k = 0; k < 3; k++) {
+        const bx = x + (rnd() - 0.5) * r * 1.5, by = y - r * 0.5 - rnd() * 3;
+        dot(c, bx, by, sh(['#ffffff', '#ffd9ea', '#ffe066'][k % 3]));
+      }
+    }
+  }
+
+  // tall grass tufts, taller than the ones on the lawn
+  for (let i = 0; i < n * 2; i++) {
+    const x = rnd() * W, y = GROUND_Y + 6 + rnd() * 34;
+    const h = 5 + rnd() * 7;
+    const sway = Math.sin(g.t * 1.1 + i) * 1.4;
+    for (let b = 0; b < 5; b++) {
+      const a = (b - 2) * 0.5;
+      for (let k = 0; k < h; k++) {
+        px(c, x + a * k * 0.35 + sway * (k / h), y - k, 1, 1, sh(k > h - 3 ? s.t2 : s.t1));
+      }
+    }
+  }
+
+  // mushrooms, in rings, because the fungus decides not you
+  if (g.season !== 'winter') for (let i = 0; i < 3; i++) {
+    const cx2 = 24 + rnd() * (W - 48), cy2 = GROUND_Y + 12 + rnd() * 22;
+    const rr = 6 + rnd() * 7;
+    for (let k = 0; k < 6; k++) {
+      const a = (k / 6) * 6.28 + rnd() * 0.4;
+      const mx2 = Math.round(cx2 + Math.cos(a) * rr), my2 = Math.round(cy2 + Math.sin(a) * rr * 0.5);
+      px(c, mx2, my2 - 1, 1, 2, sh('#e8ded0'));
+      pellipse(c, mx2, my2 - 2, 2, 1.4, sh(rnd() > 0.5 ? '#c9553f' : '#d9a05b'));
+      dot(c, mx2, my2 - 3, sh('#f6ece0'));
+    }
+  }
+}
+
+/* one long fallen log — the single best piece of furniture in any wood */
+function drawFallenLog(c, g, x, y, len) {
+  const dk = darkness(g.timeOfDay);
+  const sh = col => mix(col, '#0a1226', dk * 0.72);
+  px(c, x, y - 7, len, 8, sh('#6b4a2a'));
+  px(c, x, y - 7, len, 2, sh('#8a6338'));
+  px(c, x, y - 1, len, 2, sh('#4a3220'));
+  const rnd = mulberry(88);
+  for (let i = 0; i < len / 3; i++) px(c, x + rnd() * len, y - 6 + rnd() * 5, 1 + rnd() * 3, 1, sh('#5a3f22'));
+  // sawn end, with rings
+  pellipse(c, x + len, y - 3, 2.4, 4.4, sh('#a3794a'));
+  pellipse(c, x + len, y - 3, 1.6, 3, sh('#8a6338'));
+  dot(c, x + len, y - 3, sh('#5a3f22'));
+  // moss along the top, and something growing out of it
+  for (let i = 0; i < len; i += 2) {
+    if (mulberry(i + 3)() > 0.35) px(c, x + i, y - 8, 2, 1, sh('#4a7a32'));
+  }
+  for (let i = 0; i < 4; i++) {
+    const mx2 = x + 6 + i * (len / 5);
+    px(c, mx2, y - 11, 1, 3, sh('#e8ded0'));
+    pellipse(c, mx2, y - 12, 2, 1.3, sh('#c9553f'));
+  }
+}
+
+/* a standing stone the hollow grew around */
+function drawStandingStone(c, g, x, y) {
+  const dk = darkness(g.timeOfDay);
+  const sh = col => mix(col, '#0a1226', dk * 0.75);
+  c.globalAlpha = 0.3; pellipse(c, x, y + 1, 11, 3, '#0d1a08'); c.globalAlpha = 1;
+  for (let i = 0; i < 28; i++) {
+    const w = 13 - i * 0.24 - (i > 20 ? (i - 20) * 0.7 : 0);
+    px(c, x - w / 2, y - i, w, 1, sh(i % 7 === 3 ? '#7a7a84' : '#6a6a74'));
+    px(c, x - w / 2, y - i, 2, 1, sh('#93939e'));
+    px(c, x + w / 2 - 2, y - i, 2, 1, sh('#4a4a54'));
+  }
+  for (let i = 0; i < 18; i++) {
+    const yy = y - Math.floor(mulberry(i + 5)() * 24);
+    px(c, x - 5 + mulberry(i + 9)() * 10, yy, 1, 1, sh('#4a7a32'));
+  }
+  // marks somebody cut into it a very long time ago
+  px(c, x - 3, y - 18, 1, 6, sh('#3a3a44'));
+  px(c, x - 1, y - 16, 1, 4, sh('#3a3a44'));
+  px(c, x + 2, y - 19, 1, 7, sh('#3a3a44'));
+}
+
+/* hanging vines from the top of frame — cheap depth, huge cosiness */
+function drawVines(c, g, seed) {
+  const dk = darkness(g.timeOfDay);
+  const s = SEASON[g.season];
+  const sh = col => mix(col, '#050b16', dk * 0.85);
+  const rnd = mulberry(seed || 51);
+  const n = Math.round(6 * W / 256);
+  for (let i = 0; i < n; i++) {
+    const x0 = rnd() * W, len = 22 + rnd() * 54;
+    const ph = rnd() * 6.28;
+    for (let y = 0; y < len; y++) {
+      const sway = Math.sin(g.t * 0.5 + ph + y * 0.06) * (y / len) * 3;
+      px(c, x0 + sway, y, 1, 1, sh(s.t0));
+      if (y % 5 === 0) {
+        pcircle(c, x0 + sway - 1, y, 1.6, sh(s.t1));
+        pcircle(c, x0 + sway + 2, y + 2, 1.4, sh(s.t2));
+      }
+    }
+    if (g.season !== 'winter' && rnd() > 0.5) {
+      const sway = Math.sin(g.t * 0.5 + ph + len * 0.06) * 3;
+      pcircle(c, x0 + sway, len, 2, sh('#d8a0e8'));
+      dot(c, x0 + sway, len, sh('#ffe066'));
+    }
+  }
+}
+
+/* a hedgerow along the back of the lane, with a gate-shaped gap */
+function drawHedgerow(c, g, gapX) {
+  const dk = darkness(g.timeOfDay);
+  const s = SEASON[g.season];
+  const sh = col => mix(col, '#050c18', dk * 0.8);
+  const rnd = mulberry(303);
+  for (let x = -8; x < W + 8; x += 5) {
+    if (gapX !== undefined && Math.abs(x - gapX) < 16) continue;
+    const h = 14 + Math.sin(x * 0.11) * 4 + rnd() * 3;
+    pellipse(c, x, GROUND_Y - 2, 7, h * 0.5, sh(s.dark));
+    pellipse(c, x - 1, GROUND_Y - 3 - h * 0.2, 6, h * 0.4, sh(s.t0));
+    if (rnd() > 0.8) pcircle(c, x + rnd() * 4 - 2, GROUND_Y - 6 - rnd() * 6, 1.4, sh(g.season === 'autumn' ? '#c9553f' : s.t2));
+  }
+}
+
+/* the lane itself: pale earth widening out of the west, with two old ruts */
+function drawLaneRoad(c, g) {
+  const dk = darkness(g.timeOfDay);
+  const sh = col => mix(col, '#0a1226', dk * 0.78);
+  const vanish = W * 0.30;
+  const depth = H - GROUND_Y + 6;
+  for (let i = 0; i < depth; i++) {
+    const t = i / depth;
+    const w = 10 + t * W * 0.62;
+    const cx2 = vanish - t * W * 0.16;
+    px(c, cx2 - w / 2, GROUND_Y - 4 + i, w, 1, sh(mix('#b09a72', '#8a7855', t)));
+  }
+  // two ruts worn by nine hundred years of carts, then tyres
+  for (const side of [-1, 1]) {
+    for (let i = 4; i < depth; i++) {
+      const t = i / depth;
+      const w = 10 + t * W * 0.62;
+      const cx2 = vanish - t * W * 0.16;
+      px(c, cx2 + side * w * 0.22, GROUND_Y - 4 + i, 1 + t * 3, 1, sh(mix('#8a7855', '#6a5c40', t)));
+    }
+  }
+  const rnd = mulberry(21);
+  for (let i = 0; i < 120; i++) {
+    const t = rnd();
+    const w = 10 + t * W * 0.62;
+    const cx2 = vanish - t * W * 0.16;
+    px(c, cx2 - w / 2 + rnd() * w, GROUND_Y - 4 + t * depth, 1, 1, sh(rnd() > 0.5 ? '#cbb890' : '#6a5c40'));
+  }
+  // a milestone nobody has read in a century
+  const mx2 = Math.round(W * 0.16), my2 = GROUND_Y + 6;
+  c.globalAlpha = 0.3; pellipse(c, mx2 + 3, my2 + 1, 6, 2, '#0d1a08'); c.globalAlpha = 1;
+  px(c, mx2, my2 - 11, 8, 12, sh('#8a8a94'));
+  px(c, mx2, my2 - 13, 8, 3, sh('#a8a8b2'));
+  px(c, mx2 + 1, my2 - 1, 6, 1, sh('#4a4a54'));
+  tinyText(c, mx2 + 1, my2 - 9, 'IX', sh('#3a3a44'));
+  for (let i = 0; i < 6; i++) dot(c, mx2 + rnd() * 8, my2 - 12 + rnd() * 12, sh('#4a7a32'));
+}
+
 window.SPR = {
   get W() { return W; }, H, GROUND_Y, get CX() { return CX; }, setLogicalWidth, layerBegin, layerEnd, outlinedSprite, makeCanvas, CANOPY, TWIGS, SEASON, SEASON_NAMES, TROPHY_ART, HALL,
   px, dot, pcircle, pellipse, glow, mix, mulberry, star, quant,
@@ -2356,5 +2817,8 @@ window.SPR = {
   drawVisitor, drawBoundary,
   drawBalloon, drawPanel, drawSnail, drawSnailMessage, drawCursorTool, drawMoreArrow, roundRect, INK, drawAshScene, drawStump, drawItemIcon, drawLeafSprite,
   drawHall, drawTrophy, drawTrophyReflection, trophySprite, drawPlinth, drawHeaven, drawHeavenBackdrop, drawGhostTree, drawSoul,
-  drawCloudTunnel, drawLetterbox, drawRays, drawGrowingTree, flame
+  drawCloudTunnel, drawLetterbox, drawRays, drawGrowingTree, flame,
+  drawZzz, drawNoc, drawNocCamp, drawTravelArrow, travelArrowBox, drawAreaTitle, drawPickup,
+  drawCosyFoliage, drawFallenLog, drawStandingStone, drawVines, drawHedgerow, drawLaneRoad,
+  drawBackpackSprite, drawBagButton
 };

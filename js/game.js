@@ -16,6 +16,7 @@ const SAVE_KEY = 'wiseoak.save.v3';
 const defaultSave = () => ({
   ach: {}, endings: {}, heard: {}, muted: false, sessions: 0,
   park: { props: [], upgrades: {}, expansions: 0, earned: 0 },
+  bag: false, items: {}, taken: {}, plans: {}, planDone: {}, metNoc: false,
   stats: { leavesTotal: 0, sneezes: 0, hugs: 0, waters: 0, plants: 0, trades: 0,
            sqChats: 0, rebirths: 0, flicks: 0, seasons: {}, boughtAll: false }
 });
@@ -28,6 +29,8 @@ try {
     save = Object.assign(defaultSave(), p);
     save.stats = Object.assign(defaultSave().stats, p.stats || {});
     save.park = Object.assign(defaultSave().park, p.park || {});
+    save.items = p.items || {}; save.taken = p.taken || {};
+    save.plans = p.plans || {}; save.planDone = p.planDone || {};
   }
 } catch (e) { /* corrupt save: start fresh, no drama */ }
 
@@ -57,6 +60,12 @@ const G = {
   flags: { hatOn: false, lighterGone: false, confirming: false, newsRead: false },
   inv: { leaves: 0, items: {} }, tools: [], holding: null, holdT: 0, critters: [],
   parkPending: 0, parkMotes: [], visitors: [], visitorTimer: 6, menu: null,
+  // where you are standing, and the walk between places
+  area: 1, areaFade: 0, areaFadeDir: 0, areaTitle: 0, arrows: [], pickups: [],
+  noc: { x: 0, y: GROUND_Y + 8, look: 0, talking: 0, thinking: 0 },
+  asleep: false, wakeT: 0,
+  hasBag: false, bagOpen: false, bagHover: false, bagBadge: 0,
+  activePlan: null,
   hintText: '', hintShown: false, hintCine: false,
   sessionTime: 0, sinceTreeClick: 0, spamCount: 0, spamTimer: 0,
   sneezeTimer: 14 + Math.random() * 18,
@@ -118,7 +127,8 @@ const buf = document.createElement('canvas');
 const dc = buf.getContext('2d');
 dc.imageSmoothingEnabled = false;
 
-const elShop = $('shop'), elShopList = $('shoplist');
+const elBag = $('bag'), elBagBody = $('bagbody');
+const elChat = $('chat'), elChatLog = $('chatlog'), elChatInput = $('chatinput');
 const elModal = $('modal'), elModalBody = $('modalbody'), elModalTitle = $('modaltitle');
 const elEndingCard = $('endingcard');
 const elTitle = $('title');
@@ -140,23 +150,23 @@ let started = false;
 const logoCv = $('tlogo'), lctx = logoCv.getContext('2d');
 lctx.imageSmoothingEnabled = false;
 const titleG = {
-  t: 0, season: 'summer', timeOfDay: 0.28, mood: 'happy', talking: false,
+  t: 0, season: 'summer', timeOfDay: 0.66, mood: 'asleep', asleep: true, talking: false,
   blink: 0, blinkTimer: 1.6, look: { x: 0, y: 0.2 }, stare: 0, shake: 0,
   burn: 0, dead: false, flags: { hatOn: false }, watchers: 0
 };
 function drawTitleLogo(dt) {
   titleG.t += dt;
-  titleG.blinkTimer -= dt;
-  if (titleG.blinkTimer <= 0) { titleG.blink = 0.14; titleG.blinkTimer = 2 + Math.random() * 3; }
-  titleG.blink = Math.max(0, titleG.blink - dt);
-  titleG.look.x = Math.sin(titleG.t * 0.5) * 0.5;
-  const k = 0.66;
+  // he is asleep on the title card. He breathes, and that is all.
+  titleG.look.x = Math.sin(titleG.t * 0.25) * 0.2;
+  titleG.shake = 0;
+  const k = 0.95;
   lctx.setTransform(1, 0, 0, 1, 0, 0);
   lctx.clearRect(0, 0, logoCv.width, logoCv.height);
   lctx.save();
   lctx.translate(logoCv.width / 2 - CX() * k, logoCv.height - (GROUND_Y + 8) * k);
   lctx.scale(k, k);
   SPR.drawTree(lctx, titleG);
+  SPR.drawZzz(lctx, titleG, CX() + 30, 76, 1.8);
   lctx.restore();
 }
 
@@ -561,18 +571,12 @@ function toolHome(i) {
 }
 
 function refreshHUD() {
-  const owned = DATA.shop.filter(it => has(it.id)).map(it => it.id);
-  const kept = G.tools.filter(t => owned.includes(t.id));
-  for (const id of owned) {
-    if (!kept.some(t => t.id === id)) kept.push({ id, x: 0, y: 0, home: true });
-  }
-  kept.forEach((t, i) => {
-    const h = toolHome(i);
-    t.hx = h.x; t.hy = h.y;
-    if (t.home) { t.x = h.x; t.y = h.y; t.home = false; }
-  });
-  G.tools = kept;
+  /* Nothing lies on the grass any more. Everything you own is in the bag,
+     and the bag only exists once you have found it. */
+  G.tools = [];
+  G.hasBag = !!save.bag;
   refreshActions();
+  if (G.bagOpen) renderBag();
 }
 
 /* Little wooden signs, hammered into the bottom of the frame. The only
@@ -596,6 +600,14 @@ function refreshActions() {
     signs.push({ label: labels[i][0], act: labels[i][1], x, y: H - 22, w: widths[i], h: 15, hover: false });
     x += widths[i] + pad;
   }
+}
+
+/* one line of guidance, and it takes itself away again */
+let nudgeT = 0;
+function nudge(text, secs) {
+  elHint.textContent = text; elHint.className = '';
+  clearTimeout(nudgeT);
+  nudgeT = setTimeout(() => { if (G.hintText === text) elHint.className = 'hidden'; }, (secs || 8) * 1000);
 }
 
 function drawHint(c) {
@@ -681,6 +693,7 @@ function isKnockRhythm() {
 
 function talkToTree() {
   if (G.dead || G.scene !== 'game') return;
+  if (G.asleep) { wakeHim(); return; }
 
   // tracked before anything else, so taps that only skip the typing count too
   knocks = knocks.filter(k => G.t - k < 2.2);
@@ -817,7 +830,7 @@ function doPlant(atX) {
     "Another one! I am going to be a FATHER. Again. Statistically for the four thousandth time.",
     "That is three. Three is a copse. Four is a stand. Five is a WOOD. Keep going.",
     "Four. There is going to be shade here after you are gone. Somebody will sit in it and never know your name.",
-    "Five. That is a wood. That is an actual wood. I have been trying to do that for four hundred years and you did it in an afternoon."
+    "Five. That is a wood. That is an actual wood. I have been trying to do that for nine hundred years and you did it in an afternoon."
   ];
   say('THE WISE OAK TREE', lines[Math.min(4, save.stats.plants - 1)], 'happy');
   refreshHUD();
@@ -874,7 +887,7 @@ function doFlick() {
     "Stop.",
     "Please stop.",
     "...",
-    "I am not going to beg. I have been here four hundred years and I will not beg to a person with a lighter.",
+    "I am not going to beg. I have been here nine hundred years and I will not beg to a person with a lighter.",
     "...Okay. I will beg. Please. There are mice in my roots."
   ];
   say('THE WISE OAK TREE', lines[Math.min(lines.length - 1, save.stats.flicks - 1)], save.stats.flicks > 4 ? 'sad' : 'shock');
@@ -883,7 +896,7 @@ function doFlick() {
 function askBurn() {
   G.flags.confirming = true;
   openModal('ARE YOU SURE?',
-    "<p>He is four hundred years old.</p>" +
+    "<p>He is nine hundred years old.</p>" +
     "<p>He has a woodpecker in his elbow and mice in his roots and he has been talking to you all afternoon.</p>" +
     "<p class='small'>There is an achievement for it. There is an achievement for everything. That is not the same as a reason.</p>",
     [['Put it away', () => { closeModal(); say('THE WISE OAK TREE', "Thank you. Thank you. Okay. Okay. Let us never speak of it. ...We will absolutely speak of it.", 'happy'); }],
@@ -931,7 +944,7 @@ function maybeSpawnSquirrel() {
   ACH('squirrel');
   setTimeout(() => {
     if (G.scene === 'game' && !G.dead)
-      say('SQUIRREL', "yo. yo. down here. i heard sneezing which means LEAVES which means BUSINESS.", null, 'squirrel');
+      say('SQUIRREL', "yo. yo. down here. i used to run a whole operation out of these branches. noc put me out of business by being NICE. unbelievable.", null, 'squirrel');
   }, 1600);
 }
 
@@ -945,59 +958,362 @@ function clickSquirrel() {
   let pool = DATA.squirrelLines;
   if (has('lighter') && !G.flags.lighterGone) pool = pool.concat(DATA.squirrelWarnLines);
   say('SQUIRREL', pool[Math.floor(Math.random() * pool.length)], null, 'squirrel');
-  openShop();
 }
 
-function openShop() {
-  // open on the opposite side to the squirrel so he is never hidden behind
-  // his own shop window
-  const onLeft = G.squirrel.x < W() / 2;
-  elShop.style.left = onLeft ? 'auto' : '8px';
-  elShop.style.right = onLeft ? '8px' : 'auto';
-  elShop.classList.remove('hidden');
-  elShopList.innerHTML = '';
-  for (const it of DATA.shop) {
+/* =========================================================================
+   THE WORLD IS WIDER THAN ONE TREE
+   Three places, walked between with the signposts at the edges of the frame.
+   ========================================================================= */
+const AREAS = DATA.areas;
+function areaId() { return AREAS[G.area].id; }
+function atOak() { return areaId() === 'oak'; }
+
+function canTravel(dir) {
+  const i = G.area + dir;
+  return i >= 0 && i < AREAS.length && !G.cine && G.scene === 'game' && !G.dead && !G.menu;
+}
+
+function travel(dir) {
+  if (!canTravel(dir) || G.areaFadeDir) return;
+  G.areaFadeDir = dir;
+  G.areaFade = 0.001;
+  hideBubble();
+  closeChat();
+  SFX.click();
+}
+
+function arriveArea() {
+  G.area += G.areaFadeDir;
+  G.areaFadeDir = 0;
+  G.areaNow = areaId();
+  G.areaTitle = 3.2;
+  seedPickups();
+  if (areaId() === 'lane') {
+    G.noc.x = Math.round(W() * 0.62);
+    ACH('lane');
+    if (!save.metNoc) {
+      save.metNoc = true; persist();
+      setTimeout(() => nocSay(DATA.nocIntro.join(' ')), 700);
+    }
+  }
+  if (areaId() === 'hollow') ACH('hollow');
+  refreshHUD();
+  persist();
+}
+
+/* ---- things lying about, once you have somewhere to put them ---- */
+function pickupReady(p) {
+  if (save.taken[p.id] || has(p.id)) return false;
+  if (p.need === 'backpack') return !!save.bag;
+  if (p.need === 'plans3') return plansDone() >= 3;
+  return true;
+}
+
+function seedPickups() {
+  G.pickups = DATA.pickups
+    .filter(p => p.area === areaId() && pickupReady(p))
+    .map(p => ({ id: p.id, name: p.name, line: p.line,
+                 x: Math.round(W() * p.x), y: GROUND_Y + 2 }));
+}
+
+function takePickup(p) {
+  SFX.pickup();
+  spawnParticles('star', p.x + 8, p.y + 6, 8);
+  save.taken[p.id] = 1;
+  if (p.id === 'backpack') {
+    save.bag = true; G.hasBag = true; G.bagBadge = 1;
+    ACH('backpack');
+    pushNote('goal', 'YOU HAVE A BAG', 'Everything you find goes in it. Tap the bag, bottom left.', 'reach');
+    nudge('your bag is in the bottom left corner', 10);
+    say('YOU', "A backpack. Somebody's. Yours now.", null, 'serious');
+  } else {
+    G.inv.items[p.id] = true;
+    save.items[p.id] = 1;
+    G.bagBadge = 1;
+    pushNote('goal', p.name, 'It went into your bag.', p.id === 'lighter' ? 'flame' : 'reach');
+    if (p.id === 'lighter') {
+      ACH('lighter');
+      persist(); seedPickups(); refreshHUD();
+      startLighterCine();
+      return;
+    }
+    say('YOU', p.line, null, 'serious');
+  }
+  persist();
+  seedPickups();
+  refreshHUD();
+}
+
+function pickupAt(x, y) {
+  for (const p of G.pickups) if (x > p.x - 4 && x < p.x + 20 && y > p.y - 10 && y < p.y + 12) return p;
+  return null;
+}
+
+/* =========================================================================
+   NOC
+   He used to sell things. He stopped. Now you talk to him, in your own
+   words, and the two of you make plans.
+   ========================================================================= */
+function nocSay(text) {
+  say('NOC', text, null, 'noc');
+  G.noc.talking = Math.min(6, 1.2 + text.length * 0.03);
+}
+
+function plansDone() { return Object.keys(save.planDone).length; }
+
+function planById(id) { return DATA.plans.find(p => p.id === id); }
+
+function planStatus(p) {
+  if (save.planDone[p.id]) return 'done';
+  if (save.plans[p.id]) return 'open';
+  return 'new';
+}
+
+/* what a plan still needs before it can be finished */
+function planBlocker(p) {
+  if (p.need.leaves && G.inv.leaves < p.need.leaves) return (p.need.leaves - G.inv.leaves) + ' more leaves';
+  if (p.need.night && !SPR.isNight(G.timeOfDay)) return 'the dark. Come back at night.';
+  return null;
+}
+
+function agreePlan(id) {
+  const p = planById(id);
+  if (!p || save.planDone[id]) return;
+  if (!save.plans[id]) {
+    save.plans[id] = 1; persist();
+    ACH('plan1');
+    chatLine('noc', "Agreed, then. " + p.ask);
+    pushNote('goal', 'PLAN: ' + p.name, 'Agreed with Noc. Come back when it can be done.', 'reach');
+    return;
+  }
+  const blocker = planBlocker(p);
+  if (blocker) { SFX.deny(); chatLine('noc', "Not yet. We need " + blocker); return; }
+  completePlan(p);
+}
+
+function completePlan(p) {
+  if (p.need.leaves) G.inv.leaves -= p.need.leaves;
+  save.planDone[p.id] = 1;
+  delete save.plans[p.id];
+  SFX.ach(); G.flash = 0.4;
+  spawnParticles('star', G.noc.x, GROUND_Y, 14);
+  chatLine('noc', p.done);
+  let gift = '';
+  if (p.give.item) {
+    G.inv.items[p.give.item] = true; save.items[p.give.item] = 1; G.bagBadge = 1;
+    gift = 'It is in your bag now.';
+  }
+  if (p.give.leaves) { G.inv.leaves += p.give.leaves; save.stats.leavesTotal += p.give.leaves; gift = p.give.leaves + ' leaves, for your trouble.'; }
+  if (p.give.upgrade) { save.park.upgrades[p.give.upgrade] = 1; gift = 'The lane keeps the lights.'; }
+  if (gift) chatLine('noc', gift);
+  pushNote('chal', 'PLAN DONE: ' + p.name, p.done, 'reach');
+  ACH('plandone');
+  if (plansDone() >= 3) ACH('plan3');
+  if (plansDone() >= DATA.plans.length) { ACH('planall'); reachEnding('together'); }
+  persist(); refreshHUD(); seedPickups();
+}
+
+/* ---------------------------------------------------------------------
+   THE TALK BOX — your words go in, Noc's come out
+   --------------------------------------------------------------------- */
+let chatBusy = false;
+
+function openChat() {
+  if (G.cine) return;
+  elChat.classList.remove('hidden');
+  if (!elChatLog.childElementCount) {
+    chatLine('sys', NOC_AI.live
+      ? 'Noc is listening for real. (model: ' + NOC_AI.model + ')'
+      : 'Type anything. Noc answers in his own words. · /help for the odd commands.');
+    chatLine('noc', save.metNoc ? DATA.nocLines[Math.floor(Math.random() * DATA.nocLines.length)] : DATA.nocIntro[0]);
+  }
+  setTimeout(() => elChatInput.focus(), 30);
+  ACH('talknoc');
+}
+
+function closeChat() { elChat.classList.add('hidden'); }
+
+function chatLine(who, text, actions) {
+  const row = document.createElement('div');
+  row.className = 'cline ' + who;
+  if (who !== 'sys') {
+    const tag = document.createElement('b');
+    tag.textContent = who === 'noc' ? 'NOC' : 'YOU';
+    row.appendChild(tag);
+  }
+  const sp = document.createElement('span');
+  sp.textContent = text;
+  row.appendChild(sp);
+  if (actions && actions.length) {
+    const bar = document.createElement('div');
+    bar.className = 'cbtns';
+    for (const [label, fn] of actions) {
+      const b = document.createElement('button');
+      b.className = 'act';
+      b.textContent = label;
+      b.onclick = () => { b.parentElement.remove(); fn(); };
+      bar.appendChild(b);
+    }
+    row.appendChild(bar);
+  }
+  elChatLog.appendChild(row);
+  elChatLog.scrollTop = elChatLog.scrollHeight;
+  if (who === 'noc') { G.noc.talking = 2; SFX.click(); }
+  return row;
+}
+
+function chatCommand(text) {
+  const [cmd, ...rest] = text.slice(1).split(/\s+/);
+  const arg = rest.join(' ').trim();
+  switch (cmd.toLowerCase()) {
+    case 'help':
+      chatLine('sys', '/key <anthropic api key> — let Noc answer with a real model · /model <id> · /nokey · /plans · /forget');
+      return true;
+    case 'key':
+      if (!arg) { chatLine('sys', 'Paste the key after /key. It is stored in this browser only and never leaves it except to Anthropic.'); return true; }
+      NOC_AI.setKey(arg);
+      chatLine('sys', 'Right. Noc is thinking with a real model now (' + NOC_AI.model + '). Local brain stays as the backup.');
+      ACH('realai');
+      return true;
+    case 'nokey':
+      NOC_AI.setKey('');
+      chatLine('sys', 'Key cleared. Back to the brain he was born with.');
+      return true;
+    case 'model':
+      chatLine('sys', 'Model: ' + NOC_AI.setModel(arg));
+      return true;
+    case 'forget':
+      NOC_AI.forget(); elChatLog.innerHTML = '';
+      chatLine('sys', 'He has forgotten the conversation. He has not forgotten you.');
+      return true;
+    case 'plans':
+      for (const p of DATA.plans) {
+        const st = planStatus(p);
+        chatLine('sys', (st === 'done' ? '✓ ' : st === 'open' ? '· ' : '  ') + p.name +
+                        (st === 'open' ? ' — ' + (planBlocker(p) || 'ready. Say so.') : ''));
+      }
+      return true;
+  }
+  return false;
+}
+
+async function sendChat() {
+  const text = elChatInput.value.trim();
+  if (!text || chatBusy) return;
+  elChatInput.value = '';
+  if (text[0] === '/') { if (chatCommand(text)) return; }
+
+  chatLine('you', text);
+  save.stats.nocChats = (save.stats.nocChats || 0) + 1;
+  if (save.stats.nocChats >= 12) ACH('nocchat');
+  persist();
+
+  chatBusy = true;
+  G.noc.thinking = 1;
+  const dots = chatLine('noc', '…');
+  const ctx = {
+    season: G.season, night: SPR.isNight(G.timeOfDay), leaves: G.inv.leaves,
+    plansDone: plansDone(), backpack: !!save.bag
+  };
+  let res;
+  try { res = await NOC_AI.ask(text, ctx); }
+  catch (e) { res = { text: "Sorry. Lost my thread. Say it again?", plan: null }; }
+  dots.remove();
+  G.noc.thinking = 0;
+  chatBusy = false;
+
+  const p = res.plan ? planById(res.plan) : null;
+  const acts = [];
+  if (p && !save.planDone[p.id]) {
+    acts.push([save.plans[p.id] ? 'DO IT NOW' : 'AGREE TO IT', () => agreePlan(p.id)]);
+    acts.push(['NOT YET', () => chatLine('noc', "Fine. It'll keep. Everything out here keeps.")]);
+  }
+  chatLine('noc', res.text, acts);
+  // the balloon is for when the talk box is shut; two of them at once is noise
+  if (elChat.classList.contains('hidden')) nocSay(res.text.length > 150 ? res.text.slice(0, 148) + '…' : res.text);
+  else G.noc.talking = 2.5;
+}
+
+/* =========================================================================
+   THE BAG
+   ========================================================================= */
+function openBag() {
+  if (!save.bag || G.cine) return;
+  G.bagOpen = true; G.bagBadge = 0;
+  elBag.classList.remove('hidden');
+  renderBag();
+  SFX.pickup();
+}
+function closeBag() { G.bagOpen = false; elBag.classList.add('hidden'); }
+function toggleBag() { G.bagOpen ? closeBag() : openBag(); }
+
+function renderBag() {
+  if (!elBagBody) return;
+  elBagBody.innerHTML = '';
+  const head = document.createElement('div');
+  head.className = 'bagtop';
+  head.innerHTML = '<span class="leaves">☘ ' + G.inv.leaves + ' leaves</span>' +
+                   '<span class="dim">' + Object.keys(G.inv.items).length + ' things · ' +
+                   plansDone() + '/' + DATA.plans.length + ' plans kept</span>';
+  elBagBody.appendChild(head);
+
+  const owned = DATA.shop.filter(it => has(it.id));
+  if (!owned.length) {
+    const e = document.createElement('p');
+    e.className = 'bagempty';
+    e.textContent = 'Empty, apart from crumbs and one very old bus ticket. Look around the lane and the hollow, and make plans with Noc.';
+    elBagBody.appendChild(e);
+  }
+  for (const it of owned) {
     const row = document.createElement('div');
-    row.className = 'shoprow' + (has(it.id) ? ' owned' : '') + (G.inv.leaves < it.cost ? ' poor' : '');
+    row.className = 'bagrow';
     const c = document.createElement('canvas');
     c.width = 16; c.height = 16; c.className = 'itemicon';
     drawIcon(c.getContext('2d'), it.icon, 16);
     const info = document.createElement('div');
     info.className = 'shopinfo';
-    info.innerHTML = '<b>' + it.name + '</b><span>' + it.desc + '</span>';
+    info.innerHTML = '<b>' + it.name + '</b><span>' + (TOOL_HINTS[it.id] || it.desc) + '</span>';
     const btn = document.createElement('button');
     btn.className = 'buy';
-    btn.textContent = has(it.id) && it.id !== 'acorn' ? 'OWNED' : (it.cost + ' ☘');
-    btn.disabled = has(it.id) && it.id !== 'acorn';
-    btn.onclick = (e) => { e.stopPropagation(); buy(it); };
+    btn.textContent = 'TAKE OUT';
+    btn.onclick = (e) => { e.stopPropagation(); holdFromBag(it.id); };
     row.appendChild(c); row.appendChild(info); row.appendChild(btn);
-    elShopList.appendChild(row);
+    elBagBody.appendChild(row);
+  }
+
+  const open = DATA.plans.filter(p => save.plans[p.id]);
+  const done = DATA.plans.filter(p => save.planDone[p.id]);
+  if (open.length || done.length) {
+    const h = document.createElement('div');
+    h.className = 'bagsec';
+    h.textContent = 'PLANS WITH NOC';
+    elBagBody.appendChild(h);
+    for (const p of open) {
+      const d = document.createElement('div');
+      d.className = 'planrow';
+      d.innerHTML = '<b>' + p.name + '</b><span>' + (planBlocker(p) || 'ready — go and tell him') + '</span>';
+      elBagBody.appendChild(d);
+    }
+    for (const p of done) {
+      const d = document.createElement('div');
+      d.className = 'planrow kept';
+      d.innerHTML = '<b>✓ ' + p.name + '</b><span>' + p.done + '</span>';
+      elBagBody.appendChild(d);
+    }
   }
 }
-function closeShop() { elShop.classList.add('hidden'); }
 
-function buy(it) {
-  if (G.inv.leaves < it.cost) {
-    SFX.deny();
-    say('SQUIRREL', "nope. not enough leaves. i'm running a business here, not a charity. (i am running neither)", null, 'squirrel');
+function holdFromBag(id) {
+  closeBag();
+  if (!atOak() && id !== 'diary') {
+    say('YOU', "Not much to use it on out here. He is back at the top of the lane.", null, 'serious');
     return;
   }
-  G.inv.leaves -= it.cost;
-  G.inv.items[it.id] = true;
-  save.stats.trades++; persist();
-  SFX.trade();
-  ACH('trade1');
-  if (it.id === 'lighter') {
-    ACH('lighter');
-    refreshHUD(); closeShop();
-    startLighterCine();
-    return;
-  } else {
-    say('SQUIRREL', "pleasure doing business. don't tell the tree. he thinks i'm a saver.", null, 'squirrel');
-  }
-  if (DATA.shop.every(s => has(s.id) || (s.id === 'acorn' && save.stats.plants > 0))) ACH('tradeall');
-  refreshHUD();
-  openShop();
+  G.holding = { id, x: CX(), y: GROUND_Y - 20, fromBag: true };
+  cv.style.cursor = 'none';
+  SFX.pickup();
+  elHint.textContent = TOOL_HINTS[id] || 'drag it somewhere';
+  elHint.className = '';
 }
 
 /* ---------------------------------------------------------------------
@@ -1173,7 +1489,7 @@ function updateParticles(dt) {
       p.y += p.vy * dt;
       if (p.y >= GROUND_Y + 2 + (p.collectible ? 0 : Math.random() * 16)) {
         if (p.collectible && G.groundLeaves.length < 14) {
-          G.groundLeaves.push({ x: insetX(p.x | 0), y: GROUND_Y + 4 + Math.random() * 18, col: p.col, col2: p.col2, ph: Math.random() * 6.28, landed: true });
+          G.groundLeaves.push({ x: insetX(p.x | 0), y: GROUND_Y + 4 + Math.random() * 18, col: p.col, col2: p.col2, ph: Math.random() * 6.28, landed: true, area: areaId() });
         }
         G.particles.splice(i, 1); continue;
       }
@@ -1213,7 +1529,7 @@ function playCine(name, stages, onDone) {
   G.cine = { name, stages, i: 0, t: 0, done: onDone || null };
   G.scene = 'cine';
   hideBubble();
-  elShop.classList.add('hidden');
+  closeBag(); closeChat();
   refreshActions();
   enterStage();
 }
@@ -1298,36 +1614,39 @@ function startDeathCine() {
 
 /* ---- the opening: the wood, then the tree, then he notices you ---- */
 function startIntroCine() {
-  G.mood = 'sleepy'; G.blinkTimer = 99; G.blink = 1;
+  G.mood = 'asleep'; G.asleep = true; G.blinkTimer = 99; G.blink = 1;
   playCine('intro', [
-    { id: 'wide', dur: 3.4, cam: [-18, -4, 1.28], snap: true, caption: 'There is a tree in this park.' },
-    { id: 'near', dur: 3.2, cam: [0, 8, 1.35], caption: 'Nobody remembers who planted it.' },
+    { id: 'wide', dur: 3.4, cam: [-18, -4, 1.28], snap: true, caption: 'There is a tree in this park. It is asleep.' },
+    { id: 'near', dur: 3.2, cam: [0, 8, 1.35], caption: 'Nobody remembers planting it. Nobody alive, anyway.' },
     { id: 'wake', dur: 3.6, cam: [0, 18, 1.75], caption: '',
-      enter: () => { G.mood = 'sleepy'; },
+      enter: () => { G.mood = 'asleep'; G.asleep = true; },
       tick: (p) => {
         G.blink = p < 0.45 ? 1 : 0;
-        if (p > 0.45 && G.mood === 'sleepy') { G.mood = 'shock'; SFX.pickup(); }
+        if (p > 0.45 && G.asleep) {
+          G.asleep = false; G.mood = 'shock'; SFX.pickup(); G.shake = 3;
+          for (let i = 0; i < 6; i++) dropLeaf(90 + Math.random() * 76, 40 + Math.random() * 40, i < 2);
+        }
         if (p > 0.7) G.mood = 'chill';
       } },
     { id: 'settle', dur: 2.4, cam: [0, 5, 1.09], caption: 'Oh. You are new.' }
   ], () => {
-    G.blinkTimer = 2;
+    G.blinkTimer = 2; G.asleep = false;
     G.scene = 'game';
     refreshHUD(); refreshActions();
-    say('THE WISE OAK TREE', "Hello. I am an oak tree. I am four hundred years old. Click me and I will say things. That is the entire product.", 'happy');
+    say('THE WISE OAK TREE', "Hello. I am an oak tree. I am nine hundred years old. Click me and I will say things. That is the entire product.", 'happy');
+    setTimeout(() => { if (!save.ach.lane && !save.ach.hollow) nudge('the signposts at the edges walk you west and east', 12); }, 9000);
   });
 }
 
 /* ---- the squirrel hands over the lighter ---- */
 function startLighterCine() {
   playCine('lighter', [
-    { id: 'deal', dur: 3.2, cam: [(G.squirrel.x - CX()) * 0.5, 40, 1.9], caption: '"For nest purposes."',
-      enter: () => { G.squirrel.face = 1; G.squirrel.holding = 'lighter'; SFX.trade(); } },
-    { id: 'oblivious', dur: 3.4, cam: [0, 16, 1.6], caption: 'He does not know you have it.',
-      enter: () => { G.squirrel.holding = null; G.mood = 'happy'; } }
+    { id: 'found', dur: 3.2, cam: [0, 34, 1.8], caption: 'It was lying in the grass, cold, doing nothing.',
+      enter: () => { SFX.trade(); } },
+    { id: 'noc', dur: 3.4, cam: [0, 16, 1.5], caption: 'Noc watched you put it in your bag and said nothing at all.' }
   ], () => {
     G.scene = 'game'; refreshHUD(); refreshActions();
-    say('THE WISE OAK TREE', "You have gone very quiet. Everything alright? You have got a face like a man holding something behind his back.", 'think');
+    nocSay("You can leave that where you found it. I'm not going to stop you either way. That's rather the trouble with me.");
   });
 }
 
@@ -1384,6 +1703,17 @@ function startRebirthCine() {
 /* ---------------------------------------------------------------------
    UPDATE
    --------------------------------------------------------------------- */
+
+/* the walk between places: fade out, step across, fade back in */
+function updateTravel(dt) {
+  if (G.areaFadeDir) {
+    G.areaFade += dt * 3.2;
+    if (G.areaFade >= 1) { G.areaFade = 1; arriveArea(); }
+  } else if (G.areaFade > 0) {
+    G.areaFade = Math.max(0, G.areaFade - dt * 2.4);
+  }
+}
+
 function update(dt) {
   G.t += dt; G.dt = dt;
   G.sessionTime += dt;
@@ -1394,6 +1724,10 @@ function update(dt) {
   saveTimer += dt; if (saveTimer > 5) { saveTimer = 0; persist(); }
   if (G.sessionTime > 600) ACH('idle');
   updateCam(dt);
+  updateTravel(dt);
+  refreshArrows();
+  if (G.areaTitle > 0) G.areaTitle -= dt;
+  if (G.wakeT > 0) { G.wakeT -= dt; if (G.wakeT <= 0) G.asleep = false; }
 
   if (G.cine) {
     if (G.fleeing) updateCritters(dt);
@@ -1443,6 +1777,13 @@ function update(dt) {
 
   for (const sp of G.saplings) sp.age += dt;
 
+  if (areaId() === 'lane') {
+    const n = G.noc;
+    n.y = GROUND_Y + 8;
+    n.look = Math.max(-1, Math.min(1, ((G.look.x || 0) * 0.6))) | 0;
+    n.talking = Math.max(0, n.talking - dt);
+  }
+
   if (G.scene === 'game' && !G.dead) {
     // he does not hold one expression for long
     G.moodTimer -= dt;
@@ -1480,8 +1821,7 @@ function update(dt) {
     }
 
     updateCritters(dt);
-    updatePark(dt);
-    updateVisitors(dt);
+    if (atOak()) { updatePark(dt); updateVisitors(dt); }
     if (tickle.cool > 0) tickle.cool -= dt;
 
     // a long press on his trunk is a hug
@@ -1496,14 +1836,15 @@ function update(dt) {
 
     // sneezes
     G.sneezeTimer -= dt;
-    if (G.sneezeTimer <= 0) triggerSneeze();
+    if (G.sneezeTimer <= 0) { if (atOak()) triggerSneeze(); else G.sneezeTimer = 12; }
 
     // ambient falling leaves
-    const rate = G.season === 'autumn' ? 2.2 : G.season === 'winter' ? 0.3 : 0.5;
-    if (Math.random() < dt * rate) dropLeaf(80 + Math.random() * 96, 40 + Math.random() * 40, Math.random() < 0.35);
+    const rate = (G.season === 'autumn' ? 2.2 : G.season === 'winter' ? 0.3 : 0.5) * (atOak() ? 1 : 0.5);
+    if (Math.random() < dt * rate) dropLeaf(atOak() ? 80 + Math.random() * 96 : Math.random() * W(),
+                                            40 + Math.random() * 40, Math.random() < 0.35);
 
     // squirrel appears on its own eventually
-    if (!G.squirrel.spawned && G.sessionTime > 45) maybeSpawnSquirrel();
+    if (atOak() && !G.squirrel.spawned && G.sessionTime > 45) maybeSpawnSquirrel();
   }
 
   // squirrel movement
@@ -1553,16 +1894,18 @@ function parkMargin() {
   return Math.round(W() * step);
 }
 
-function plotCount() { return 4 + save.park.expansions * 3; }
+/* Fewer plots than there used to be, and further apart. An empty park with
+   three good things in it beats a full one with ten. */
+function plotCount() { return 3 + save.park.expansions * 2; }
 
 /* evenly spaced building plots along the grass, skipping the tree */
 function plotPos(i) {
   const n = plotCount();
-  const m = parkMargin() + 16;
+  const m = parkMargin() + 26;
   const span = W() - m * 2;
   let x = m + (span / (n + 1)) * (i + 1);
-  if (Math.abs(x - CX()) < 46) x += (x < CX() ? -1 : 1) * 46;
-  return { x: Math.round(x), y: GROUND_Y + 14 + (i % 2) * 8 };
+  if (Math.abs(x - CX()) < 62) x += (x < CX() ? -1 : 1) * 62;
+  return { x: Math.round(x), y: GROUND_Y + 16 + (i % 2) * 10 };
 }
 
 function propAtPlot(i) { return save.park.props.find(p => p.plot === i); }
@@ -1603,7 +1946,7 @@ function updatePark(dt) {
       const pos = plotPos(src.plot);
       const c = ['#8fd95a', '#5fae3c'];
       G.groundLeaves.push({ x: insetX(pos.x + (Math.random() - 0.5) * 24), y: GROUND_Y + 6 + Math.random() * 20,
-                            col: c[0], col2: c[1], ph: Math.random() * 6.28, landed: true });
+                            col: c[0], col2: c[1], ph: Math.random() * 6.28, landed: true, area: 'oak' });
     }
   }
   for (let i = G.parkMotes.length - 1; i >= 0; i--) {
@@ -1945,6 +2288,7 @@ function sortHall() {
    --------------------------------------------------------------------- */
 function drawWorld(opts) {
   const o = opts || {};
+  if (!atOak() && !o.fall && o.growing === undefined) { drawSideArea(); return; }
   SPR.drawBackdrop(dc, G);
   if (G.burn > 0 && !o.growing) {
     // firelight swallows the daylight
@@ -1955,6 +2299,7 @@ function drawWorld(opts) {
   SPR.drawGround(dc, G);
   SPR.drawPond(dc, G);
   SPR.drawBoundary(dc, G, parkMargin());
+  SPR.drawCosyFoliage(dc, G, 404, 0.9);
   SPR.drawFireGlow(dc, G);
 
   // everything solid in the foreground shares one dark contour
@@ -2001,6 +2346,7 @@ function drawWorld(opts) {
   SPR.layerEnd(dc, '#1a0f08');
 
   SPR.drawFireOnTree(dc, G);
+  if (G.asleep && !G.dead) SPR.drawZzz(dc, G, CX() + 34, 84, 1.4);
   SPR.drawParticles(dc, G);
   // leaves the rake collected, floating up
   for (const m of G.parkMotes) {
@@ -2010,6 +2356,8 @@ function drawWorld(opts) {
   }
   SPR.drawUndergrowth(dc, G);
   SPR.drawForeground(dc, G);
+  drawPickups(dc);
+  SPR.drawVines(dc, G, 51);
   SPR.drawFrameFoliage(dc, G);
   SPR.drawBokeh(dc, G);
   SPR.drawOverlay(dc, G);
@@ -2023,6 +2371,74 @@ function drawWorld(opts) {
       SPR.drawLeafSprite(ctx, l.x, l.y, l.col, l.col2);
     }
   }
+}
+
+
+/* -------------------------------------------------------------------------
+   THE LANE AND THE HOLLOW
+   Same sky, same clock, same weather. Everything else is different, and
+   deliberately emptier than the park: the point of them is the room.
+   ------------------------------------------------------------------------- */
+function drawSideArea() {
+  const lane = areaId() === 'lane';
+  SPR.drawBackdrop(dc, G);
+  SPR.drawGround(dc, G);
+  if (lane) SPR.drawLaneRoad(dc, G);
+  SPR.drawHedgerow(dc, G, lane ? W() * 0.22 : undefined);
+  SPR.drawCosyFoliage(dc, G, lane ? 707 : 909, lane ? 0.45 : 1.4);
+
+  const L = SPR.layerBegin();
+  SPR.drawGroundItems(L, G);
+  if (lane) {
+    SPR.drawNocCamp(L, G, Math.round(W() * 0.62) - 34, GROUND_Y + 14);
+    SPR.drawNoc(L, G, G.noc);
+  } else {
+    SPR.drawStandingStone(L, G, Math.round(W() * 0.62), GROUND_Y + 12);
+    SPR.drawFallenLog(L, G, Math.round(W() * 0.10), GROUND_Y + 26, Math.round(W() * 0.32));
+  }
+  SPR.drawCritters(L, G);
+  SPR.layerEnd(dc, '#1a0f08');
+
+  SPR.drawParticles(dc, G);
+  if (!lane) SPR.drawUndergrowth(dc, G);
+  SPR.drawForeground(dc, G);
+  drawPickups(dc);
+  SPR.drawVines(dc, G, lane ? 61 : 71);
+  SPR.drawFrameFoliage(dc, G);
+  SPR.drawBokeh(dc, G);
+  SPR.drawOverlay(dc, G);
+}
+
+function drawPickups(c) {
+  for (const p of G.pickups) SPR.drawPickup(c, G, p, hover.kind === 'pickup' && hover.p === p);
+}
+
+/* the signposts, drawn on the finished frame so a click lands where it looks */
+function refreshArrows() {
+  G.arrows = [];
+  if (G.cine || G.scene !== 'game' || G.dead || G.menu) return;
+  for (const dir of [-1, 1]) {
+    const i = G.area + dir;
+    if (i < 0 || i >= AREAS.length) continue;
+    const label = AREAS[i].name.replace(/^THE /, '');
+    const box = SPR.travelArrowBox(dir, label);
+    G.arrows.push({ dir, label, hover: false, x: box.x, y: box.y, w: box.w, h: box.h });
+  }
+}
+
+function arrowAt(x, y) {
+  for (const a of G.arrows) if (x >= a.x && x <= a.x + a.w && y >= a.y && y <= a.y + a.h) return a;
+  return null;
+}
+
+function drawArrows(c) {
+  for (const a of G.arrows) SPR.drawTravelArrow(c, G, a.dir, a.label, a.hover);
+}
+
+function bagButtonBox() { return { x: 4, y: H - 26, w: 26, h: 26 }; }
+function overBagButton(x, y) {
+  const b = bagButtonBox();
+  return G.hasBag && x >= b.x && x <= b.x + b.w && y >= b.y && y <= b.y + b.h;
 }
 
 function drawCineFrame() {
@@ -2127,13 +2543,19 @@ function render() {
   ctx.drawImage(buf, sx, sy, sw, sHt, 0, 0, W(), H);
 
   if (G.flash > 0) { ctx.globalAlpha = Math.min(1, G.flash); SPR.px(ctx, 0, 0, W(), H, '#ffffff'); ctx.globalAlpha = 1; }
-  if (!G.cine && G.scene === 'game') SPR.drawHud(ctx, G);
+  if (!G.cine && G.scene === 'game') { drawArrows(ctx); SPR.drawHud(ctx, G); }
+  if (G.areaTitle > 0 && !G.cine) SPR.drawAreaTitle(ctx, G, AREAS[G.area].name, AREAS[G.area].sub, Math.min(1, G.areaTitle));
   if (!G.cine) drawPost(ctx);
   drawHint(ctx);
   drawSigns(ctx);
   if (G.menu) drawMenu(ctx);
   drawDialogue(ctx);
   SPR.drawLetterbox(ctx, G.letterbox);
+  if (G.areaFade > 0) {
+    ctx.globalAlpha = Math.min(1, G.areaFade);
+    SPR.px(ctx, 0, 0, W(), H, '#0a0f0a');
+    ctx.globalAlpha = 1;
+  }
   if (G.holding && G.scene === 'game') {
     const f = worldToFrame(G.holding.x, G.holding.y);
     SPR.drawCursorTool(ctx, G, f.x, f.y, G.holding.id);
@@ -2187,6 +2609,20 @@ function showHallLabel(i) {
 function hitTest(x, y) {
   if (G.scene === 'hall') return { kind: 'hall', i: hallSlotAt(x, y) };
 
+  // away from the oak there is no oak to click, only what is actually there
+  if (G.scene === 'game' && !atOak()) {
+    const pk = pickupAt(x, y);
+    if (pk) return { kind: 'pickup', p: pk, i: -1 };
+    for (let i = G.groundLeaves.length - 1; i >= 0; i--) {
+      const l = G.groundLeaves[i];
+      if (l.area && l.area !== areaId()) continue;
+      if (x > l.x - 3 && x < l.x + 10 && y > l.y - 3 && y < l.y + 9) return { kind: 'leaf', i };
+    }
+    if (areaId() === 'lane' && Math.abs(x - G.noc.x) < 14 && y > G.noc.y - 40 && y < G.noc.y + 4)
+      return { kind: 'noc', i: -1 };
+    return { kind: null, i: -1 };
+  }
+
   // the cottage and the noticeboard are solid objects, checked before him
   if (G.scene === 'game' && !G.dead) {
     if (Math.abs(x - (parkMargin() + 26)) < 24 && y > GROUND_Y - 34 && y < GROUND_Y + 14)
@@ -2204,8 +2640,13 @@ function hitTest(x, y) {
     return { kind: 'sky', i: -1 };
   }
   if (G.scene !== 'game') return { kind: null, i: -1 };
+  {
+    const pk = pickupAt(x, y);
+    if (pk) return { kind: 'pickup', p: pk, i: -1 };
+  }
   for (let i = G.groundLeaves.length - 1; i >= 0; i--) {
     const l = G.groundLeaves[i];
+    if (l.area && l.area !== areaId()) continue;
     if (x > l.x - 3 && x < l.x + 10 && y > l.y - 3 && y < l.y + 9) return { kind: 'leaf', i };
   }
   const s = G.squirrel;
@@ -2242,6 +2683,7 @@ const partCount = {};
 
 function touchPart(part) {
   if (G.dead || G.scene !== 'game') return;
+  if (G.asleep) { wakeHim(); return; }
   if (skipType()) return;
   G.sinceTreeClick = 0;
   const t = DATA.touch[part];
@@ -2279,7 +2721,10 @@ function onMove(ev) {
   if (G.menu) { G.menu.sel = menuRowAt(fr.x, fr.y); cv.style.cursor = G.menu.sel >= -1 ? 'pointer' : 'default'; return; }
   let onSign = false;
   for (const sg of signs) { sg.hover = signAt(fr.x, fr.y) === sg; onSign = onSign || sg.hover; }
-  if (onSign) { cv.style.cursor = 'pointer'; return; }
+  const ar = arrowAt(fr.x, fr.y);
+  for (const a of G.arrows) a.hover = a === ar;
+  G.bagHover = overBagButton(fr.x, fr.y);
+  if (onSign || ar || G.bagHover) { cv.style.cursor = 'pointer'; return; }
   DLG.hover = DLG.choices && dialogueDone() ? choiceAt(fr.x, fr.y) : -1;
   cv.style.cursor = DLG.hover >= 0 ? 'pointer' : (G.holding ? 'none' : cv.style.cursor);
 
@@ -2305,7 +2750,7 @@ function onMove(ev) {
   }
 
   // scrub the cursor quickly over him without pressing: he is ticklish
-  if (G.scene === 'game' && !G.dead && tickle.cool <= 0) {
+  if (G.scene === 'game' && atOak() && !G.dead && tickle.cool <= 0) {
     const onHim = Math.abs(p.x - CX()) < 40 && p.y > 88 && p.y < GROUND_Y;
     if (onHim && tickle.last) {
       const d = Math.abs(p.x - tickle.last.x) + Math.abs(p.y - tickle.last.y);
@@ -2414,6 +2859,13 @@ function onPress(ev) {
   const sg = signAt(fr.x, fr.y);
   if (sg) { SFX.click(); sg.act(); return; }
 
+  // the signposts at the edges, and the bag in the corner
+  if (!G.cine && G.scene === 'game') {
+    const ar = arrowAt(fr.x, fr.y);
+    if (ar) { travel(ar.dir); return; }
+    if (overBagButton(fr.x, fr.y)) { SFX.click(); toggleBag(); return; }
+  }
+
   // a reply, if one is on offer
   if (DLG.on && DLG.choices && dialogueDone()) {
     const ci = choiceAt(fr.x, fr.y);
@@ -2477,6 +2929,8 @@ function onPress(ev) {
     return;
   }
   if (h.kind === 'leaf') { collectLeaf(h.i); return; }
+  if (h.kind === 'pickup') { takePickup(h.p); return; }
+  if (h.kind === 'noc') { SFX.click(); openChat(); return; }
   if (h.kind === 'squirrel') { clickSquirrel(); return; }
   if (h.kind === 'part') {
     grab = { x: p.x, lastX: p.x, moved: 0, t: 0 };
@@ -2497,7 +2951,7 @@ function onPress(ev) {
     SFX.click();
     const rate = (b.rate * incomeMultiplier()).toFixed(2);
     say('THE WISE OAK TREE',
-        b.name + '. ' + b.desc + ' Bringing in about ' + rate + ' leaves a second, which over four hundred years is genuinely enormous.',
+        b.name + '. ' + b.desc + ' Bringing in about ' + rate + ' leaves a second, which over nine hundred years is genuinely enormous.',
         'happy');
     return;
   }
@@ -2542,18 +2996,32 @@ function eraseEverything() {
 }
 
 $('modalclose').onclick = () => { SFX.click(); closeModal(); };
-$('shopclose').onclick = (e) => { e.stopPropagation(); SFX.click(); closeShop(); };
+$('chatsend').onclick = (e) => { e.stopPropagation(); sendChat(); };
+elChatInput.addEventListener('keydown', e => {
+  if (e.key === 'Enter') { e.preventDefault(); sendChat(); }
+});
+$('bagclose').onclick = (e) => { e.stopPropagation(); SFX.click(); closeBag(); };
+$('chatclose').onclick = (e) => { e.stopPropagation(); SFX.click(); closeChat(); };
 elModal.addEventListener('mousedown', e => { if (e.target === elModal && !G.flags.confirming) closeModal(); });
 
 document.addEventListener('keydown', e => {
+  const tag = (e.target && e.target.tagName) || '';
+  if (tag === 'INPUT' || tag === 'TEXTAREA') {
+    if (e.key === 'Escape') { e.target.blur(); closeChat(); }
+    return;
+  }
   if (G.scene === 'hall') {
     if (e.key === 'ArrowRight') G.hall.target += 60;
     if (e.key === 'ArrowLeft') G.hall.target -= 60;
     if (e.key === 'Escape') closeHall();
     return;
   }
-  if (e.key === 'Escape') { if (G.menu) closeMenu(); closeModal(); closeShop(); }
+  if (e.key === 'Escape') { if (G.menu) closeMenu(); closeModal(); closeBag(); closeChat(); }
   if (e.key === ' ') { e.preventDefault(); if (!skipType() && G.scene === 'game') talkToTree(); }
+  if (e.key === 'ArrowLeft') travel(-1);
+  if (e.key === 'ArrowRight') travel(1);
+  if (e.key.toLowerCase() === 'b') toggleBag();
+  if (e.key.toLowerCase() === 't' && areaId() === 'lane') openChat();
   if (e.key.toLowerCase() === 'm') toggleMute();
   if (e.key.toLowerCase() === 'r' && e.shiftKey) eraseEverything();
   if (e.key.toLowerCase() === 'e' && G.scene === 'heaven') openEndings();
@@ -2570,6 +3038,11 @@ checkCompletionist();
 fit();
 seedCritters();
 buildHall();
+for (const id in (save.items || {})) G.inv.items[id] = true;
+G.hasBag = !!save.bag;
+G.areaNow = areaId();
+seedPickups();
+refreshArrows();
 G.muted = save.muted;
 refreshHUD();
 persist();
@@ -2581,13 +3054,33 @@ function beginGame() {
   SFX.kick(); SFX.ach();
   elTitle.classList.add('out');
   setTimeout(() => elTitle.classList.add('hidden'), 520);
+  // he was asleep on the card, so he is asleep in the world too
+  G.asleep = true; G.mood = 'asleep';
   if (hadSave) {
-    say('THE WISE OAK TREE',
-        "You came back. I did not think you would. I have been standing here in the exact same spot, which is my only move.",
-        'happy');
+    setTimeout(wakeHim, 1100);
   } else {
     startIntroCine();
   }
+}
+
+/* the actual waking: a shudder, a blink, and nine hundred years of opinions */
+function wakeHim() {
+  if (!G.asleep) return;
+  G.asleep = false; G.wakeT = 0;
+  G.blink = 0.45; G.shake = 3.2; G.mood = 'shock'; G.moodTimer = 5;
+  SFX.sneeze();
+  for (let i = 0; i < 7; i++) dropLeaf(90 + Math.random() * 76, 40 + Math.random() * 40, i < 2);
+  spawnParticles('star', CX(), 96, 6);
+  setTimeout(() => {
+    if (G.dead || G.cine) return;
+    G.mood = 'sleepy';
+    say('THE WISE OAK TREE', hadSave
+      ? "Mm. You again. I had got all the way to sleep, which for me takes about a decade. Sit down. I'll be awake in a minute."
+      : "Nnh. Someone is standing under me. Right. Give me a moment. Nine hundred years is a long nap to come out of.",
+      'sleepy');
+    if (!save.ach.lane && !save.ach.hollow) setTimeout(() => nudge('the signposts at the edges walk you west and east', 12), 7000);
+    else if (!save.bag) setTimeout(() => nudge('there is a bag somewhere east of here', 10), 7000);
+  }, 700);
 }
 $('tstart').onclick = beginGame;
 elTitle.addEventListener('mousedown', beginGame);
@@ -2600,8 +3093,10 @@ if (/[?&]debug/.test(location.search)) {
                  refreshHUD, dropLeaf, triggerSneeze, maybeSpawnSquirrel, persist,
                  skipAll: () => { if (G.cine) { G.cine.i = G.cine.stages.length - 1; skipStage(); } },
                  parkMargin, parkIncome, menuBox, closeMenu, openBuildMenu, openLedger, plotPos, hitTest,
+                 travel, takePickup, seedPickups, openChat, closeChat, sendChat, openBag, closeBag,
+                 agreePlan, completePlan, planById, areaId, wakeHim, AREAS,
                  signLabels: () => signs.map(s => s.label), signFor: (l) => signs.find(s => s.label === l),
-                 dlgText: () => DLG.text, DLG };
+                 dlgText: () => DLG.text, DLG, snails: () => snails.length, toastQueue };
 }
 
 let last = performance.now();

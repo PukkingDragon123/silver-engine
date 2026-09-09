@@ -68,7 +68,7 @@ html, body {
 #title {
   position: fixed; inset: 0; z-index: 60;
   display: flex; align-items: center; justify-content: center;
-  background: radial-gradient(circle at 50% 42%, #2c4a2a 0%, #14251a 55%, #080d09 100%);
+  background: radial-gradient(circle at 50% 42%, #24384a 0%, #131e28 55%, #070b0e 100%);
   animation: fadein .6s ease both;
 }
 #title.out { animation: fadeout .5s ease both; }
@@ -77,18 +77,19 @@ html, body {
 .tcard { text-align: center; padding: 20px; }
 #tlogo {
   display: block; margin: 0 auto 4px;
-  width: 270px; height: 180px;
+  width: 396px; height: 270px; max-width: 88vw;
   image-rendering: pixelated;
-  filter: drop-shadow(0 6px 0 rgba(0,0,0,.35)) drop-shadow(0 0 26px rgba(124,196,74,.28));
+  filter: drop-shadow(0 6px 0 rgba(0,0,0,.35)) drop-shadow(0 0 30px rgba(120,150,220,.30));
+  animation: breathe 6s ease-in-out infinite;
 }
-@media (max-height: 620px) { #tlogo { width: 180px; height: 120px; } .tsub { margin: 10px 0 14px; } }
+@media (max-height: 700px) { #tlogo { width: 264px; height: 180px; } .tsub { margin: 10px 0 14px; } }
 #title h1 { margin: 0; line-height: 1; display: flex; flex-direction: column; align-items: center; gap: 2px; }
-#title h1 span { font-size: 15px; letter-spacing: 9px; color: #b6d8a0; text-indent: 9px; }
+#title h1 span { font-size: 15px; letter-spacing: 9px; color: #9fb8d0; text-indent: 9px; }
 #title h1 b {
   font-size: clamp(34px, 9vw, 60px); letter-spacing: 4px; color: var(--gold);
   text-shadow: 0 4px 0 #6b3f10, 0 5px 0 #3a2208, 0 8px 22px rgba(0,0,0,.6);
 }
-.tsub { color: #c8dcb8; font-size: 12px; line-height: 1.7; margin: 16px 0 20px; }
+.tsub { color: #b8c8dc; font-size: 12px; line-height: 1.7; margin: 16px 0 20px; }
 #tstart {
   font-family: var(--font); font-size: 14px; letter-spacing: 2px; cursor: pointer;
   color: #2b1c10; background: var(--gold);
@@ -97,8 +98,9 @@ html, body {
   animation: bob 1.8s ease-in-out infinite;
 }
 @keyframes bob { 50% { transform: translateY(-3px); } }
+@keyframes breathe { 50% { transform: translateY(2px) scale(1.012); } }
 #tstart:active { transform: translateY(4px); box-shadow: 0 1px 0 #7a5a10; }
-.tfoot { color: #7e9470; font-size: 10px; letter-spacing: 1px; margin: 18px 0 0; }
+.tfoot { color: #6f8296; font-size: 10px; letter-spacing: 1px; margin: 18px 0 0; }
 
 /* ---------------- ending card ---------------- */
 #endingcard {
@@ -159,24 +161,76 @@ html, body {
 .tro span { font-size: 10px; color: var(--ink-dim); }
 .troicon { width: 22px; height: 22px; image-rendering: pixelated; flex: none; }
 
-#shop {
-  position: absolute; right: 14px; bottom: 14px; width: min(300px, calc(100vw - 28px));
+/* ---------------- the backpack ---------------- */
+#bag {
+  position: absolute; left: 14px; bottom: 60px; width: min(320px, calc(100vw - 28px));
   background: #2a211c; border: 3px solid #000; box-shadow: 0 6px 0 rgba(0,0,0,.4);
   line-height: 1.4; z-index: 25;
 }
-#shoplist { max-height: 210px; overflow-y: auto; }
-.shoprow { display: flex; align-items: center; gap: 8px; padding: 6px 8px; border-bottom: 1px solid #1a1411; }
-.shoprow.owned { opacity: .5; }
+#bagbody { max-height: min(320px, 52vh); overflow-y: auto; }
+.bagtop {
+  display: flex; justify-content: space-between; align-items: baseline; gap: 8px;
+  padding: 7px 9px; border-bottom: 2px solid #1a1411; background: #211a16;
+}
+.bagtop .leaves { color: var(--green); font-size: 12px; letter-spacing: 1px; }
+.bagtop .dim { color: var(--ink-dim); font-size: 10px; }
+.bagempty { margin: 0; padding: 12px 10px; font-size: 11px; color: var(--ink-dim); line-height: 1.6; }
+.bagrow { display: flex; align-items: center; gap: 8px; padding: 6px 8px; border-bottom: 1px solid #1a1411; }
+.bagsec {
+  font-size: 10px; letter-spacing: 2px; color: var(--gold);
+  padding: 7px 9px 4px; border-top: 2px solid #1a1411; background: #241d18;
+}
+.planrow { padding: 5px 9px; border-bottom: 1px solid #1a1411; }
+.planrow b { display: block; font-size: 11px; color: var(--ink); }
+.planrow span { font-size: 10px; color: var(--ink-dim); }
+.planrow.kept b { color: var(--green); }
+
 .shopinfo { flex: 1; display: flex; flex-direction: column; }
 .shopinfo b { font-size: 12px; color: var(--ink); }
 .shopinfo span { font-size: 10px; color: var(--ink-dim); }
 .buy {
-  font-family: var(--font); font-size: 11px; padding: 5px 8px; cursor: pointer;
-  color: var(--green); background: #3a2e26; border: 2px solid #000;
+  font-family: var(--font); font-size: 10px; padding: 5px 7px; cursor: pointer;
+  color: var(--gold); background: #3a2e26; border: 2px solid #000; letter-spacing: 1px;
 }
-.shoprow.poor .buy { color: #a08a70; }
-.itemicon { width: 20px; height: 20px; image-rendering: pixelated; }
+.buy:hover { background: #4a3b30; }
+.itemicon { width: 20px; height: 20px; image-rendering: pixelated; flex: none; }
 .panelfoot { font-size: 10px; color: var(--ink-dim); padding: 6px 8px; border-top: 2px solid #000; }
+
+/* ---------------- talking to Noc ---------------- */
+#chat {
+  position: absolute; left: 50%; bottom: 14px; transform: translateX(-50%);
+  width: min(460px, calc(100vw - 24px));
+  background: #201a26; border: 3px solid #000; box-shadow: 0 6px 0 rgba(0,0,0,.45);
+  z-index: 30; display: flex; flex-direction: column;
+}
+#chat .paneltop { background: #2c2436; color: #ffcf6a; }
+#chatlog {
+  height: min(260px, 42vh); overflow-y: auto; padding: 8px 9px;
+  display: flex; flex-direction: column; gap: 7px;
+}
+.cline { font-size: 11.5px; line-height: 1.55; }
+.cline b { display: block; font-size: 9px; letter-spacing: 2px; margin-bottom: 1px; }
+.cline.noc b { color: #ffcf6a; }
+.cline.noc span { color: #f0e6d4; }
+.cline.you { text-align: right; }
+.cline.you b { color: #8fc2e8; }
+.cline.you span { color: #c9d8e4; }
+.cline.sys { font-size: 10px; color: #8a7f9a; font-style: italic; }
+.cbtns { display: flex; gap: 6px; margin-top: 6px; flex-wrap: wrap; }
+.cbtns .act { font-size: 10px; padding: 5px 9px; }
+#chatbar { display: flex; gap: 6px; padding: 7px; border-top: 2px solid #000; background: #171220; }
+#chatinput {
+  flex: 1; min-width: 0; font-family: var(--font); font-size: 12px;
+  color: var(--ink); background: #0f0c15; border: 2px solid #000; padding: 8px 9px;
+}
+#chatinput:focus { outline: none; border-color: #6b5a8a; }
+#chatinput::placeholder { color: #6b6178; }
+#chatsend {
+  font-family: var(--font); font-size: 11px; letter-spacing: 1px; cursor: pointer;
+  color: #2b1c10; background: var(--gold); border: 2px solid #000; padding: 0 14px;
+}
+#chatsend:active { transform: translateY(2px); }
+@media (max-width: 520px) { #chatlog { height: 34vh; } #bag { bottom: 54px; } }
 
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation-duration: .01ms !important; transition-duration: .01ms !important; }
@@ -192,11 +246,11 @@ html, body {
 <!-- the title card -->
 <div id="title">
   <div class="tcard">
-    <canvas id="tlogo" width="180" height="120"></canvas>
+    <canvas id="tlogo" width="264" height="180"></canvas>
     <h1><span>THE</span><b>WISE OAK</b><span>TREE</span></h1>
-    <p class="tsub">he has been standing here for four hundred years<br>and he has a great deal to say about it</p>
+    <p class="tsub">nine hundred years old &middot; fast asleep<br>he has a great deal to say about it, once he is up</p>
     <button id="tstart">tap to wake him</button>
-    <p class="tfoot">headphones recommended &middot; he does not repeat himself</p>
+    <p class="tfoot">headphones recommended &middot; arrows walk you west and east &middot; noc is out there somewhere</p>
   </div>
 </div>
 
@@ -209,10 +263,21 @@ html, body {
   </div>
 </div>
 
-<div id="shop" class="panel hidden">
-  <div class="paneltop">SQUIRREL'S GOODS <button id="shopclose">&times;</button></div>
-  <div id="shoplist"></div>
-  <div class="panelfoot">leaves only. no refunds. no memory of this conversation.</div>
+<div id="bag" class="panel hidden">
+  <div class="paneltop">YOUR BACKPACK <button id="bagclose">&times;</button></div>
+  <div id="bagbody"></div>
+  <div class="panelfoot">found, not bought. nobody here sells anything any more.</div>
+</div>
+
+<div id="chat" class="panel hidden">
+  <div class="paneltop">TALKING TO NOC <button id="chatclose">&times;</button></div>
+  <div id="chatlog"></div>
+  <div id="chatbar">
+    <input id="chatinput" type="text" autocomplete="off" autocapitalize="sentences" spellcheck="false"
+           placeholder="say something to Noc…" maxlength="400">
+    <button id="chatsend">SAY</button>
+  </div>
+  <div class="panelfoot">type anything &middot; /help for the odd commands</div>
 </div>
 <script>
 /* =========================================================================
@@ -403,12 +468,12 @@ const DATA = {};
    ------------------------------------------------------------------------- */
 DATA.lines = [
   /* ---------- GOOFY ---------- */
-  { id: 'g01', tag: 'goofy', mood: 'happy', text: "I am four hundred years old and I have never once had to find parking." },
+  { id: 'g01', tag: 'goofy', mood: 'happy', text: "I am nine hundred years old and I have never once had to find parking." },
   { id: 'g02', tag: 'goofy', mood: 'smug',  text: "People say 'touch grass'. I say: touch bark. Grass is a coward. Grass runs from winter." },
   { id: 'g03', tag: 'goofy', mood: 'idle',  text: "A woodpecker lives in my elbow. He pays no rent. We are, legally speaking, roommates." },
   { id: 'g04', tag: 'goofy', mood: 'shock', text: "Do NOT look up. There is a squirrel up there doing something unspeakable with a walnut." },
   { id: 'g05', tag: 'goofy', mood: 'happy', text: "My branches are extremely strong. Do not test this. Two children tested this. They were fine. I was not." },
-  { id: 'g06', tag: 'goofy', mood: 'idle',  text: "I have been standing in the exact same spot since 1613. Ask me about my cardio." },
+  { id: 'g06', tag: 'goofy', mood: 'idle',  text: "I have been standing in the exact same spot since 1140. Ask me about my cardio." },
   { id: 'g07', tag: 'goofy', mood: 'smug',  text: "I invented shade. Legally I cannot prove this. Emotionally, I am certain." },
   { id: 'g08', tag: 'goofy', mood: 'sad',   text: "A dog has claimed me. Every Tuesday. I have accepted this as weather." },
   { id: 'g09', tag: 'goofy', mood: 'happy', text: "In autumn I do a little striptease. Very tasteful. Extremely seasonal." },
@@ -467,7 +532,7 @@ DATA.lines = [
   { id: 'r01', tag: 'world', mood: 'sad', text: "In Gaza, children have learned to tell the aircraft apart by sound. I am a tree. I hold no flag and I command no one. I only know that no child anywhere should have to learn that." },
   { id: 'r02', tag: 'world', mood: 'sad', text: "There were olive trees in that valley older than me. Someone's great-grandmother planted them. Trees do not choose sides. Trees only know that it takes eighty years to grow one and an afternoon to end one." },
   { id: 'r03', tag: 'world', mood: 'sad', text: "On October 7th families were murdered and taken from their homes. In the months after, families in Gaza were buried under theirs. Both of those things are true at once, and grief does not run out when you share it." },
-  { id: 'r04', tag: 'world', mood: 'idle',text: "People ask me who is right. I am four hundred years old and I have never once seen a war where the children on either side did anything to deserve it." },
+  { id: 'r04', tag: 'world', mood: 'idle',text: "People ask me who is right. I am nine hundred years old and I have never once seen a war where the children on either side did anything to deserve it." },
   { id: 'r05', tag: 'world', mood: 'sad', text: "In Sudan the famine is real and almost no one is looking. A hungry child does not get less hungry because the news moved on." },
   { id: 'r06', tag: 'world', mood: 'sad', text: "In Ukraine there is a sunflower field that no one can walk into for another thirty years, because of what was buried in it." },
   { id: 'r07', tag: 'world', mood: 'sad', text: "Somewhere tonight a family is sleeping in a stairwell because the building above it is safer than the room they used to have. They had a couch. They had a smell to their kitchen. That is what a refugee is: someone who had a kitchen." },
@@ -483,7 +548,7 @@ DATA.lines = [
   { id: 'r17', tag: 'world', mood: 'sad', text: "There is a plastic island in the Pacific bigger than some countries. Nothing lives there. It is the only place on this planet we built entirely by accident." },
   { id: 'r18', tag: 'world', mood: 'idle',text: "Loneliness now shortens lives about as much as smoking does. You are surrounded by ten thousand people and no roots touching. That is not a personal failure. That is bad forest design." },
   { id: 'r19', tag: 'world', mood: 'sad', text: "A bee species went extinct while you were reading this sentence. Not really. But one did this year, and no one held a funeral, and I found that unbearable." },
-  { id: 'r20', tag: 'world', mood: 'idle',text: "You will be told the problems are too big and you are too small. I am one tree. I have cooled this street by four degrees for four hundred years. Small is a lie people tell to get you to sit down." },
+  { id: 'r20', tag: 'world', mood: 'idle',text: "You will be told the problems are too big and you are too small. I am one tree. I have cooled this street by four degrees for nine hundred years. Small is a lie people tell to get you to sit down." },
   { id: 'r21', tag: 'world', mood: 'sad', text: "Somewhere a hospital ran out of anaesthetic this week. Surgeries happened anyway. I want you to sit with that for exactly five seconds and then go be kind to someone." },
   { id: 'r22', tag: 'world', mood: 'idle',text: "Antibiotics are quietly failing. A scratch used to kill people. It is allowed to become that again if we are careless. Progress is not a ratchet. It is a garden." },
   { id: 'r23', tag: 'world', mood: 'sad', text: "There are children in this world whose entire lives have been a war. Not part of. All of it. Every birthday." },
@@ -521,10 +586,10 @@ DATA.lines = [
   { id: 'r42', tag: 'world', mood: 'sad', text: "The forests near a war do not get counted. Olive groves, orchards, windbreaks, four hundred years of somebody's patience. Nobody writes those numbers down." },
   { id: 'r43', tag: 'world', mood: 'idle',text: "People keep telling me their country is the greatest one. I have roots in a country that has been six different countries. The soil never once noticed." },
   { id: 'r44', tag: 'world', mood: 'sad', text: "There is a generation of children who will need help with their heads long after the shooting stops, and almost nobody is budgeting for that." },
-  { id: 'r45', tag: 'world', mood: 'happy',text: "And still: more people are vaccinated, fed and literate than at any point in my four centuries. Both things are true. Hold both. That is the whole job." },
+  { id: 'r45', tag: 'world', mood: 'happy',text: "And still: more people are vaccinated, fed and literate than at any point in my nine centuries. Both things are true. Hold both. That is the whole job." },
 
   /* ---------- POP CULTURE ----------
-     Allusions, not quotations. He has had four hundred years and a very
+     Allusions, not quotations. He has had nine hundred years and a very
      good view of everyone's picnic blanket, including their phone screen. */
   { id: 'p01', tag: 'pop', mood: 'smug',  text: "There is a whole film about trees like me marching off to war. I was invited. I said I would think about it. That was in 1954 and I am still thinking about it." },
   { id: 'p02', tag: 'pop', mood: 'happy', text: "There is a talking tree in the films who only ever says his own name. Icon. Absolute legend. Zero effort. I say four hundred things and get nothing." },
@@ -559,7 +624,7 @@ DATA.lines = [
   { id: 'p31', tag: 'pop', mood: 'happy', text: "A robot from the future came back to stop a war. I am a tree from the past and I am here to tell you the war is mostly about water and it started already." },
   { id: 'p32', tag: 'pop', mood: 'smug',  text: "There was room on that door. I have thought about it for a hundred and ten years, from a fixed position, with no other hobbies. There was room on that door." },
   { id: 'p33', tag: 'pop', mood: 'sleepy',text: "We need to go deeper. Deeper. Deeper. ...That is just my roots. That is where I keep everything. It is a dream within a dream within a taproot." },
-  { id: 'p34', tag: 'pop', mood: 'idle',  text: "One anime is about giant humans eating people behind a wall, and one is about a boy who becomes strong by running. I have been standing in one place for four centuries. Guess which one I am." },
+  { id: 'p34', tag: 'pop', mood: 'idle',  text: "One anime is about giant humans eating people behind a wall, and one is about a boy who becomes strong by running. I have been standing in one place for nine centuries. Guess which one I am." },
   { id: 'p35', tag: 'pop', mood: 'shock', text: "A man found a notebook that kills people whose names he writes in it. Someone carved four names into my bark in 1987. I have been wondering about this ever since." },
   { id: 'p36', tag: 'pop', mood: 'smug',  text: "There is a pirate looking for a treasure that has been 'just up ahead' for twenty-five years. That is not a story. That is gardening." },
   { id: 'p37', tag: 'pop', mood: 'happy', text: "There is a pocket monster that is a tree pretending to be a rock, or a rock pretending to be a tree. Either way: coward. Pick a lane." },
@@ -650,6 +715,17 @@ DATA.shop = [
    Unlocked by the engine via ACH('id').
    ------------------------------------------------------------------------- */
 DATA.achievements = [
+  // the wider world
+  { id: 'lane',        kind: 'task', icon: 'reach',   name: 'West of Everything',    desc: "Walk down the lane and find out who keeps the lamp." },
+  { id: 'hollow',      kind: 'task', icon: 'reach',   name: 'The East Hollow',       desc: "Walk east until the moss gets serious." },
+  { id: 'backpack',    kind: 'goal', icon: 'reach',   name: 'Somewhere To Put It',   desc: "Find the backpack. Everything changes once you can carry things." },
+  { id: 'talknoc',     kind: 'task', icon: 'mouth',   name: 'Hello, Noc',            desc: "Say something to Noc in your own words." },
+  { id: 'nocchat',     kind: 'goal', icon: 'mouth',   name: 'A Long Conversation',   desc: "Say twelve things to Noc. He counted." },
+  { id: 'realai',      kind: 'chal', icon: 'book',    name: 'A Mind Of His Own',     desc: "Give Noc a real model to think with." },
+  { id: 'plan1',       kind: 'task', icon: 'reach',   name: 'A Plan',                desc: "Agree to do something with Noc." },
+  { id: 'plandone',    kind: 'goal', icon: 'reach',   name: 'Kept Your Word',        desc: "Finish a plan you made with Noc." },
+  { id: 'plan3',       kind: 'goal', icon: 'reach',   name: 'Three Promises',        desc: "Keep three plans." },
+  { id: 'planall',     kind: 'chal', icon: 'book',    name: 'Every Promise Kept',    desc: "Keep every plan Noc ever offered you." },
   // first steps
   { id: 'hello',       kind: 'task', icon: 'leaf',    name: 'Taking Inventory',      desc: "Click the tree. He was going to say something anyway." },
   { id: 'chat10',      kind: 'task', icon: 'mouth',   name: 'Small Talk',            desc: "Hear 10 different things." },
@@ -760,12 +836,21 @@ DATA.achievements = [
    ------------------------------------------------------------------------- */
 DATA.endings = [
   {
+    id: 'together', name: 'THE LAMP AND THE TREE', icon: 'heart',
+    title: "You kept every promise you made out here.",
+    body: "Lights down the lane. A feast nobody made a speech at. An hour of doing nothing on purpose. " +
+          "A grove of his children, badly planted, all of them alive. " +
+          "Noc turned the lamp down and said the park was finished, and the oak said nothing at all, " +
+          "which from him is a standing ovation.",
+    hint: "Make plans with Noc. Then actually do them."
+  },
+  {
     id: 'arson', name: 'THE ARSONIST', icon: 'fire',
     title: "You burned the wise oak tree.",
-    body: "Four hundred years of standing in one place, ended in eleven minutes. " +
+    body: "Nine hundred years of standing in one place, ended in eleven minutes. " +
           "The birds got out. The mice did not all get out. " +
           "He did not curse you. His last words were about you, and they were kind, and that is somehow worse.",
-    hint: "Buy the lighter. Use it."
+    hint: "Find the lighter in the lane. Use it."
   },
   {
     id: 'mercy', name: 'THE MERCIFUL', icon: 'heart',
@@ -794,7 +879,7 @@ DATA.endings = [
     id: 'friend', name: 'BEST FRIENDS', icon: 'heart',
     title: "You hugged him ten times and watered him ten times.",
     body: "He is not built to cry. He did something with his sap that was, functionally, crying. " +
-          "'I have been hugged four times in four hundred years,' he said. 'You did ten in one afternoon. " +
+          "'I have been hugged four times in nine hundred years,' he said. 'You did ten in one afternoon. " +
           "I am going to be insufferable about this to the birch.'",
     hint: "Hug 10 times, water 10 times."
   },
@@ -847,7 +932,7 @@ DATA.godLines = [
 DATA.heavenTreeLines = [
   "Oh! You're here! Do you have any idea how good it feels to have no ROOTS?",
   "I've been FLOATING. Do you understand what that means to me. FLOATING.",
-  "I'm not angry. I had four hundred years and you had one afternoon. I got the better deal.",
+  "I'm not angry. I had nine hundred years and you had one afternoon. I got the better deal.",
   "There's a birch up here who WILL NOT stop talking about her bark. It's paper. We KNOW, Susan.",
   "Go back down. Plant one. That's all. That squares us."
 ];
@@ -862,7 +947,7 @@ DATA.touch = {
       "AAGH. THE EYE. YOU WENT FOR THE EYE.",
       "That is an EYE. That is a functioning EYE with a lens made of SAP.",
       "Do you know how long it took me to grow those? Ninety years. Each.",
-      "I have watched four centuries through that and you just POKED it.",
+      "I have watched nine centuries through that and you just POKED it.",
       "Okay. We are even. I once dropped a branch on a man's car. We are EVEN."
     ]
   },
@@ -899,7 +984,7 @@ DATA.touch = {
     mood: 'sleepy',
     lines: [
       "Careful, there are mice down there and they are extremely private people.",
-      "That is where I keep the last four hundred years. Do not disturb the filing.",
+      "That is where I keep the last nine hundred years. Do not disturb the filing.",
       "The roots go down as far as I go up. You are currently patting my entire subconscious.",
       "Bartholomew says hello. Bartholomew is a mouse. Bartholomew does not actually say anything."
     ]
@@ -933,19 +1018,19 @@ DATA.knockLines = [
   "Who's there? ...No. No, I refuse. I have heard every single one.",
   "Come in. ...That was a joke. There is no in. I am solid all the way through. Mostly.",
   "*knock knock* ...That was me. Doing it back. From the inside. Did that frighten you?",
-  "Yes, hello, one moment, I am four hundred years old and it takes me a while to get to the door.",
+  "Yes, hello, one moment, I am nine hundred years old and it takes me a while to get to the door.",
   "You knocked on wood for luck. On ME. I am the luck. I have been the luck this whole time."
 ];
 
 DATA.moonLines = [
-  "You reached up and touched the moon. From here. With your little arm. I have been trying that for four hundred years.",
+  "You reached up and touched the moon. From here. With your little arm. I have been trying that for nine hundred years.",
   "The moon and I have an arrangement and you have just violated about six clauses of it.",
   "Careful. She pulls the whole ocean around by the nose. She can absolutely handle you.",
   "Every night she comes past, and every night I think: same. Same, mate. Stuck in a circuit, glowing, nobody asks how we are."
 ];
 
 DATA.sunLines = [
-  "Do NOT touch that. That is my LUNCH. That has been my lunch every day for four hundred years.",
+  "Do NOT touch that. That is my LUNCH. That has been my lunch every day for nine hundred years.",
   "Please stop grabbing at the sun. You are making me anxious about my supply chain.",
   "That is a fusion reactor ninety-three million miles away and you just went for it like it was a doorknob."
 ];
@@ -969,11 +1054,11 @@ DATA.replies = {
   world: [
     { tone: 'kind',    text: "That's awful.",                follow: "It is. Sitting with that for a second, instead of scrolling past it, is not nothing. It is small, but it is not nothing." },
     { tone: 'curious', text: "What can I even do?",          follow: "Less than you want and more than none. Give money to people already there. Vote like it matters. Be unbearable about it at dinner. And then go outside." },
-    { tone: 'rude',    text: "Why are you telling me this?", follow: "Because you asked a tree what it thinks and I have had four hundred years to notice who gets crushed and who does the crushing. You can close the tab. I will still be here." },
+    { tone: 'rude',    text: "Why are you telling me this?", follow: "Because you asked a tree what it thinks and I have had nine hundred years to notice who gets crushed and who does the crushing. You can close the tab. I will still be here." },
     { tone: 'kind',    text: "I don't know what to say.",    follow: "Nobody does. The people it is happening to do not know what to say either. Not knowing what to say is not the same as not caring." }
   ],
   pop: [
-    { tone: 'joke',    text: "You watch a lot of telly.",    follow: "I have never seen a single frame of anything. I hear it. Through open car windows. Second-hand, badly described, for four hundred years." },
+    { tone: 'joke',    text: "You watch a lot of telly.",    follow: "I have never seen a single frame of anything. I hear it. Through open car windows. Second-hand, badly described, for nine hundred years." },
     { tone: 'curious', text: "How do you even know that?",   follow: "A teenager explained the entire plot to another teenager under my branches in 2011. It took two hours. I have never recovered." },
     { tone: 'rude',    text: "That was a stretch.",          follow: "Everything I say is a stretch. I am a tree doing bits. Lower your standards and we will both have a nicer afternoon." },
     { tone: 'kind',    text: "Okay, that got me.",           follow: "YES. Four hundred years. Four hundred years for one laugh. Worth it. Genuinely worth it." }
@@ -1049,14 +1134,14 @@ DATA.expansions = [
 
 DATA.houseLines = [
   "The keeper's cottage. Nobody has lived in it since 1974 and the kettle is still warm.",
-  "You may go in. You will find one chair, one window and four hundred years of quiet.",
+  "You may go in. You will find one chair, one window and nine hundred years of quiet.",
   "That is where the ledger is kept. Somebody has to write down what the park is worth.",
-  "I watched them build it. Took eleven weeks. I have taken four hundred years and I am still not finished."
+  "I watched them build it. Took eleven weeks. I have taken nine hundred years and I am still not finished."
 ];
 
 DATA.boardLines = [
   "The noticeboard. Everything this park could be, pinned up in one place.",
-  "Go on. Build something. I have been the only attraction here for four centuries and frankly I am tired.",
+  "Go on. Build something. I have been the only attraction here for nine centuries and frankly I am tired.",
   "A park is just a tree with ambitions."
 ];
 
@@ -1065,6 +1150,375 @@ DATA.visitorTips = [
   "A visitor said the park was lovely. To ME. Directly. I have not recovered.",
   "They fed the birds, sat for eleven minutes, and left without dropping litter. A perfect human."
 ];
+
+/* =========================================================================
+   NEW WORLD CONTENT
+   Areas, NOC, plans, pickups and a great many more television references.
+   ========================================================================= */
+
+/* ---- more of him, mostly about television he has never seen ---- */
+DATA.lines = DATA.lines.concat([
+  { id: 'p50', tag: 'pop', mood: 'smug',  text: "Someone under me was watching the show about the ultra-orthodox family in Jerusalem on their phone. Black and white, everyone smoking, everyone grieving beautifully. I wept sap. Actual sap." },
+  { id: 'p51', tag: 'pop', mood: 'idle',  text: "There is a Israeli programme where a therapist sits in a chair and lets people talk for fifty minutes. They remade it in nine countries. I have been doing it for free, outdoors, for nine hundred years." },
+  { id: 'p52', tag: 'pop', mood: 'happy', text: "A baker fell in love with a supermodel in a show from Tel Aviv and the entire street argued about it for a summer. Under my branches. Loudly. In three languages." },
+  { id: 'p53', tag: 'pop', mood: 'sad',   text: "A woman in a Jerusalem drama wanted an apartment, a husband and God, in that order, and could not have any of them at once. I only ever wanted rain. I have it easy." },
+  { id: 'p54', tag: 'pop', mood: 'shock', text: "The dragon programme. Everybody sat under me for eight years and then had one conversation about the last season and never mentioned it again. Devastating. I still think about it." },
+  { id: 'p55', tag: 'pop', mood: 'smug',  text: "In the paper-money heist show they all took city names as codenames. If I joined, I would be OAK. That is not a city. That is why I would be the brains." },
+  { id: 'p56', tag: 'pop', mood: 'happy', text: "The one with the small town, the bunker, the missing boy and the synth music. A child once hid behind me from something imaginary. I have never been more useful." },
+  { id: 'p57', tag: 'pop', mood: 'idle',  text: "There is a show where an office manager stares into a camera that should not exist. I do that. All day. To you. Right now." },
+  { id: 'p58', tag: 'pop', mood: 'sad',   text: "The one about the nurse who fell into the sea and the island that would not let anyone leave. I am also an island that will not let anyone leave. My island is shade." },
+  { id: 'p59', tag: 'pop', mood: 'laugh', text: "A woman in New York wondered about relationships in voiceover while typing. I do that. Except my laptop is weather and my column is leaves." },
+  { id: 'p60', tag: 'pop', mood: 'smug',  text: "In the show about the Korean debt games, everyone wore green. I wear green nine months a year and nobody gives me a prize." },
+  { id: 'p61', tag: 'pop', mood: 'shock', text: "A man turned into a dragon-ish thing, a chemist turned into a monster, a mob boss went to therapy. Everybody on television is a tree who suddenly grew a personality." },
+  { id: 'p62', tag: 'pop', mood: 'idle',  text: "Somebody watched the baking tent programme on a picnic blanket at my feet. Nobody died. Nobody betrayed anyone. I did not know television could do that." },
+  { id: 'p63', tag: 'pop', mood: 'happy', text: "The show where the sad detective and the sadder detective drive through a wet town for six episodes. That is just November. I do six of those a year." },
+  { id: 'p64', tag: 'pop', mood: 'sly',   text: "There is a cartoon where a yellow family never ages. I have aged nine hundred years and gained one face. We are both cursed. They have better writers." },
+  { id: 'p65', tag: 'pop', mood: 'think', text: "Somebody streamed the show about a friendly Colombian family with a magic house under me. There is a tree in it that keeps a family alive. That is called a documentary where I come from." },
+  { id: 'p66', tag: 'pop', mood: 'happy', text: "The football manager show. Nice moustache man. Kindness as a strategy. I have been running that strategy since before England had a league and it is SLOW but it works." },
+  { id: 'p67', tag: 'pop', mood: 'idle',  text: "In the space programme with the ship and the beard and the tea, they say the mission is to seek out new life. Mate. There are four thousand species in my bark. Come outside." },
+  { id: 'p68', tag: 'pop', mood: 'sad',   text: "The one where the office workers split their brains in half so the sad half never goes home. I have one brain and no home to go to, and I am, on balance, still winning." },
+  { id: 'p69', tag: 'pop', mood: 'smug',  text: "A show about a man who wakes up with no memory in a strange village. That was me every spring until about 1600. You get used to it." },
+  { id: 'p70', tag: 'pop', mood: 'laugh', text: "The nature documentary man whispers over footage of my cousins as though we are shy. We are not shy. We are SLOW. There is a difference and he knows it." }
+]);
+
+/* ---- the areas you can walk to ---- */
+DATA.areas = [
+  { id: 'lane',   name: 'THE WEST LANE',   sub: 'where the road forgets to go' },
+  { id: 'oak',    name: 'THE OAK',         sub: 'he has not moved' },
+  { id: 'hollow', name: 'THE EAST HOLLOW', sub: 'quiet, mossy, slightly too green' }
+];
+
+/* ---- NOC ---- */
+DATA.nocIntro = [
+  "Oh. Hello. I'm Noc. I keep the lamp lit on this side of the park.",
+  "No, I don't sell anything. I used to. It made me tired and it made me boring.",
+  "Now I just talk, and I make plans with people, and sometimes the plans work."
+];
+
+DATA.nocLines = [
+  "I've been out here since the lamp was oil. Ask me anything, I'll probably answer sideways.",
+  "The oak talks a lot. He listens more than he lets on. Don't tell him I said that.",
+  "Everything good in this park started as somebody saying 'what if' out loud to somebody else.",
+  "I don't have a shop. I have a kettle and opinions. Better deal, honestly.",
+  "You can type at me, you know. Actual words. I'll do my best with them.",
+  "Moths think my lamp is the moon. I've stopped correcting them. It seems unkind.",
+  "If you want something built, we plan it. Plans are just promises with steps.",
+  "The hollow to the east is where things get left behind. Go look. Things get left behind for a reason, but they also get FOUND for a reason."
+];
+
+DATA.nocTopics = {
+  oak:    "He's older than the road, older than the parish, older than the argument about where the parish ends. He'll pretend that's nothing.",
+  park:   "Empty is not the same as unfinished. Leave room. People come for the room.",
+  leaves: "Leaves are the local currency because nobody agreed to it. That's how all currency starts.",
+  plan:   "Say a word and we'll make it a plan. Try: party, lights, quiet, tree, feast, stars.",
+  noc:    "Noc. Short for nothing. Long for nocturnal. I keep the lamp and I keep the hours nobody wants.",
+  you:    "You're the first person in a while who walked all the way over here instead of just looking.",
+  night:  "Night's the honest shift. Everything stops performing.",
+  tv:     "He'll tell you about television he has never seen. He hears it through car windows. He's usually about eighty percent right, which is worse than wrong."
+};
+
+/* things you and Noc can agree to do, and what it takes */
+DATA.plans = [
+  { id: 'lights',  name: 'STRING THE LAMPS',  keys: ['light', 'lamp', 'lantern', 'glow'],
+    ask: "Lights, then. Little ones, all the way down the lane. We'll need leaves — forty of them.",
+    need: { leaves: 40 },
+    done: "Look at that. The lane has a heartbeat now.",
+    give: { upgrade: 'lamps' } },
+  { id: 'feast',   name: 'A QUIET FEAST',     keys: ['feast', 'food', 'eat', 'picnic', 'kettle', 'tea'],
+    ask: "A feast. Nothing loud. Blankets, bread, one flask of something. Thirty leaves and I'll bring the kettle.",
+    need: { leaves: 30 },
+    done: "Nobody made a speech. Best party I have ever been to.",
+    give: { item: 'hat' } },
+  { id: 'stars',   name: 'WATCH THE STARS',   keys: ['star', 'sky', 'night', 'meteor', 'watch'],
+    ask: "We wait for dark and we look up together. Costs nothing. Costs everything, if you're busy.",
+    need: { night: true },
+    done: "Nine hundred years he's been looking up and he still gasps. Every time.",
+    give: { item: 'diary' } },
+  { id: 'quiet',   name: 'A HOUR OF QUIET',   keys: ['quiet', 'still', 'silence', 'rest', 'nothing'],
+    ask: "We do nothing. Deliberately. Hardest plan on the board.",
+    need: {},
+    done: "That was the most anyone has done for him in a century.",
+    give: { leaves: 25 } },
+  { id: 'paper',   name: 'PRINT THE NEWS',    keys: ['news', 'paper', 'print', 'tell', 'story'],
+    ask: "We write down what actually happened here and we pin it up. Twenty leaves for the paper.",
+    need: { leaves: 20 },
+    done: "One page. True. Pinned where the wind can read it.",
+    give: { item: 'pamph' } },
+  { id: 'water',   name: 'DIG THE CHANNEL',   keys: ['water', 'rain', 'pond', 'drink', 'thirst'],
+    ask: "The pond doesn't reach his roots. We fix that. Bring a can and thirty-five leaves.",
+    need: { leaves: 35 },
+    done: "He drank for six hours and said nothing. That's how you know.",
+    give: { item: 'can' } },
+  { id: 'grove',   name: 'PLANT A GROVE',     keys: ['grove', 'plant', 'acorn', 'seed', 'child', 'children'],
+    ask: "Acorns. Lots of them. He'll pretend not to care and then count them all night.",
+    need: { leaves: 15 },
+    done: "He has family now. He is being extremely normal about it.",
+    give: { item: 'acorn' } }
+];
+
+/* things lying in the world, waiting to be picked up */
+DATA.pickups = [
+  { id: 'backpack', area: 'hollow', x: 0.30, name: 'AN OLD CANVAS BACKPACK',
+    line: "Somebody left this against a stone and never came back for it. It still smells of woodsmoke." },
+  { id: 'acorn',    area: 'oak',    x: 0.28, need: 'backpack', name: 'AN ACORN',
+    line: "One of his. It has a 0.0001% chance of becoming him. Carry it anyway." },
+  { id: 'can',      area: 'lane',   x: 0.72, need: 'backpack', name: 'A DENTED WATERING CAN',
+    line: "Noc's. He says take it. He says he has three, which is a lie, he has one." },
+  { id: 'lighter',  area: 'lane',   x: 0.18, need: 'plans3',   name: 'A LIGHTER',
+    line: "It is cold and small and it does exactly one thing. You should probably leave it." }
+];
+
+DATA.nocPlanNudge = [
+  "Say what you want out loud. I'm good at out loud.",
+  "Plans, then. What are we doing about all this?",
+  "Give me a word and I'll give you a plan."
+];
+</script>
+<script>
+/* =========================================================================
+   NOC'S BRAIN
+   Noc answers what you actually type. Two ways:
+
+   1. LOCAL (always on, no setup, works offline) — a small associative
+      responder built out of Noc's own vocabulary. It reads your sentence for
+      mood, subject and intent, and answers in character.
+   2. REAL (optional) — type  /key sk-ant-...  into the talk box and Noc's
+      replies come from the Claude API instead, with the local brain as the
+      fallback the moment anything goes wrong.
+
+   Either way the reply can carry an instruction back to the game, written as
+   a tag at the end of the line:  [plan:lights]  [gift:can]  [mood:warm]
+   ========================================================================= */
+(function () {
+'use strict';
+
+const KEY_STORE = 'wiseoak.noc.key';
+const MODEL_STORE = 'wiseoak.noc.model';
+const DEFAULT_MODEL = 'claude-sonnet-5';
+
+let apiKey = '';
+let model = DEFAULT_MODEL;
+try {
+  apiKey = localStorage.getItem(KEY_STORE) || '';
+  model = localStorage.getItem(MODEL_STORE) || DEFAULT_MODEL;
+} catch (e) {}
+
+const history = [];      // { role, text } — what has actually been said
+const memory = { name: null, likes: [], said: [] };
+
+/* ---------------------------------------------------------------------
+   READING WHAT YOU TYPED
+   --------------------------------------------------------------------- */
+const D = () => (typeof DATA !== 'undefined' ? DATA : {});
+
+const STOP = new Set(('a an the and or but so is are was were be been being of to in on at it its i you he she they we me my your our this that what why how when who do does did not no yes ok okay please just very really can could would should will shall have has had if then than for with about there here them his her their as from by up out about').split(' '));
+
+function words(s) {
+  return (s || '').toLowerCase().replace(/[^a-z0-9' ]+/g, ' ').split(/\s+/).filter(Boolean);
+}
+function keywords(s) { return words(s).filter(w => !STOP.has(w) && w.length > 2); }
+
+function readIntent(text) {
+  const t = (text || '').toLowerCase();
+  const k = keywords(text);
+  const out = { kind: 'talk', plan: null, topic: null, mood: 'level', keywords: k };
+
+  if (/^\s*$/.test(t)) out.kind = 'empty';
+  else if (/\?\s*$/.test(t) || /^(what|why|how|when|who|where|do you|are you|can you|did you|is it)\b/.test(t)) out.kind = 'question';
+  if (/\b(hi|hey|hello|yo|shalom|salaam|good (morning|evening|night))\b/.test(t)) out.kind = 'greet';
+  if (/\b(bye|goodbye|see you|later|night)\b/.test(t) && t.length < 24) out.kind = 'bye';
+  if (/\b(thanks|thank you|cheers|ta)\b/.test(t)) out.kind = 'thanks';
+  if (/\b(sorry|my bad|apolog)/.test(t)) out.kind = 'sorry';
+  if (/\b(sad|tired|lonely|hurt|scared|anxious|awful|terrible|down|depress)/.test(t)) out.mood = 'low';
+  if (/\b(love|great|happy|beautiful|amazing|lovely|good|nice|brilliant)/.test(t)) out.mood = 'warm';
+  if (/\b(stupid|hate|shut up|boring|dumb|useless)\b/.test(t)) out.mood = 'sharp';
+  if (/\b(plan|let'?s|lets|shall we|we should|can we|i want|i'd like|build|make|do)\b/.test(t)) out.kind = 'plan';
+  if (/\bmy name is ([a-z]+)/.test(t)) { memory.name = RegExp.$1.replace(/^./, c => c.toUpperCase()); out.kind = 'name'; }
+  else if (/\bi'?m ([a-z]{2,12})\b/.test(t) && /name/.test(t)) memory.name = RegExp.$1;
+
+  // a plan wins over everything else if the words match one
+  for (const p of D().plans || []) {
+    if (p.keys.some(kw => t.includes(kw))) { out.plan = p.id; out.kind = 'plan'; break; }
+  }
+  for (const topic in (D().nocTopics || {})) {
+    if (t.includes(topic)) { out.topic = topic; break; }
+  }
+  if (/\btree|oak\b/.test(t)) out.topic = out.topic || 'oak';
+  if (/\btv|telly|show|series|watch|netflix|episode\b/.test(t)) out.topic = out.topic || 'tv';
+  return out;
+}
+
+/* ---------------------------------------------------------------------
+   THE LOCAL BRAIN
+   --------------------------------------------------------------------- */
+const OPENERS = {
+  greet: ["Hello you.", "There you are.", "Evening. Or whatever it is under all that canopy.", "Hello. Sit down, the moss is dry."],
+  question: ["Right.", "Good question.", "Hm.", "Nobody's asked me that in a while."],
+  thanks: ["You're welcome.", "Any time.", "Don't. It was nothing and I liked doing it."],
+  sorry: ["Nothing to be sorry for.", "Stop that.", "You're fine."],
+  bye: ["Go on then.", "Mind the roots on the way back.", "The lamp stays on."],
+  talk: ["Mm.", "Go on.", "Alright.", "I hear you."]
+};
+const LOW = [
+  "That's a heavy thing to carry into a park at this hour. Put it down here for a minute, nobody's using the bench.",
+  "You don't have to be alright out here. The oak isn't, most days, and he's the main attraction.",
+  "Come and stand where the lamp is. It doesn't fix anything. It's just warmer."
+];
+const WARM = [
+  "See, that's the sort of thing that keeps the lamp lit.",
+  "I'll take that. I'll take that all the way home with me.",
+  "The oak heard that. He'll pretend he didn't."
+];
+const SHARP = [
+  "Fair enough. I've been called worse by a moth.",
+  "You're allowed. I'm made of patience and lamp oil.",
+  "Noted. Filed. Ignored, gently."
+];
+const MUSINGS = [
+  "Everything here happened slowly enough that nobody noticed it happening.",
+  "You can tell a park is loved by how much of it is empty on purpose.",
+  "The oak measures things in centuries and I measure them in kettles. We meet in the middle around teatime.",
+  "Nothing out here is in a hurry, which is either restful or maddening depending on what you brought with you.",
+  "Half of what I know I learned from people talking to somebody else near my lamp."
+];
+const ABOUT = [
+  "$K, is it. I've thought about $K more than is healthy for a man with one lamp.",
+  "$K. Big word for a small park. Go on.",
+  "You said $K like it was ordinary. Around here nothing is.",
+  "$K. Right. The oak has a speech about that. I have a shorter one: it depends who's standing under it."
+];
+
+function pick(a, seed) { return a[Math.floor(Math.random() * a.length)]; }
+
+function localReply(text, ctx) {
+  const it = readIntent(text);
+  const bits = [];
+
+  if (it.kind === 'empty') return { text: "Take your time. I've got all night, that's rather the point of me.", intent: it };
+  if (it.kind === 'name' && memory.name) {
+    return { text: memory.name + ". Good name. I'll use it sparingly so it keeps its shine.", intent: it };
+  }
+
+  bits.push(pick(OPENERS[it.kind] || OPENERS.talk));
+
+  if (it.mood === 'low') bits.push(pick(LOW));
+  else if (it.mood === 'warm') bits.push(pick(WARM));
+  else if (it.mood === 'sharp') bits.push(pick(SHARP));
+
+  if (it.plan) {
+    const p = (D().plans || []).find(x => x.id === it.plan);
+    if (p) {
+      bits.push(p.ask);
+      return { text: bits.join(' '), intent: it, plan: p.id };
+    }
+  }
+  if (it.topic && D().nocTopics && D().nocTopics[it.topic]) bits.push(D().nocTopics[it.topic]);
+  else if (it.keywords.length) bits.push(pick(ABOUT).replace(/\$K/g, it.keywords[0]));
+  else bits.push(pick(MUSINGS));
+
+  if (it.kind === 'question' && Math.random() < 0.5 && D().nocLines) bits.push(pick(D().nocLines));
+  if (ctx && ctx.night && Math.random() < 0.3) bits.push("It's dark. Everything I say is truer after dark, ask anyone.");
+  if (memory.name && Math.random() < 0.25) bits.push("Right, " + memory.name + "?");
+
+  return { text: bits.join(' '), intent: it, plan: null };
+}
+
+/* ---------------------------------------------------------------------
+   THE REAL ONE
+   --------------------------------------------------------------------- */
+function systemPrompt(ctx) {
+  const plans = (D().plans || []).map(p => '- ' + p.id + ': ' + p.name + ' — ' + p.ask).join('\n');
+  return [
+    "You are NOC, the lamp-keeper of a small park in a pixel-art game called THE WISE OAK TREE.",
+    "You are quiet, dry, kind and slightly worn out. You speak in short paragraphs, two or three sentences, never more.",
+    "You used to run a little shop and you gave it up because it made you boring. You do NOT sell anything. You make plans with people instead.",
+    "Your neighbour is a nine-hundred-year-old talking oak who has opinions about television he has never seen.",
+    "Never break character, never mention being an AI or a model, never use emoji, never use stage directions.",
+    "Do not make jokes about real wars, bombings, or real people who have been hurt. If the player pushes for that, answer plainly and change the subject.",
+    "",
+    "If the player agrees to do something with you that matches one of these plans, end your reply with a tag on its own like [plan:lights].",
+    plans,
+    "",
+    "Current state — season: " + (ctx.season || '?') + ", " + (ctx.night ? "night" : "day") +
+    ", leaves the player holds: " + (ctx.leaves | 0) + ", plans finished: " + (ctx.plansDone || 0) +
+    ", backpack found: " + (ctx.backpack ? "yes" : "no") + "."
+  ].join('\n');
+}
+
+async function remoteReply(text, ctx) {
+  const msgs = history.slice(-10).map(h => ({ role: h.role, content: h.text }));
+  msgs.push({ role: 'user', content: text });
+  const res = await fetch('https://api.anthropic.com/v1/messages', {
+    method: 'POST',
+    headers: {
+      'content-type': 'application/json',
+      'x-api-key': apiKey,
+      'anthropic-version': '2023-06-01',
+      'anthropic-dangerous-direct-browser-access': 'true'
+    },
+    body: JSON.stringify({
+      model, max_tokens: 300, system: systemPrompt(ctx), messages: msgs
+    })
+  });
+  if (!res.ok) throw new Error('http ' + res.status);
+  const j = await res.json();
+  const out = (j.content || []).filter(b => b.type === 'text').map(b => b.text).join('').trim();
+  if (!out) throw new Error('empty');
+  return out;
+}
+
+/* pull [plan:x] / [gift:x] tags off the end of a reply */
+function parseTags(text) {
+  const tags = {};
+  const clean = text.replace(/\[(plan|gift|mood):([a-z0-9_-]+)\]/gi, (m, k, v) => { tags[k.toLowerCase()] = v.toLowerCase(); return ''; }).trim();
+  return { text: clean, tags };
+}
+
+/* ---------------------------------------------------------------------
+   PUBLIC
+   --------------------------------------------------------------------- */
+const AI = {
+  get live() { return !!apiKey; },
+  get model() { return model; },
+  setKey(k) {
+    apiKey = (k || '').trim();
+    try { apiKey ? localStorage.setItem(KEY_STORE, apiKey) : localStorage.removeItem(KEY_STORE); } catch (e) {}
+    return !!apiKey;
+  },
+  setModel(m) {
+    model = (m || '').trim() || DEFAULT_MODEL;
+    try { localStorage.setItem(MODEL_STORE, model); } catch (e) {}
+    return model;
+  },
+  forget() { history.length = 0; memory.name = null; },
+
+  /* always resolves — Noc never fails to say something */
+  async ask(text, ctx) {
+    ctx = ctx || {};
+    history.push({ role: 'user', text });
+    const local = localReply(text, ctx);
+    let reply = local.text, plan = local.plan, live = false;
+
+    if (apiKey) {
+      try {
+        const raw = await remoteReply(text, ctx);
+        const parsed = parseTags(raw);
+        reply = parsed.text;
+        plan = parsed.tags.plan || null;
+        live = true;
+      } catch (e) {
+        reply = local.text;
+        plan = local.plan;
+      }
+    }
+    history.push({ role: 'assistant', text: reply });
+    if (history.length > 24) history.splice(0, history.length - 24);
+    return { text: reply, plan, live, intent: local.intent };
+  }
+};
+
+window.NOC_AI = AI;
+})();
 </script>
 <script>
 /* =========================================================================
@@ -1630,7 +2084,8 @@ const MOODS = {
   sleepy: { lid: 0.72, brow:  2, tilt:  0, mouth: 'flat',  pupil: 1.1, squint: 0.0 },
   think:  { lid: 0.34, brow: -1, tilt:  2, mouth: 'flat',  pupil: 1.0, squint: 0.0 },
   creepy: { lid: -0.30, brow: -1, tilt: 0, mouth: 'wide',  pupil: 0.35, squint: 0.0 },
-  dead:   { lid: 0.0,  brow:  1, tilt:  0, mouth: 'flat',  pupil: 1.0, squint: 0.0 }
+  dead:   { lid: 0.0,  brow:  1, tilt:  0, mouth: 'flat',  pupil: 1.0, squint: 0.0 },
+  asleep: { lid: 1.0,  brow:  1, tilt:  0, mouth: 'flat',  pupil: 1.1, squint: 0.0 }
 };
 
 /* a slightly wavy horizontal groove — bark is never straight */
@@ -1705,6 +2160,73 @@ function drawTree(c, g) {
     const hw = trunkHalfWidth(y);
     const x = CX + off(y) + Math.floor((rnd() * 2 - 1) * (hw - 4));
     px(c, x, y, 1, 2 + Math.floor(rnd() * 4), rnd() > 0.45 ? B.lo : B.hi);
+  }
+
+  /* --- nine hundred years of weather ---
+     Age is not one effect. It is moss on the sunless side, lichen where the
+     rain sits, split bark that healed crooked, a hollow nobody filled in,
+     and burls that grew where something once went wrong. */
+  const age = mulberry(77);
+  // deep vertical fissures, healed crooked
+  for (let i = 0; i < 22; i++) {
+    const y0 = 92 + age() * 56;
+    const len = 6 + age() * 26;
+    const hw = trunkHalfWidth(y0);
+    const x0 = CX + off(y0) + (age() * 2 - 1) * (hw - 6);
+    for (let y = 0; y < len; y++) {
+      const wob = Math.round(Math.sin(y * 0.5 + i) * 1.2);
+      px(c, x0 + wob, y0 + y, 1, 1, B.deep);
+      px(c, x0 + wob + 1, y0 + y, 1, 1, mix(B.hi, B.mid, 0.4));
+    }
+  }
+  // burls — old wounds that grew round
+  for (const [by, bd] of [[104, -1], [131, 1], [146, -1]]) {
+    const hw = trunkHalfWidth(by);
+    const bx = CX + off(by) + bd * (hw - 7);
+    pcircle(c, bx, by, 5, B.lo);
+    pcircle(c, bx - 1, by - 1, 4, B.mid);
+    pcircle(c, bx - 2, by - 2, 2, mix(B.hi, B.mid, 0.3));
+    pcircle(c, bx, by, 1.5, B.deep);
+  }
+  // the hollow, low on the shadow side; something lives in there
+  {
+    const hy = 149, hw = trunkHalfWidth(hy);
+    const hx = CX + off(hy) + hw - 13;
+    pellipse(c, hx, hy, 6, 9, B.deep);
+    pellipse(c, hx, hy, 5, 8, '#160d06');
+    pellipse(c, hx - 1, hy - 6, 5, 2, B.lo);
+    if (!g.dead && Math.sin(g.t * 0.31) > 0.94) {
+      dot(c, hx - 1, hy, '#ffe066'); dot(c, hx + 2, hy, '#ffe066');
+    }
+  }
+  // moss creeping up the sunless side, and pale lichen where rain lingers
+  {
+    const mossCol = mix(mix('#3f6f2c', '#0a1226', dk * 0.7), '#7fb04a', 0.25);
+    const lich = mix(mix('#9fb0a0', '#0a1226', dk * 0.7), '#d8e4d0', 0.3);
+    for (let i = 0; i < 150; i++) {
+      const y = GROUND_Y + 4 - age() * age() * 62;
+      const hw = trunkHalfWidth(y);
+      const side = age() > 0.22 ? 1 : -1;
+      const x = CX + off(y) + side * (hw - 1 - age() * 9);
+      px(c, x, y, 1 + (age() > 0.7 ? 1 : 0), 1, age() > 0.72 ? mix(mossCol, '#8fd95a', 0.4) : mossCol);
+    }
+    for (let i = 0; i < 26; i++) {
+      const y = 90 + age() * 58;
+      const hw = trunkHalfWidth(y);
+      const x = CX + off(y) + (age() * 2 - 1) * (hw - 5);
+      c.globalAlpha = 0.55;
+      pcircle(c, x, y, 1 + age() * 2, lich);
+      c.globalAlpha = 1;
+    }
+  }
+  // a bracket fungus, the way they always come to the very old
+  {
+    const fy = 121, hw = trunkHalfWidth(fy);
+    const fx = CX + off(fy) - hw + 1;
+    pellipse(c, fx, fy, 6, 2, mix('#c08a3a', '#0a1226', dk * 0.7));
+    pellipse(c, fx, fy - 1, 5, 1.4, mix('#e0aa55', '#0a1226', dk * 0.7));
+    pellipse(c, fx, fy + 1, 5, 1, mix('#7a5220', '#0a1226', dk * 0.7));
+    pellipse(c, fx + 2, fy + 5, 4, 1.6, mix('#b07c34', '#0a1226', dk * 0.7));
   }
 
   // branches
@@ -1823,6 +2345,7 @@ function drawFace(c, g, off, B, dk) {
 
   let lid = M.lid * (1 - stare) + (-0.30) * stare;
   if (g.blink > 0 && !g.dead) lid = 1;
+  if (g.asleep) lid = 1;
   const brow = M.brow - stare * 2;
   const glowAmt = Math.max(dk, Math.max(stare * 0.9, (g.burn || 0) * 0.85));
   const LIT = mix(B.hi, '#ffe0b0', 0.25);      // sun side
@@ -2479,27 +3002,9 @@ function drawCursorTool(c, g, x, y, id) {
    IN-WORLD HUD — drawn in pixels, because the game has no other interface
    ------------------------------------------------------------------------- */
 function drawHud(c, g) {
-  const pad = 6;
-  // leaf tally on a little wooden sign
-  const n = String(g.inv.leaves);
-  const w = 26 + n.length * 6;
-  px(c, pad, pad, w, 15, '#1a0f08');
-  px(c, pad + 1, pad + 1, w - 2, 13, '#4a3423');
-  px(c, pad + 1, pad + 1, w - 2, 1, '#6b4a30');
-  drawLeafSprite(c, pad + 4, pad + 4, '#7cc44a', '#2d6b1f');
-  digits(c, pad + 15, pad + 5, n, '#f4ead6');
-
-  // season and time
-  const label = g.season.toUpperCase();
-  const sw = label.length * 4 + 14;
-  px(c, pad, pad + 18, sw, 12, '#1a0f08');
-  px(c, pad + 1, pad + 19, sw - 2, 10, '#3a2e26');
-  if (isNight(g.timeOfDay)) {
-    pcircle(c, pad + 6, pad + 24, 3, '#e9eeff'); pcircle(c, pad + 8, pad + 23, 3, '#3a2e26');
-  } else {
-    pcircle(c, pad + 6, pad + 24, 3, '#ffe066');
-  }
-  tinyText(c, pad + 11, pad + 21, label, '#c8b89a');
+  /* Almost nothing. The leaf tally used to live up here and it made the park
+     feel like a spreadsheet. Now the only permanent things on screen are the
+     sound switch and, once you have found it, your bag. */
 
   // sound toggle, bottom right
   const mx = W - 18, my = H - 16;
@@ -2509,6 +3014,38 @@ function drawHud(c, g) {
   for (let i = 0; i < 4; i++) px(c, mx + 4, my + 5 - i, 2, 2 + i * 2, '#f4ead6');
   if (g.muted) for (let i = 0; i < 5; i++) { dot(c, mx + 7 + i, my + 2 + i, '#ef5330'); dot(c, mx + 7 + i, my + 6 - i, '#ef5330'); }
   else { px(c, mx + 8, my + 3, 1, 4, '#f4ead6'); px(c, mx + 10, my + 1, 1, 8, '#f4ead6'); }
+
+  if (g.bagOpen !== undefined && g.hasBag) drawBagButton(c, g);
+}
+
+/* the bag, once you own one: bottom left, and it bulges when it is full */
+function drawBagButton(c, g) {
+  const x = 8, y = H - 22, hot = g.bagHover;
+  c.globalAlpha = 0.35; pellipse(c, x + 9, y + 19, 9, 2, '#000000'); c.globalAlpha = 1;
+  const bump = hot ? 1 : 0;
+  drawBackpackSprite(c, x, y - bump, 1);
+  if (g.bagBadge > 0) {
+    pcircle(c, x + 17, y - 1 - bump, 4, '#1a0f08');
+    pcircle(c, x + 17, y - 1 - bump, 3, '#ef8a30');
+    dot(c, x + 17, y - 3 - bump, '#ffe9b0'); px(c, x + 17, y - 2 - bump, 1, 3, '#ffe9b0');
+  }
+}
+
+/* an old canvas backpack, drawn once and used everywhere */
+function drawBackpackSprite(c, x, y, s) {
+  const cvs = '#8a6a3f', dkc = '#5f4726', lit = '#b08c58', strap = '#4a3620';
+  px(c, x + 2, y + 4, 14, 14, cvs);
+  px(c, x + 2, y + 4, 14, 2, lit);
+  px(c, x + 2, y + 16, 14, 2, dkc);
+  px(c, x + 1, y + 6, 1, 11, dkc); px(c, x + 16, y + 6, 1, 11, dkc);
+  px(c, x + 4, y + 1, 10, 5, cvs);            // the flap
+  px(c, x + 4, y + 1, 10, 1, lit);
+  px(c, x + 3, y + 6, 12, 2, dkc);
+  px(c, x + 8, y + 6, 3, 4, strap);           // buckle strap
+  px(c, x + 8, y + 8, 3, 2, '#c9a659');
+  px(c, x + 3, y + 10, 12, 5, mix(cvs, dkc, 0.35));   // front pocket
+  px(c, x + 3, y + 10, 12, 1, lit);
+  px(c, x + 5, y + 12, 8, 1, strap);
 }
 
 /* a 3x5 pixel numeral set, for the leaf tally */
@@ -2609,10 +3146,12 @@ function drawItemIcon(c, x, y, id) {
 function drawGroundItems(c, g) {
   const dk = darkness(g.timeOfDay);
   for (const it of g.groundLeaves) {
+    if (it.area && g.areaNow && it.area !== g.areaNow) continue;
     const bob = Math.sin(g.t * 3 + it.ph) * 0.5;
     c.globalAlpha = 0.3; pellipse(c, it.x + 3, it.y + 6, 5, 2, '#0d1a08'); c.globalAlpha = 1;
     drawLeafSprite(c, it.x, it.y + bob, mix(it.col, '#0a1226', dk * 0.6), mix(it.col2, '#0a1226', dk * 0.6));
   }
+  if (g.areaNow && g.areaNow !== 'oak') return;
   for (const sp of g.saplings) {
     const h = Math.min(26, sp.age * 0.7);
     const sway = Math.sin(g.t * 1.6 + sp.ph) * 1.2;
@@ -3488,6 +4027,382 @@ function drawGrowingTree(c, g, p) {
   glow(c, CX, GROUND_Y - 30 * k, 40 * k, '#c8f090', 0.35 * (1 - p * 0.6));
 }
 
+
+/* =========================================================================
+   SLEEP, NEIGHBOURS, AND THE ROAD OUT OF HERE
+   ========================================================================= */
+
+/* he snores in three sizes */
+function drawZzz(c, g, x, y, sc) {
+  sc = sc || 1;
+  for (let i = 0; i < 3; i++) {
+    const t = (g.t * 0.5 + i * 0.34) % 1;
+    const sz = Math.round((3 + i * 1.4) * sc);
+    const zx = Math.round(x + i * 9 * sc + Math.sin(g.t * 1.1 + i) * 2);
+    const zy = Math.round(y - t * 30 * sc);
+    const a = Math.max(0, Math.sin(t * Math.PI));
+    const w = Math.max(1, Math.round(sc));
+    const col = '#e8f0ff';
+    c.globalAlpha = a * 0.35;
+    px(c, zx - 1, zy - 1, sz + 2, sz + 2, '#0d1420');
+    c.globalAlpha = a * 0.95;
+    px(c, zx, zy, sz, w, col);
+    for (let k = 0; k < sz; k++) px(c, zx + sz - w - k * (sz - w) / Math.max(1, sz - 1), zy + k, w, 1, col);
+    px(c, zx, zy + sz - w, sz, w, col);
+    c.globalAlpha = 1;
+  }
+}
+
+/* -------------------------------------------------------------------------
+   NOC — lamp-keeper. Long coat, wide hat, one lantern, no shop.
+   ------------------------------------------------------------------------- */
+function drawNoc(c, g, n) {
+  const dk = darkness(g.timeOfDay);
+  const sh = col => mix(col, '#0a1226', dk * 0.7);
+  const x = Math.round(n.x), y = Math.round(n.y);
+  const breathe = Math.sin(g.t * 1.4) * 0.6;
+  const yy = Math.round(y + breathe);
+  const coat = sh('#3c4a63'), coatLo = sh('#28334a'), coatHi = sh('#55668a');
+  const skin = sh('#d8b089'), hat = sh('#2c3242');
+
+  // shadow
+  c.globalAlpha = 0.3; pellipse(c, x, y + 1, 10, 3, '#0d1a08'); c.globalAlpha = 1;
+
+  // coat, wide at the hem
+  for (let i = 0; i < 22; i++) {
+    const w = 6 + i * 0.5;
+    px(c, x - w / 2, yy - 22 + i, w, 1, i > 16 ? coatLo : coat);
+  }
+  px(c, x - 5, yy - 20, 3, 18, coatHi);            // lamp-lit edge
+  px(c, x - 1, yy - 18, 2, 14, coatLo);            // buttoned seam
+  for (let i = 0; i < 4; i++) dot(c, x, yy - 17 + i * 4, sh('#c9a659'));
+
+  // scarf
+  px(c, x - 4, yy - 24, 9, 3, sh('#8a4a4a'));
+  px(c, x + 3, yy - 22, 2, 6 + Math.sin(g.t * 2) * 1, sh('#7a3f3f'));
+
+  // head under a wide flat hat
+  pcircle(c, x, yy - 28, 4.6, skin);
+  px(c, x - 4, yy - 30, 8, 2, sh('#c39a72'));
+  px(c, x - 8, yy - 32, 17, 2, hat);               // brim
+  px(c, x - 5, yy - 36, 11, 4, hat);               // crown
+  px(c, x - 5, yy - 36, 11, 1, sh('#3f4759'));
+  px(c, x - 5, yy - 33, 11, 1, sh('#1c2130'));
+
+  // eyes: two calm lights under the brim
+  const blink = Math.sin(g.t * 0.9 + 1.7) > 0.985 ? 0 : 1;
+  if (blink) {
+    dot(c, x - 3 + n.look, yy - 28, '#f6f2df'); dot(c, x + 2 + n.look, yy - 28, '#f6f2df');
+    dot(c, x - 3 + n.look, yy - 28, n.talking ? '#ffe9a0' : '#f6f2df');
+  } else {
+    px(c, x - 3, yy - 28, 2, 1, sh('#8a6a4a')); px(c, x + 2, yy - 28, 2, 1, sh('#8a6a4a'));
+  }
+  px(c, x - 2, yy - 26, 4, 1, sh('#a8785a'));      // a mouth that mostly listens
+
+  // the lantern he keeps, always lit
+  const lx = x + 10, ly = yy - 16 + Math.sin(g.t * 1.1) * 0.8;
+  px(c, x + 4, yy - 20, 6, 1, coatLo);             // the arm
+  px(c, lx - 1, ly - 8, 2, 5, sh('#3a3a44'));      // hanger
+  px(c, lx - 4, ly - 3, 9, 2, sh('#4a4a56'));
+  px(c, lx - 3, ly - 1, 7, 8, sh('#5a5a66'));
+  px(c, lx - 2, ly, 5, 6, '#2a2418');
+  glow(c, lx, ly + 3, (7 + dk * 7) + Math.sin(g.t * 3) * 1.2, '#ffcf6a', 0.22 + dk * 0.5);
+  pcircle(c, lx, ly + 3, 2.2, '#ffe9a0');
+  pcircle(c, lx, ly + 3, 1.2, '#fffceb');
+  px(c, lx - 4, ly + 6, 9, 2, sh('#4a4a56'));
+
+  // the lantern throws light back on him
+  c.globalAlpha = 0.12 + dk * 0.3;
+  pellipse(c, x + 4, yy - 20, 5, 10, '#ffcf6a');
+  c.globalAlpha = 1;
+
+  // moths, because of course
+  for (let i = 0; i < 3; i++) {
+    const a = g.t * (1.1 + i * 0.4) + i * 2.1;
+    const mx2 = lx + Math.cos(a) * (7 + i * 3), my2 = ly + 3 + Math.sin(a * 1.3) * (5 + i * 2);
+    const flap = Math.sin(g.t * 18 + i) > 0 ? 1 : 2;
+    px(c, mx2, my2, 2, 1, sh('#e0d8c0'));
+    px(c, mx2 - 1, my2 - flap + 1, 1, flap, sh('#cfc6ac'));
+    px(c, mx2 + 2, my2 - flap + 1, 1, flap, sh('#cfc6ac'));
+  }
+}
+
+/* Noc's camp: a stool, a kettle on a ring, a crate of nothing for sale */
+function drawNocCamp(c, g, x, y) {
+  const dk = darkness(g.timeOfDay);
+  const sh = col => mix(col, '#0a1226', dk * 0.72);
+  // stool
+  px(c, x - 7, y - 8, 14, 3, sh('#7a5630'));
+  px(c, x - 7, y - 8, 14, 1, sh('#a3794a'));
+  px(c, x - 6, y - 5, 2, 5, sh('#5a3f22')); px(c, x + 4, y - 5, 2, 5, sh('#5a3f22'));
+  // fire ring and kettle
+  const fx = x + 22;
+  for (let i = 0; i < 7; i++) pcircle(c, fx - 8 + i * 2.6, y - 1, 1.6, sh('#6a6a72'));
+  const flick = Math.sin(g.t * 9) * 0.6;
+  glow(c, fx, y - 5, 9, '#ff9a3a', 0.4);
+  flame(c, fx, y - 3, 5 + flick, 3);
+  px(c, fx - 4, y - 11, 8, 6, sh('#4a4a52'));
+  px(c, fx - 4, y - 11, 8, 1, sh('#6a6a74'));
+  px(c, fx + 4, y - 10, 3, 2, sh('#4a4a52'));
+  px(c, fx - 1, y - 13, 2, 2, sh('#3a3a42'));
+  // steam
+  for (let i = 0; i < 3; i++) {
+    const t = (g.t * 0.6 + i * 0.33) % 1;
+    c.globalAlpha = (1 - t) * 0.5;
+    pcircle(c, fx - 1 + Math.sin(t * 6 + i) * 2, y - 15 - t * 12, 1 + t * 2, '#e8eef4');
+    c.globalAlpha = 1;
+  }
+  // the crate he no longer sells out of, lid nailed shut
+  px(c, x - 30, y - 9, 16, 9, sh('#6b4a2a'));
+  px(c, x - 30, y - 9, 16, 2, sh('#8a6338'));
+  px(c, x - 30, y - 3, 16, 1, sh('#4a3220'));
+  for (let i = 0; i < 3; i++) dot(c, x - 28 + i * 6, y - 8, sh('#c9c9c9'));
+  tinyText(c, x - 29, y - 7, 'SHUT', sh('#e8dcc0'));
+}
+
+/* -------------------------------------------------------------------------
+   WAYS OUT — a signpost arrow at each edge you can actually leave through
+   ------------------------------------------------------------------------- */
+function drawTravelArrow(c, g, side, label, hover) {
+  const dk = darkness(g.timeOfDay);
+  const y = Math.round(GROUND_Y - 26);
+  const w = Math.max(46, F.textWidth(label, 1) + 22);
+  const x = side < 0 ? 6 : W - 6 - w;
+  const bob = Math.sin(g.t * 2.2 + (side < 0 ? 0 : 1.6)) * (hover ? 1.6 : 0.8);
+  const yy = Math.round(y + bob);
+
+  // post
+  px(c, side < 0 ? x + 8 : x + w - 10, yy + 13, 2, 22, mix('#5a3a1e', '#0a1226', dk * 0.7));
+
+  // the board, cut to a point at the travelling end
+  const body = hover ? '#c39a63' : '#a0703c';
+  roundRect(c, x - 1, yy - 1, w + 2, 15, 3, INK);
+  roundRect(c, x, yy, w, 13, 2, mix(body, '#0a1226', dk * 0.55));
+  px(c, x + 2, yy + 2, w - 4, 1, mix('#c9a06a', '#0a1226', dk * 0.5));
+  for (let i = 0; i < 7; i++) {
+    const px2 = side < 0 ? x - 1 - i : x + w + i;
+    px(c, px2, yy + i, 1, 13 - i * 2, INK);
+    px(c, px2 + (side < 0 ? 1 : -1), yy + 1 + i, 1, 11 - i * 2, mix(body, '#0a1226', dk * 0.55));
+  }
+  F.drawTextCentered(c, x + w / 2 + (side < 0 ? 3 : -3), yy + 4, label, hover ? '#2b1c10' : '#ffe9b0', 1);
+
+  // a little walking arrow that nudges toward the edge
+  const ax = side < 0 ? x + 5 : x + w - 5;
+  const nudge = hover ? side * 2 : 0;
+  for (let i = 0; i < 4; i++) dot(c, ax + side * i + nudge, yy + 10 - i, hover ? '#2b1c10' : '#ffe9b0');
+  for (let i = 0; i < 4; i++) dot(c, ax + side * i + nudge, yy + 10 + i, hover ? '#2b1c10' : '#ffe9b0');
+}
+
+function travelArrowBox(side, label) {
+  const w = Math.max(46, F.textWidth(label, 1) + 22);
+  const x = side < 0 ? 0 : W - 12 - w;
+  return { x, y: GROUND_Y - 32, w: w + 12, h: 26 };
+}
+
+/* the name of wherever you have just walked into */
+function drawAreaTitle(c, g, name, sub, amount) {
+  if (amount <= 0) return;
+  c.globalAlpha = Math.min(1, amount);
+  const y = 22;
+  F.drawTextCentered(c, W / 2, y, name, '#f6ecd6', 1, '#000000');
+  F.drawTextCentered(c, W / 2, y + 10, sub, '#b9a88c', 1, '#000000');
+  px(c, W / 2 - 22, y + 25, 44, 1, '#6b5a3a');
+  c.globalAlpha = 1;
+}
+
+/* -------------------------------------------------------------------------
+   THINGS LYING ABOUT
+   ------------------------------------------------------------------------- */
+function drawPickup(c, g, p, hover) {
+  const bob = Math.sin(g.t * 2 + p.x) * 0.8;
+  const y = p.y + bob;
+  c.globalAlpha = 0.28; pellipse(c, p.x + 1, p.y + 7, 7, 2, '#0d1a08'); c.globalAlpha = 1;
+  if (hover) glow(c, p.x + 8, y + 8, 16, '#ffe9a0', 0.45);
+  if (p.id === 'backpack') drawBackpackSprite(c, p.x, y, 1);
+  else drawItemIcon(c, p.x + 8, y + 9, p.id);
+  // a soft sparkle so you can tell it is takeable
+  const sp = (g.t * 1.4 + p.x) % 3;
+  if (sp < 1) { c.globalAlpha = 1 - sp; dot(c, p.x + 15, y + 1 - sp * 4, '#fff6d8'); c.globalAlpha = 1; }
+}
+
+/* -------------------------------------------------------------------------
+   COSY — the park is meant to feel emptier and softer, not busier.
+   Big quiet shapes: hedges, a fallen log, mushroom rings, tall grass, vines.
+   ------------------------------------------------------------------------- */
+function drawCosyFoliage(c, g, seed, density) {
+  const dk = darkness(g.timeOfDay);
+  const s = SEASON[g.season];
+  const sh = col => mix(col, '#050c18', dk * 0.82);
+  const rnd = mulberry(seed || 404);
+  const n = Math.round((density === undefined ? 1 : density) * 14 * W / 256);
+
+  for (let i = 0; i < n; i++) {
+    const x = rnd() * W;
+    const y = GROUND_Y + 2 + rnd() * 30;
+    const r = 5 + rnd() * 9;
+    // a low soft bush
+    pellipse(c, x, y, r, r * 0.62, sh(s.dark));
+    pellipse(c, x - 1, y - 2, r * 0.85, r * 0.5, sh(s.t0));
+    pellipse(c, x - 2, y - 3, r * 0.5, r * 0.3, sh(s.t1));
+    if (rnd() > 0.6 && g.season !== 'winter') {
+      for (let k = 0; k < 3; k++) {
+        const bx = x + (rnd() - 0.5) * r * 1.5, by = y - r * 0.5 - rnd() * 3;
+        dot(c, bx, by, sh(['#ffffff', '#ffd9ea', '#ffe066'][k % 3]));
+      }
+    }
+  }
+
+  // tall grass tufts, taller than the ones on the lawn
+  for (let i = 0; i < n * 2; i++) {
+    const x = rnd() * W, y = GROUND_Y + 6 + rnd() * 34;
+    const h = 5 + rnd() * 7;
+    const sway = Math.sin(g.t * 1.1 + i) * 1.4;
+    for (let b = 0; b < 5; b++) {
+      const a = (b - 2) * 0.5;
+      for (let k = 0; k < h; k++) {
+        px(c, x + a * k * 0.35 + sway * (k / h), y - k, 1, 1, sh(k > h - 3 ? s.t2 : s.t1));
+      }
+    }
+  }
+
+  // mushrooms, in rings, because the fungus decides not you
+  if (g.season !== 'winter') for (let i = 0; i < 3; i++) {
+    const cx2 = 24 + rnd() * (W - 48), cy2 = GROUND_Y + 12 + rnd() * 22;
+    const rr = 6 + rnd() * 7;
+    for (let k = 0; k < 6; k++) {
+      const a = (k / 6) * 6.28 + rnd() * 0.4;
+      const mx2 = Math.round(cx2 + Math.cos(a) * rr), my2 = Math.round(cy2 + Math.sin(a) * rr * 0.5);
+      px(c, mx2, my2 - 1, 1, 2, sh('#e8ded0'));
+      pellipse(c, mx2, my2 - 2, 2, 1.4, sh(rnd() > 0.5 ? '#c9553f' : '#d9a05b'));
+      dot(c, mx2, my2 - 3, sh('#f6ece0'));
+    }
+  }
+}
+
+/* one long fallen log — the single best piece of furniture in any wood */
+function drawFallenLog(c, g, x, y, len) {
+  const dk = darkness(g.timeOfDay);
+  const sh = col => mix(col, '#0a1226', dk * 0.72);
+  px(c, x, y - 7, len, 8, sh('#6b4a2a'));
+  px(c, x, y - 7, len, 2, sh('#8a6338'));
+  px(c, x, y - 1, len, 2, sh('#4a3220'));
+  const rnd = mulberry(88);
+  for (let i = 0; i < len / 3; i++) px(c, x + rnd() * len, y - 6 + rnd() * 5, 1 + rnd() * 3, 1, sh('#5a3f22'));
+  // sawn end, with rings
+  pellipse(c, x + len, y - 3, 2.4, 4.4, sh('#a3794a'));
+  pellipse(c, x + len, y - 3, 1.6, 3, sh('#8a6338'));
+  dot(c, x + len, y - 3, sh('#5a3f22'));
+  // moss along the top, and something growing out of it
+  for (let i = 0; i < len; i += 2) {
+    if (mulberry(i + 3)() > 0.35) px(c, x + i, y - 8, 2, 1, sh('#4a7a32'));
+  }
+  for (let i = 0; i < 4; i++) {
+    const mx2 = x + 6 + i * (len / 5);
+    px(c, mx2, y - 11, 1, 3, sh('#e8ded0'));
+    pellipse(c, mx2, y - 12, 2, 1.3, sh('#c9553f'));
+  }
+}
+
+/* a standing stone the hollow grew around */
+function drawStandingStone(c, g, x, y) {
+  const dk = darkness(g.timeOfDay);
+  const sh = col => mix(col, '#0a1226', dk * 0.75);
+  c.globalAlpha = 0.3; pellipse(c, x, y + 1, 11, 3, '#0d1a08'); c.globalAlpha = 1;
+  for (let i = 0; i < 28; i++) {
+    const w = 13 - i * 0.24 - (i > 20 ? (i - 20) * 0.7 : 0);
+    px(c, x - w / 2, y - i, w, 1, sh(i % 7 === 3 ? '#7a7a84' : '#6a6a74'));
+    px(c, x - w / 2, y - i, 2, 1, sh('#93939e'));
+    px(c, x + w / 2 - 2, y - i, 2, 1, sh('#4a4a54'));
+  }
+  for (let i = 0; i < 18; i++) {
+    const yy = y - Math.floor(mulberry(i + 5)() * 24);
+    px(c, x - 5 + mulberry(i + 9)() * 10, yy, 1, 1, sh('#4a7a32'));
+  }
+  // marks somebody cut into it a very long time ago
+  px(c, x - 3, y - 18, 1, 6, sh('#3a3a44'));
+  px(c, x - 1, y - 16, 1, 4, sh('#3a3a44'));
+  px(c, x + 2, y - 19, 1, 7, sh('#3a3a44'));
+}
+
+/* hanging vines from the top of frame — cheap depth, huge cosiness */
+function drawVines(c, g, seed) {
+  const dk = darkness(g.timeOfDay);
+  const s = SEASON[g.season];
+  const sh = col => mix(col, '#050b16', dk * 0.85);
+  const rnd = mulberry(seed || 51);
+  const n = Math.round(6 * W / 256);
+  for (let i = 0; i < n; i++) {
+    const x0 = rnd() * W, len = 22 + rnd() * 54;
+    const ph = rnd() * 6.28;
+    for (let y = 0; y < len; y++) {
+      const sway = Math.sin(g.t * 0.5 + ph + y * 0.06) * (y / len) * 3;
+      px(c, x0 + sway, y, 1, 1, sh(s.t0));
+      if (y % 5 === 0) {
+        pcircle(c, x0 + sway - 1, y, 1.6, sh(s.t1));
+        pcircle(c, x0 + sway + 2, y + 2, 1.4, sh(s.t2));
+      }
+    }
+    if (g.season !== 'winter' && rnd() > 0.5) {
+      const sway = Math.sin(g.t * 0.5 + ph + len * 0.06) * 3;
+      pcircle(c, x0 + sway, len, 2, sh('#d8a0e8'));
+      dot(c, x0 + sway, len, sh('#ffe066'));
+    }
+  }
+}
+
+/* a hedgerow along the back of the lane, with a gate-shaped gap */
+function drawHedgerow(c, g, gapX) {
+  const dk = darkness(g.timeOfDay);
+  const s = SEASON[g.season];
+  const sh = col => mix(col, '#050c18', dk * 0.8);
+  const rnd = mulberry(303);
+  for (let x = -8; x < W + 8; x += 5) {
+    if (gapX !== undefined && Math.abs(x - gapX) < 16) continue;
+    const h = 14 + Math.sin(x * 0.11) * 4 + rnd() * 3;
+    pellipse(c, x, GROUND_Y - 2, 7, h * 0.5, sh(s.dark));
+    pellipse(c, x - 1, GROUND_Y - 3 - h * 0.2, 6, h * 0.4, sh(s.t0));
+    if (rnd() > 0.8) pcircle(c, x + rnd() * 4 - 2, GROUND_Y - 6 - rnd() * 6, 1.4, sh(g.season === 'autumn' ? '#c9553f' : s.t2));
+  }
+}
+
+/* the lane itself: pale earth widening out of the west, with two old ruts */
+function drawLaneRoad(c, g) {
+  const dk = darkness(g.timeOfDay);
+  const sh = col => mix(col, '#0a1226', dk * 0.78);
+  const vanish = W * 0.30;
+  const depth = H - GROUND_Y + 6;
+  for (let i = 0; i < depth; i++) {
+    const t = i / depth;
+    const w = 10 + t * W * 0.62;
+    const cx2 = vanish - t * W * 0.16;
+    px(c, cx2 - w / 2, GROUND_Y - 4 + i, w, 1, sh(mix('#b09a72', '#8a7855', t)));
+  }
+  // two ruts worn by nine hundred years of carts, then tyres
+  for (const side of [-1, 1]) {
+    for (let i = 4; i < depth; i++) {
+      const t = i / depth;
+      const w = 10 + t * W * 0.62;
+      const cx2 = vanish - t * W * 0.16;
+      px(c, cx2 + side * w * 0.22, GROUND_Y - 4 + i, 1 + t * 3, 1, sh(mix('#8a7855', '#6a5c40', t)));
+    }
+  }
+  const rnd = mulberry(21);
+  for (let i = 0; i < 120; i++) {
+    const t = rnd();
+    const w = 10 + t * W * 0.62;
+    const cx2 = vanish - t * W * 0.16;
+    px(c, cx2 - w / 2 + rnd() * w, GROUND_Y - 4 + t * depth, 1, 1, sh(rnd() > 0.5 ? '#cbb890' : '#6a5c40'));
+  }
+  // a milestone nobody has read in a century
+  const mx2 = Math.round(W * 0.16), my2 = GROUND_Y + 6;
+  c.globalAlpha = 0.3; pellipse(c, mx2 + 3, my2 + 1, 6, 2, '#0d1a08'); c.globalAlpha = 1;
+  px(c, mx2, my2 - 11, 8, 12, sh('#8a8a94'));
+  px(c, mx2, my2 - 13, 8, 3, sh('#a8a8b2'));
+  px(c, mx2 + 1, my2 - 1, 6, 1, sh('#4a4a54'));
+  tinyText(c, mx2 + 1, my2 - 9, 'IX', sh('#3a3a44'));
+  for (let i = 0; i < 6; i++) dot(c, mx2 + rnd() * 8, my2 - 12 + rnd() * 12, sh('#4a7a32'));
+}
+
 window.SPR = {
   get W() { return W; }, H, GROUND_Y, get CX() { return CX; }, setLogicalWidth, layerBegin, layerEnd, outlinedSprite, makeCanvas, CANOPY, TWIGS, SEASON, SEASON_NAMES, TROPHY_ART, HALL,
   px, dot, pcircle, pellipse, glow, mix, mulberry, star, quant,
@@ -3499,7 +4414,10 @@ window.SPR = {
   drawVisitor, drawBoundary,
   drawBalloon, drawPanel, drawSnail, drawSnailMessage, drawCursorTool, drawMoreArrow, roundRect, INK, drawAshScene, drawStump, drawItemIcon, drawLeafSprite,
   drawHall, drawTrophy, drawTrophyReflection, trophySprite, drawPlinth, drawHeaven, drawHeavenBackdrop, drawGhostTree, drawSoul,
-  drawCloudTunnel, drawLetterbox, drawRays, drawGrowingTree, flame
+  drawCloudTunnel, drawLetterbox, drawRays, drawGrowingTree, flame,
+  drawZzz, drawNoc, drawNocCamp, drawTravelArrow, travelArrowBox, drawAreaTitle, drawPickup,
+  drawCosyFoliage, drawFallenLog, drawStandingStone, drawVines, drawHedgerow, drawLaneRoad,
+  drawBackpackSprite, drawBagButton
 };
 </script>
 <script>
@@ -3521,6 +4439,7 @@ const SAVE_KEY = 'wiseoak.save.v3';
 const defaultSave = () => ({
   ach: {}, endings: {}, heard: {}, muted: false, sessions: 0,
   park: { props: [], upgrades: {}, expansions: 0, earned: 0 },
+  bag: false, items: {}, taken: {}, plans: {}, planDone: {}, metNoc: false,
   stats: { leavesTotal: 0, sneezes: 0, hugs: 0, waters: 0, plants: 0, trades: 0,
            sqChats: 0, rebirths: 0, flicks: 0, seasons: {}, boughtAll: false }
 });
@@ -3533,6 +4452,8 @@ try {
     save = Object.assign(defaultSave(), p);
     save.stats = Object.assign(defaultSave().stats, p.stats || {});
     save.park = Object.assign(defaultSave().park, p.park || {});
+    save.items = p.items || {}; save.taken = p.taken || {};
+    save.plans = p.plans || {}; save.planDone = p.planDone || {};
   }
 } catch (e) { /* corrupt save: start fresh, no drama */ }
 
@@ -3562,6 +4483,12 @@ const G = {
   flags: { hatOn: false, lighterGone: false, confirming: false, newsRead: false },
   inv: { leaves: 0, items: {} }, tools: [], holding: null, holdT: 0, critters: [],
   parkPending: 0, parkMotes: [], visitors: [], visitorTimer: 6, menu: null,
+  // where you are standing, and the walk between places
+  area: 1, areaFade: 0, areaFadeDir: 0, areaTitle: 0, arrows: [], pickups: [],
+  noc: { x: 0, y: GROUND_Y + 8, look: 0, talking: 0, thinking: 0 },
+  asleep: false, wakeT: 0,
+  hasBag: false, bagOpen: false, bagHover: false, bagBadge: 0,
+  activePlan: null,
   hintText: '', hintShown: false, hintCine: false,
   sessionTime: 0, sinceTreeClick: 0, spamCount: 0, spamTimer: 0,
   sneezeTimer: 14 + Math.random() * 18,
@@ -3623,7 +4550,8 @@ const buf = document.createElement('canvas');
 const dc = buf.getContext('2d');
 dc.imageSmoothingEnabled = false;
 
-const elShop = $('shop'), elShopList = $('shoplist');
+const elBag = $('bag'), elBagBody = $('bagbody');
+const elChat = $('chat'), elChatLog = $('chatlog'), elChatInput = $('chatinput');
 const elModal = $('modal'), elModalBody = $('modalbody'), elModalTitle = $('modaltitle');
 const elEndingCard = $('endingcard');
 const elTitle = $('title');
@@ -3645,23 +4573,23 @@ let started = false;
 const logoCv = $('tlogo'), lctx = logoCv.getContext('2d');
 lctx.imageSmoothingEnabled = false;
 const titleG = {
-  t: 0, season: 'summer', timeOfDay: 0.28, mood: 'happy', talking: false,
+  t: 0, season: 'summer', timeOfDay: 0.66, mood: 'asleep', asleep: true, talking: false,
   blink: 0, blinkTimer: 1.6, look: { x: 0, y: 0.2 }, stare: 0, shake: 0,
   burn: 0, dead: false, flags: { hatOn: false }, watchers: 0
 };
 function drawTitleLogo(dt) {
   titleG.t += dt;
-  titleG.blinkTimer -= dt;
-  if (titleG.blinkTimer <= 0) { titleG.blink = 0.14; titleG.blinkTimer = 2 + Math.random() * 3; }
-  titleG.blink = Math.max(0, titleG.blink - dt);
-  titleG.look.x = Math.sin(titleG.t * 0.5) * 0.5;
-  const k = 0.66;
+  // he is asleep on the title card. He breathes, and that is all.
+  titleG.look.x = Math.sin(titleG.t * 0.25) * 0.2;
+  titleG.shake = 0;
+  const k = 0.95;
   lctx.setTransform(1, 0, 0, 1, 0, 0);
   lctx.clearRect(0, 0, logoCv.width, logoCv.height);
   lctx.save();
   lctx.translate(logoCv.width / 2 - CX() * k, logoCv.height - (GROUND_Y + 8) * k);
   lctx.scale(k, k);
   SPR.drawTree(lctx, titleG);
+  SPR.drawZzz(lctx, titleG, CX() + 30, 76, 1.8);
   lctx.restore();
 }
 
@@ -4066,18 +4994,12 @@ function toolHome(i) {
 }
 
 function refreshHUD() {
-  const owned = DATA.shop.filter(it => has(it.id)).map(it => it.id);
-  const kept = G.tools.filter(t => owned.includes(t.id));
-  for (const id of owned) {
-    if (!kept.some(t => t.id === id)) kept.push({ id, x: 0, y: 0, home: true });
-  }
-  kept.forEach((t, i) => {
-    const h = toolHome(i);
-    t.hx = h.x; t.hy = h.y;
-    if (t.home) { t.x = h.x; t.y = h.y; t.home = false; }
-  });
-  G.tools = kept;
+  /* Nothing lies on the grass any more. Everything you own is in the bag,
+     and the bag only exists once you have found it. */
+  G.tools = [];
+  G.hasBag = !!save.bag;
   refreshActions();
+  if (G.bagOpen) renderBag();
 }
 
 /* Little wooden signs, hammered into the bottom of the frame. The only
@@ -4101,6 +5023,14 @@ function refreshActions() {
     signs.push({ label: labels[i][0], act: labels[i][1], x, y: H - 22, w: widths[i], h: 15, hover: false });
     x += widths[i] + pad;
   }
+}
+
+/* one line of guidance, and it takes itself away again */
+let nudgeT = 0;
+function nudge(text, secs) {
+  elHint.textContent = text; elHint.className = '';
+  clearTimeout(nudgeT);
+  nudgeT = setTimeout(() => { if (G.hintText === text) elHint.className = 'hidden'; }, (secs || 8) * 1000);
 }
 
 function drawHint(c) {
@@ -4186,6 +5116,7 @@ function isKnockRhythm() {
 
 function talkToTree() {
   if (G.dead || G.scene !== 'game') return;
+  if (G.asleep) { wakeHim(); return; }
 
   // tracked before anything else, so taps that only skip the typing count too
   knocks = knocks.filter(k => G.t - k < 2.2);
@@ -4322,7 +5253,7 @@ function doPlant(atX) {
     "Another one! I am going to be a FATHER. Again. Statistically for the four thousandth time.",
     "That is three. Three is a copse. Four is a stand. Five is a WOOD. Keep going.",
     "Four. There is going to be shade here after you are gone. Somebody will sit in it and never know your name.",
-    "Five. That is a wood. That is an actual wood. I have been trying to do that for four hundred years and you did it in an afternoon."
+    "Five. That is a wood. That is an actual wood. I have been trying to do that for nine hundred years and you did it in an afternoon."
   ];
   say('THE WISE OAK TREE', lines[Math.min(4, save.stats.plants - 1)], 'happy');
   refreshHUD();
@@ -4379,7 +5310,7 @@ function doFlick() {
     "Stop.",
     "Please stop.",
     "...",
-    "I am not going to beg. I have been here four hundred years and I will not beg to a person with a lighter.",
+    "I am not going to beg. I have been here nine hundred years and I will not beg to a person with a lighter.",
     "...Okay. I will beg. Please. There are mice in my roots."
   ];
   say('THE WISE OAK TREE', lines[Math.min(lines.length - 1, save.stats.flicks - 1)], save.stats.flicks > 4 ? 'sad' : 'shock');
@@ -4388,7 +5319,7 @@ function doFlick() {
 function askBurn() {
   G.flags.confirming = true;
   openModal('ARE YOU SURE?',
-    "<p>He is four hundred years old.</p>" +
+    "<p>He is nine hundred years old.</p>" +
     "<p>He has a woodpecker in his elbow and mice in his roots and he has been talking to you all afternoon.</p>" +
     "<p class='small'>There is an achievement for it. There is an achievement for everything. That is not the same as a reason.</p>",
     [['Put it away', () => { closeModal(); say('THE WISE OAK TREE', "Thank you. Thank you. Okay. Okay. Let us never speak of it. ...We will absolutely speak of it.", 'happy'); }],
@@ -4436,7 +5367,7 @@ function maybeSpawnSquirrel() {
   ACH('squirrel');
   setTimeout(() => {
     if (G.scene === 'game' && !G.dead)
-      say('SQUIRREL', "yo. yo. down here. i heard sneezing which means LEAVES which means BUSINESS.", null, 'squirrel');
+      say('SQUIRREL', "yo. yo. down here. i used to run a whole operation out of these branches. noc put me out of business by being NICE. unbelievable.", null, 'squirrel');
   }, 1600);
 }
 
@@ -4450,59 +5381,362 @@ function clickSquirrel() {
   let pool = DATA.squirrelLines;
   if (has('lighter') && !G.flags.lighterGone) pool = pool.concat(DATA.squirrelWarnLines);
   say('SQUIRREL', pool[Math.floor(Math.random() * pool.length)], null, 'squirrel');
-  openShop();
 }
 
-function openShop() {
-  // open on the opposite side to the squirrel so he is never hidden behind
-  // his own shop window
-  const onLeft = G.squirrel.x < W() / 2;
-  elShop.style.left = onLeft ? 'auto' : '8px';
-  elShop.style.right = onLeft ? '8px' : 'auto';
-  elShop.classList.remove('hidden');
-  elShopList.innerHTML = '';
-  for (const it of DATA.shop) {
+/* =========================================================================
+   THE WORLD IS WIDER THAN ONE TREE
+   Three places, walked between with the signposts at the edges of the frame.
+   ========================================================================= */
+const AREAS = DATA.areas;
+function areaId() { return AREAS[G.area].id; }
+function atOak() { return areaId() === 'oak'; }
+
+function canTravel(dir) {
+  const i = G.area + dir;
+  return i >= 0 && i < AREAS.length && !G.cine && G.scene === 'game' && !G.dead && !G.menu;
+}
+
+function travel(dir) {
+  if (!canTravel(dir) || G.areaFadeDir) return;
+  G.areaFadeDir = dir;
+  G.areaFade = 0.001;
+  hideBubble();
+  closeChat();
+  SFX.click();
+}
+
+function arriveArea() {
+  G.area += G.areaFadeDir;
+  G.areaFadeDir = 0;
+  G.areaNow = areaId();
+  G.areaTitle = 3.2;
+  seedPickups();
+  if (areaId() === 'lane') {
+    G.noc.x = Math.round(W() * 0.62);
+    ACH('lane');
+    if (!save.metNoc) {
+      save.metNoc = true; persist();
+      setTimeout(() => nocSay(DATA.nocIntro.join(' ')), 700);
+    }
+  }
+  if (areaId() === 'hollow') ACH('hollow');
+  refreshHUD();
+  persist();
+}
+
+/* ---- things lying about, once you have somewhere to put them ---- */
+function pickupReady(p) {
+  if (save.taken[p.id] || has(p.id)) return false;
+  if (p.need === 'backpack') return !!save.bag;
+  if (p.need === 'plans3') return plansDone() >= 3;
+  return true;
+}
+
+function seedPickups() {
+  G.pickups = DATA.pickups
+    .filter(p => p.area === areaId() && pickupReady(p))
+    .map(p => ({ id: p.id, name: p.name, line: p.line,
+                 x: Math.round(W() * p.x), y: GROUND_Y + 2 }));
+}
+
+function takePickup(p) {
+  SFX.pickup();
+  spawnParticles('star', p.x + 8, p.y + 6, 8);
+  save.taken[p.id] = 1;
+  if (p.id === 'backpack') {
+    save.bag = true; G.hasBag = true; G.bagBadge = 1;
+    ACH('backpack');
+    pushNote('goal', 'YOU HAVE A BAG', 'Everything you find goes in it. Tap the bag, bottom left.', 'reach');
+    nudge('your bag is in the bottom left corner', 10);
+    say('YOU', "A backpack. Somebody's. Yours now.", null, 'serious');
+  } else {
+    G.inv.items[p.id] = true;
+    save.items[p.id] = 1;
+    G.bagBadge = 1;
+    pushNote('goal', p.name, 'It went into your bag.', p.id === 'lighter' ? 'flame' : 'reach');
+    if (p.id === 'lighter') {
+      ACH('lighter');
+      persist(); seedPickups(); refreshHUD();
+      startLighterCine();
+      return;
+    }
+    say('YOU', p.line, null, 'serious');
+  }
+  persist();
+  seedPickups();
+  refreshHUD();
+}
+
+function pickupAt(x, y) {
+  for (const p of G.pickups) if (x > p.x - 4 && x < p.x + 20 && y > p.y - 10 && y < p.y + 12) return p;
+  return null;
+}
+
+/* =========================================================================
+   NOC
+   He used to sell things. He stopped. Now you talk to him, in your own
+   words, and the two of you make plans.
+   ========================================================================= */
+function nocSay(text) {
+  say('NOC', text, null, 'noc');
+  G.noc.talking = Math.min(6, 1.2 + text.length * 0.03);
+}
+
+function plansDone() { return Object.keys(save.planDone).length; }
+
+function planById(id) { return DATA.plans.find(p => p.id === id); }
+
+function planStatus(p) {
+  if (save.planDone[p.id]) return 'done';
+  if (save.plans[p.id]) return 'open';
+  return 'new';
+}
+
+/* what a plan still needs before it can be finished */
+function planBlocker(p) {
+  if (p.need.leaves && G.inv.leaves < p.need.leaves) return (p.need.leaves - G.inv.leaves) + ' more leaves';
+  if (p.need.night && !SPR.isNight(G.timeOfDay)) return 'the dark. Come back at night.';
+  return null;
+}
+
+function agreePlan(id) {
+  const p = planById(id);
+  if (!p || save.planDone[id]) return;
+  if (!save.plans[id]) {
+    save.plans[id] = 1; persist();
+    ACH('plan1');
+    chatLine('noc', "Agreed, then. " + p.ask);
+    pushNote('goal', 'PLAN: ' + p.name, 'Agreed with Noc. Come back when it can be done.', 'reach');
+    return;
+  }
+  const blocker = planBlocker(p);
+  if (blocker) { SFX.deny(); chatLine('noc', "Not yet. We need " + blocker); return; }
+  completePlan(p);
+}
+
+function completePlan(p) {
+  if (p.need.leaves) G.inv.leaves -= p.need.leaves;
+  save.planDone[p.id] = 1;
+  delete save.plans[p.id];
+  SFX.ach(); G.flash = 0.4;
+  spawnParticles('star', G.noc.x, GROUND_Y, 14);
+  chatLine('noc', p.done);
+  let gift = '';
+  if (p.give.item) {
+    G.inv.items[p.give.item] = true; save.items[p.give.item] = 1; G.bagBadge = 1;
+    gift = 'It is in your bag now.';
+  }
+  if (p.give.leaves) { G.inv.leaves += p.give.leaves; save.stats.leavesTotal += p.give.leaves; gift = p.give.leaves + ' leaves, for your trouble.'; }
+  if (p.give.upgrade) { save.park.upgrades[p.give.upgrade] = 1; gift = 'The lane keeps the lights.'; }
+  if (gift) chatLine('noc', gift);
+  pushNote('chal', 'PLAN DONE: ' + p.name, p.done, 'reach');
+  ACH('plandone');
+  if (plansDone() >= 3) ACH('plan3');
+  if (plansDone() >= DATA.plans.length) { ACH('planall'); reachEnding('together'); }
+  persist(); refreshHUD(); seedPickups();
+}
+
+/* ---------------------------------------------------------------------
+   THE TALK BOX — your words go in, Noc's come out
+   --------------------------------------------------------------------- */
+let chatBusy = false;
+
+function openChat() {
+  if (G.cine) return;
+  elChat.classList.remove('hidden');
+  if (!elChatLog.childElementCount) {
+    chatLine('sys', NOC_AI.live
+      ? 'Noc is listening for real. (model: ' + NOC_AI.model + ')'
+      : 'Type anything. Noc answers in his own words. · /help for the odd commands.');
+    chatLine('noc', save.metNoc ? DATA.nocLines[Math.floor(Math.random() * DATA.nocLines.length)] : DATA.nocIntro[0]);
+  }
+  setTimeout(() => elChatInput.focus(), 30);
+  ACH('talknoc');
+}
+
+function closeChat() { elChat.classList.add('hidden'); }
+
+function chatLine(who, text, actions) {
+  const row = document.createElement('div');
+  row.className = 'cline ' + who;
+  if (who !== 'sys') {
+    const tag = document.createElement('b');
+    tag.textContent = who === 'noc' ? 'NOC' : 'YOU';
+    row.appendChild(tag);
+  }
+  const sp = document.createElement('span');
+  sp.textContent = text;
+  row.appendChild(sp);
+  if (actions && actions.length) {
+    const bar = document.createElement('div');
+    bar.className = 'cbtns';
+    for (const [label, fn] of actions) {
+      const b = document.createElement('button');
+      b.className = 'act';
+      b.textContent = label;
+      b.onclick = () => { b.parentElement.remove(); fn(); };
+      bar.appendChild(b);
+    }
+    row.appendChild(bar);
+  }
+  elChatLog.appendChild(row);
+  elChatLog.scrollTop = elChatLog.scrollHeight;
+  if (who === 'noc') { G.noc.talking = 2; SFX.click(); }
+  return row;
+}
+
+function chatCommand(text) {
+  const [cmd, ...rest] = text.slice(1).split(/\s+/);
+  const arg = rest.join(' ').trim();
+  switch (cmd.toLowerCase()) {
+    case 'help':
+      chatLine('sys', '/key <anthropic api key> — let Noc answer with a real model · /model <id> · /nokey · /plans · /forget');
+      return true;
+    case 'key':
+      if (!arg) { chatLine('sys', 'Paste the key after /key. It is stored in this browser only and never leaves it except to Anthropic.'); return true; }
+      NOC_AI.setKey(arg);
+      chatLine('sys', 'Right. Noc is thinking with a real model now (' + NOC_AI.model + '). Local brain stays as the backup.');
+      ACH('realai');
+      return true;
+    case 'nokey':
+      NOC_AI.setKey('');
+      chatLine('sys', 'Key cleared. Back to the brain he was born with.');
+      return true;
+    case 'model':
+      chatLine('sys', 'Model: ' + NOC_AI.setModel(arg));
+      return true;
+    case 'forget':
+      NOC_AI.forget(); elChatLog.innerHTML = '';
+      chatLine('sys', 'He has forgotten the conversation. He has not forgotten you.');
+      return true;
+    case 'plans':
+      for (const p of DATA.plans) {
+        const st = planStatus(p);
+        chatLine('sys', (st === 'done' ? '✓ ' : st === 'open' ? '· ' : '  ') + p.name +
+                        (st === 'open' ? ' — ' + (planBlocker(p) || 'ready. Say so.') : ''));
+      }
+      return true;
+  }
+  return false;
+}
+
+async function sendChat() {
+  const text = elChatInput.value.trim();
+  if (!text || chatBusy) return;
+  elChatInput.value = '';
+  if (text[0] === '/') { if (chatCommand(text)) return; }
+
+  chatLine('you', text);
+  save.stats.nocChats = (save.stats.nocChats || 0) + 1;
+  if (save.stats.nocChats >= 12) ACH('nocchat');
+  persist();
+
+  chatBusy = true;
+  G.noc.thinking = 1;
+  const dots = chatLine('noc', '…');
+  const ctx = {
+    season: G.season, night: SPR.isNight(G.timeOfDay), leaves: G.inv.leaves,
+    plansDone: plansDone(), backpack: !!save.bag
+  };
+  let res;
+  try { res = await NOC_AI.ask(text, ctx); }
+  catch (e) { res = { text: "Sorry. Lost my thread. Say it again?", plan: null }; }
+  dots.remove();
+  G.noc.thinking = 0;
+  chatBusy = false;
+
+  const p = res.plan ? planById(res.plan) : null;
+  const acts = [];
+  if (p && !save.planDone[p.id]) {
+    acts.push([save.plans[p.id] ? 'DO IT NOW' : 'AGREE TO IT', () => agreePlan(p.id)]);
+    acts.push(['NOT YET', () => chatLine('noc', "Fine. It'll keep. Everything out here keeps.")]);
+  }
+  chatLine('noc', res.text, acts);
+  // the balloon is for when the talk box is shut; two of them at once is noise
+  if (elChat.classList.contains('hidden')) nocSay(res.text.length > 150 ? res.text.slice(0, 148) + '…' : res.text);
+  else G.noc.talking = 2.5;
+}
+
+/* =========================================================================
+   THE BAG
+   ========================================================================= */
+function openBag() {
+  if (!save.bag || G.cine) return;
+  G.bagOpen = true; G.bagBadge = 0;
+  elBag.classList.remove('hidden');
+  renderBag();
+  SFX.pickup();
+}
+function closeBag() { G.bagOpen = false; elBag.classList.add('hidden'); }
+function toggleBag() { G.bagOpen ? closeBag() : openBag(); }
+
+function renderBag() {
+  if (!elBagBody) return;
+  elBagBody.innerHTML = '';
+  const head = document.createElement('div');
+  head.className = 'bagtop';
+  head.innerHTML = '<span class="leaves">☘ ' + G.inv.leaves + ' leaves</span>' +
+                   '<span class="dim">' + Object.keys(G.inv.items).length + ' things · ' +
+                   plansDone() + '/' + DATA.plans.length + ' plans kept</span>';
+  elBagBody.appendChild(head);
+
+  const owned = DATA.shop.filter(it => has(it.id));
+  if (!owned.length) {
+    const e = document.createElement('p');
+    e.className = 'bagempty';
+    e.textContent = 'Empty, apart from crumbs and one very old bus ticket. Look around the lane and the hollow, and make plans with Noc.';
+    elBagBody.appendChild(e);
+  }
+  for (const it of owned) {
     const row = document.createElement('div');
-    row.className = 'shoprow' + (has(it.id) ? ' owned' : '') + (G.inv.leaves < it.cost ? ' poor' : '');
+    row.className = 'bagrow';
     const c = document.createElement('canvas');
     c.width = 16; c.height = 16; c.className = 'itemicon';
     drawIcon(c.getContext('2d'), it.icon, 16);
     const info = document.createElement('div');
     info.className = 'shopinfo';
-    info.innerHTML = '<b>' + it.name + '</b><span>' + it.desc + '</span>';
+    info.innerHTML = '<b>' + it.name + '</b><span>' + (TOOL_HINTS[it.id] || it.desc) + '</span>';
     const btn = document.createElement('button');
     btn.className = 'buy';
-    btn.textContent = has(it.id) && it.id !== 'acorn' ? 'OWNED' : (it.cost + ' ☘');
-    btn.disabled = has(it.id) && it.id !== 'acorn';
-    btn.onclick = (e) => { e.stopPropagation(); buy(it); };
+    btn.textContent = 'TAKE OUT';
+    btn.onclick = (e) => { e.stopPropagation(); holdFromBag(it.id); };
     row.appendChild(c); row.appendChild(info); row.appendChild(btn);
-    elShopList.appendChild(row);
+    elBagBody.appendChild(row);
+  }
+
+  const open = DATA.plans.filter(p => save.plans[p.id]);
+  const done = DATA.plans.filter(p => save.planDone[p.id]);
+  if (open.length || done.length) {
+    const h = document.createElement('div');
+    h.className = 'bagsec';
+    h.textContent = 'PLANS WITH NOC';
+    elBagBody.appendChild(h);
+    for (const p of open) {
+      const d = document.createElement('div');
+      d.className = 'planrow';
+      d.innerHTML = '<b>' + p.name + '</b><span>' + (planBlocker(p) || 'ready — go and tell him') + '</span>';
+      elBagBody.appendChild(d);
+    }
+    for (const p of done) {
+      const d = document.createElement('div');
+      d.className = 'planrow kept';
+      d.innerHTML = '<b>✓ ' + p.name + '</b><span>' + p.done + '</span>';
+      elBagBody.appendChild(d);
+    }
   }
 }
-function closeShop() { elShop.classList.add('hidden'); }
 
-function buy(it) {
-  if (G.inv.leaves < it.cost) {
-    SFX.deny();
-    say('SQUIRREL', "nope. not enough leaves. i'm running a business here, not a charity. (i am running neither)", null, 'squirrel');
+function holdFromBag(id) {
+  closeBag();
+  if (!atOak() && id !== 'diary') {
+    say('YOU', "Not much to use it on out here. He is back at the top of the lane.", null, 'serious');
     return;
   }
-  G.inv.leaves -= it.cost;
-  G.inv.items[it.id] = true;
-  save.stats.trades++; persist();
-  SFX.trade();
-  ACH('trade1');
-  if (it.id === 'lighter') {
-    ACH('lighter');
-    refreshHUD(); closeShop();
-    startLighterCine();
-    return;
-  } else {
-    say('SQUIRREL', "pleasure doing business. don't tell the tree. he thinks i'm a saver.", null, 'squirrel');
-  }
-  if (DATA.shop.every(s => has(s.id) || (s.id === 'acorn' && save.stats.plants > 0))) ACH('tradeall');
-  refreshHUD();
-  openShop();
+  G.holding = { id, x: CX(), y: GROUND_Y - 20, fromBag: true };
+  cv.style.cursor = 'none';
+  SFX.pickup();
+  elHint.textContent = TOOL_HINTS[id] || 'drag it somewhere';
+  elHint.className = '';
 }
 
 /* ---------------------------------------------------------------------
@@ -4678,7 +5912,7 @@ function updateParticles(dt) {
       p.y += p.vy * dt;
       if (p.y >= GROUND_Y + 2 + (p.collectible ? 0 : Math.random() * 16)) {
         if (p.collectible && G.groundLeaves.length < 14) {
-          G.groundLeaves.push({ x: insetX(p.x | 0), y: GROUND_Y + 4 + Math.random() * 18, col: p.col, col2: p.col2, ph: Math.random() * 6.28, landed: true });
+          G.groundLeaves.push({ x: insetX(p.x | 0), y: GROUND_Y + 4 + Math.random() * 18, col: p.col, col2: p.col2, ph: Math.random() * 6.28, landed: true, area: areaId() });
         }
         G.particles.splice(i, 1); continue;
       }
@@ -4718,7 +5952,7 @@ function playCine(name, stages, onDone) {
   G.cine = { name, stages, i: 0, t: 0, done: onDone || null };
   G.scene = 'cine';
   hideBubble();
-  elShop.classList.add('hidden');
+  closeBag(); closeChat();
   refreshActions();
   enterStage();
 }
@@ -4803,36 +6037,39 @@ function startDeathCine() {
 
 /* ---- the opening: the wood, then the tree, then he notices you ---- */
 function startIntroCine() {
-  G.mood = 'sleepy'; G.blinkTimer = 99; G.blink = 1;
+  G.mood = 'asleep'; G.asleep = true; G.blinkTimer = 99; G.blink = 1;
   playCine('intro', [
-    { id: 'wide', dur: 3.4, cam: [-18, -4, 1.28], snap: true, caption: 'There is a tree in this park.' },
-    { id: 'near', dur: 3.2, cam: [0, 8, 1.35], caption: 'Nobody remembers who planted it.' },
+    { id: 'wide', dur: 3.4, cam: [-18, -4, 1.28], snap: true, caption: 'There is a tree in this park. It is asleep.' },
+    { id: 'near', dur: 3.2, cam: [0, 8, 1.35], caption: 'Nobody remembers planting it. Nobody alive, anyway.' },
     { id: 'wake', dur: 3.6, cam: [0, 18, 1.75], caption: '',
-      enter: () => { G.mood = 'sleepy'; },
+      enter: () => { G.mood = 'asleep'; G.asleep = true; },
       tick: (p) => {
         G.blink = p < 0.45 ? 1 : 0;
-        if (p > 0.45 && G.mood === 'sleepy') { G.mood = 'shock'; SFX.pickup(); }
+        if (p > 0.45 && G.asleep) {
+          G.asleep = false; G.mood = 'shock'; SFX.pickup(); G.shake = 3;
+          for (let i = 0; i < 6; i++) dropLeaf(90 + Math.random() * 76, 40 + Math.random() * 40, i < 2);
+        }
         if (p > 0.7) G.mood = 'chill';
       } },
     { id: 'settle', dur: 2.4, cam: [0, 5, 1.09], caption: 'Oh. You are new.' }
   ], () => {
-    G.blinkTimer = 2;
+    G.blinkTimer = 2; G.asleep = false;
     G.scene = 'game';
     refreshHUD(); refreshActions();
-    say('THE WISE OAK TREE', "Hello. I am an oak tree. I am four hundred years old. Click me and I will say things. That is the entire product.", 'happy');
+    say('THE WISE OAK TREE', "Hello. I am an oak tree. I am nine hundred years old. Click me and I will say things. That is the entire product.", 'happy');
+    setTimeout(() => { if (!save.ach.lane && !save.ach.hollow) nudge('the signposts at the edges walk you west and east', 12); }, 9000);
   });
 }
 
 /* ---- the squirrel hands over the lighter ---- */
 function startLighterCine() {
   playCine('lighter', [
-    { id: 'deal', dur: 3.2, cam: [(G.squirrel.x - CX()) * 0.5, 40, 1.9], caption: '"For nest purposes."',
-      enter: () => { G.squirrel.face = 1; G.squirrel.holding = 'lighter'; SFX.trade(); } },
-    { id: 'oblivious', dur: 3.4, cam: [0, 16, 1.6], caption: 'He does not know you have it.',
-      enter: () => { G.squirrel.holding = null; G.mood = 'happy'; } }
+    { id: 'found', dur: 3.2, cam: [0, 34, 1.8], caption: 'It was lying in the grass, cold, doing nothing.',
+      enter: () => { SFX.trade(); } },
+    { id: 'noc', dur: 3.4, cam: [0, 16, 1.5], caption: 'Noc watched you put it in your bag and said nothing at all.' }
   ], () => {
     G.scene = 'game'; refreshHUD(); refreshActions();
-    say('THE WISE OAK TREE', "You have gone very quiet. Everything alright? You have got a face like a man holding something behind his back.", 'think');
+    nocSay("You can leave that where you found it. I'm not going to stop you either way. That's rather the trouble with me.");
   });
 }
 
@@ -4889,6 +6126,17 @@ function startRebirthCine() {
 /* ---------------------------------------------------------------------
    UPDATE
    --------------------------------------------------------------------- */
+
+/* the walk between places: fade out, step across, fade back in */
+function updateTravel(dt) {
+  if (G.areaFadeDir) {
+    G.areaFade += dt * 3.2;
+    if (G.areaFade >= 1) { G.areaFade = 1; arriveArea(); }
+  } else if (G.areaFade > 0) {
+    G.areaFade = Math.max(0, G.areaFade - dt * 2.4);
+  }
+}
+
 function update(dt) {
   G.t += dt; G.dt = dt;
   G.sessionTime += dt;
@@ -4899,6 +6147,10 @@ function update(dt) {
   saveTimer += dt; if (saveTimer > 5) { saveTimer = 0; persist(); }
   if (G.sessionTime > 600) ACH('idle');
   updateCam(dt);
+  updateTravel(dt);
+  refreshArrows();
+  if (G.areaTitle > 0) G.areaTitle -= dt;
+  if (G.wakeT > 0) { G.wakeT -= dt; if (G.wakeT <= 0) G.asleep = false; }
 
   if (G.cine) {
     if (G.fleeing) updateCritters(dt);
@@ -4948,6 +6200,13 @@ function update(dt) {
 
   for (const sp of G.saplings) sp.age += dt;
 
+  if (areaId() === 'lane') {
+    const n = G.noc;
+    n.y = GROUND_Y + 8;
+    n.look = Math.max(-1, Math.min(1, ((G.look.x || 0) * 0.6))) | 0;
+    n.talking = Math.max(0, n.talking - dt);
+  }
+
   if (G.scene === 'game' && !G.dead) {
     // he does not hold one expression for long
     G.moodTimer -= dt;
@@ -4985,8 +6244,7 @@ function update(dt) {
     }
 
     updateCritters(dt);
-    updatePark(dt);
-    updateVisitors(dt);
+    if (atOak()) { updatePark(dt); updateVisitors(dt); }
     if (tickle.cool > 0) tickle.cool -= dt;
 
     // a long press on his trunk is a hug
@@ -5001,14 +6259,15 @@ function update(dt) {
 
     // sneezes
     G.sneezeTimer -= dt;
-    if (G.sneezeTimer <= 0) triggerSneeze();
+    if (G.sneezeTimer <= 0) { if (atOak()) triggerSneeze(); else G.sneezeTimer = 12; }
 
     // ambient falling leaves
-    const rate = G.season === 'autumn' ? 2.2 : G.season === 'winter' ? 0.3 : 0.5;
-    if (Math.random() < dt * rate) dropLeaf(80 + Math.random() * 96, 40 + Math.random() * 40, Math.random() < 0.35);
+    const rate = (G.season === 'autumn' ? 2.2 : G.season === 'winter' ? 0.3 : 0.5) * (atOak() ? 1 : 0.5);
+    if (Math.random() < dt * rate) dropLeaf(atOak() ? 80 + Math.random() * 96 : Math.random() * W(),
+                                            40 + Math.random() * 40, Math.random() < 0.35);
 
     // squirrel appears on its own eventually
-    if (!G.squirrel.spawned && G.sessionTime > 45) maybeSpawnSquirrel();
+    if (atOak() && !G.squirrel.spawned && G.sessionTime > 45) maybeSpawnSquirrel();
   }
 
   // squirrel movement
@@ -5058,16 +6317,18 @@ function parkMargin() {
   return Math.round(W() * step);
 }
 
-function plotCount() { return 4 + save.park.expansions * 3; }
+/* Fewer plots than there used to be, and further apart. An empty park with
+   three good things in it beats a full one with ten. */
+function plotCount() { return 3 + save.park.expansions * 2; }
 
 /* evenly spaced building plots along the grass, skipping the tree */
 function plotPos(i) {
   const n = plotCount();
-  const m = parkMargin() + 16;
+  const m = parkMargin() + 26;
   const span = W() - m * 2;
   let x = m + (span / (n + 1)) * (i + 1);
-  if (Math.abs(x - CX()) < 46) x += (x < CX() ? -1 : 1) * 46;
-  return { x: Math.round(x), y: GROUND_Y + 14 + (i % 2) * 8 };
+  if (Math.abs(x - CX()) < 62) x += (x < CX() ? -1 : 1) * 62;
+  return { x: Math.round(x), y: GROUND_Y + 16 + (i % 2) * 10 };
 }
 
 function propAtPlot(i) { return save.park.props.find(p => p.plot === i); }
@@ -5108,7 +6369,7 @@ function updatePark(dt) {
       const pos = plotPos(src.plot);
       const c = ['#8fd95a', '#5fae3c'];
       G.groundLeaves.push({ x: insetX(pos.x + (Math.random() - 0.5) * 24), y: GROUND_Y + 6 + Math.random() * 20,
-                            col: c[0], col2: c[1], ph: Math.random() * 6.28, landed: true });
+                            col: c[0], col2: c[1], ph: Math.random() * 6.28, landed: true, area: 'oak' });
     }
   }
   for (let i = G.parkMotes.length - 1; i >= 0; i--) {
@@ -5450,6 +6711,7 @@ function sortHall() {
    --------------------------------------------------------------------- */
 function drawWorld(opts) {
   const o = opts || {};
+  if (!atOak() && !o.fall && o.growing === undefined) { drawSideArea(); return; }
   SPR.drawBackdrop(dc, G);
   if (G.burn > 0 && !o.growing) {
     // firelight swallows the daylight
@@ -5460,6 +6722,7 @@ function drawWorld(opts) {
   SPR.drawGround(dc, G);
   SPR.drawPond(dc, G);
   SPR.drawBoundary(dc, G, parkMargin());
+  SPR.drawCosyFoliage(dc, G, 404, 0.9);
   SPR.drawFireGlow(dc, G);
 
   // everything solid in the foreground shares one dark contour
@@ -5506,6 +6769,7 @@ function drawWorld(opts) {
   SPR.layerEnd(dc, '#1a0f08');
 
   SPR.drawFireOnTree(dc, G);
+  if (G.asleep && !G.dead) SPR.drawZzz(dc, G, CX() + 34, 84, 1.4);
   SPR.drawParticles(dc, G);
   // leaves the rake collected, floating up
   for (const m of G.parkMotes) {
@@ -5515,6 +6779,8 @@ function drawWorld(opts) {
   }
   SPR.drawUndergrowth(dc, G);
   SPR.drawForeground(dc, G);
+  drawPickups(dc);
+  SPR.drawVines(dc, G, 51);
   SPR.drawFrameFoliage(dc, G);
   SPR.drawBokeh(dc, G);
   SPR.drawOverlay(dc, G);
@@ -5528,6 +6794,74 @@ function drawWorld(opts) {
       SPR.drawLeafSprite(ctx, l.x, l.y, l.col, l.col2);
     }
   }
+}
+
+
+/* -------------------------------------------------------------------------
+   THE LANE AND THE HOLLOW
+   Same sky, same clock, same weather. Everything else is different, and
+   deliberately emptier than the park: the point of them is the room.
+   ------------------------------------------------------------------------- */
+function drawSideArea() {
+  const lane = areaId() === 'lane';
+  SPR.drawBackdrop(dc, G);
+  SPR.drawGround(dc, G);
+  if (lane) SPR.drawLaneRoad(dc, G);
+  SPR.drawHedgerow(dc, G, lane ? W() * 0.22 : undefined);
+  SPR.drawCosyFoliage(dc, G, lane ? 707 : 909, lane ? 0.45 : 1.4);
+
+  const L = SPR.layerBegin();
+  SPR.drawGroundItems(L, G);
+  if (lane) {
+    SPR.drawNocCamp(L, G, Math.round(W() * 0.62) - 34, GROUND_Y + 14);
+    SPR.drawNoc(L, G, G.noc);
+  } else {
+    SPR.drawStandingStone(L, G, Math.round(W() * 0.62), GROUND_Y + 12);
+    SPR.drawFallenLog(L, G, Math.round(W() * 0.10), GROUND_Y + 26, Math.round(W() * 0.32));
+  }
+  SPR.drawCritters(L, G);
+  SPR.layerEnd(dc, '#1a0f08');
+
+  SPR.drawParticles(dc, G);
+  if (!lane) SPR.drawUndergrowth(dc, G);
+  SPR.drawForeground(dc, G);
+  drawPickups(dc);
+  SPR.drawVines(dc, G, lane ? 61 : 71);
+  SPR.drawFrameFoliage(dc, G);
+  SPR.drawBokeh(dc, G);
+  SPR.drawOverlay(dc, G);
+}
+
+function drawPickups(c) {
+  for (const p of G.pickups) SPR.drawPickup(c, G, p, hover.kind === 'pickup' && hover.p === p);
+}
+
+/* the signposts, drawn on the finished frame so a click lands where it looks */
+function refreshArrows() {
+  G.arrows = [];
+  if (G.cine || G.scene !== 'game' || G.dead || G.menu) return;
+  for (const dir of [-1, 1]) {
+    const i = G.area + dir;
+    if (i < 0 || i >= AREAS.length) continue;
+    const label = AREAS[i].name.replace(/^THE /, '');
+    const box = SPR.travelArrowBox(dir, label);
+    G.arrows.push({ dir, label, hover: false, x: box.x, y: box.y, w: box.w, h: box.h });
+  }
+}
+
+function arrowAt(x, y) {
+  for (const a of G.arrows) if (x >= a.x && x <= a.x + a.w && y >= a.y && y <= a.y + a.h) return a;
+  return null;
+}
+
+function drawArrows(c) {
+  for (const a of G.arrows) SPR.drawTravelArrow(c, G, a.dir, a.label, a.hover);
+}
+
+function bagButtonBox() { return { x: 4, y: H - 26, w: 26, h: 26 }; }
+function overBagButton(x, y) {
+  const b = bagButtonBox();
+  return G.hasBag && x >= b.x && x <= b.x + b.w && y >= b.y && y <= b.y + b.h;
 }
 
 function drawCineFrame() {
@@ -5632,13 +6966,19 @@ function render() {
   ctx.drawImage(buf, sx, sy, sw, sHt, 0, 0, W(), H);
 
   if (G.flash > 0) { ctx.globalAlpha = Math.min(1, G.flash); SPR.px(ctx, 0, 0, W(), H, '#ffffff'); ctx.globalAlpha = 1; }
-  if (!G.cine && G.scene === 'game') SPR.drawHud(ctx, G);
+  if (!G.cine && G.scene === 'game') { drawArrows(ctx); SPR.drawHud(ctx, G); }
+  if (G.areaTitle > 0 && !G.cine) SPR.drawAreaTitle(ctx, G, AREAS[G.area].name, AREAS[G.area].sub, Math.min(1, G.areaTitle));
   if (!G.cine) drawPost(ctx);
   drawHint(ctx);
   drawSigns(ctx);
   if (G.menu) drawMenu(ctx);
   drawDialogue(ctx);
   SPR.drawLetterbox(ctx, G.letterbox);
+  if (G.areaFade > 0) {
+    ctx.globalAlpha = Math.min(1, G.areaFade);
+    SPR.px(ctx, 0, 0, W(), H, '#0a0f0a');
+    ctx.globalAlpha = 1;
+  }
   if (G.holding && G.scene === 'game') {
     const f = worldToFrame(G.holding.x, G.holding.y);
     SPR.drawCursorTool(ctx, G, f.x, f.y, G.holding.id);
@@ -5692,6 +7032,20 @@ function showHallLabel(i) {
 function hitTest(x, y) {
   if (G.scene === 'hall') return { kind: 'hall', i: hallSlotAt(x, y) };
 
+  // away from the oak there is no oak to click, only what is actually there
+  if (G.scene === 'game' && !atOak()) {
+    const pk = pickupAt(x, y);
+    if (pk) return { kind: 'pickup', p: pk, i: -1 };
+    for (let i = G.groundLeaves.length - 1; i >= 0; i--) {
+      const l = G.groundLeaves[i];
+      if (l.area && l.area !== areaId()) continue;
+      if (x > l.x - 3 && x < l.x + 10 && y > l.y - 3 && y < l.y + 9) return { kind: 'leaf', i };
+    }
+    if (areaId() === 'lane' && Math.abs(x - G.noc.x) < 14 && y > G.noc.y - 40 && y < G.noc.y + 4)
+      return { kind: 'noc', i: -1 };
+    return { kind: null, i: -1 };
+  }
+
   // the cottage and the noticeboard are solid objects, checked before him
   if (G.scene === 'game' && !G.dead) {
     if (Math.abs(x - (parkMargin() + 26)) < 24 && y > GROUND_Y - 34 && y < GROUND_Y + 14)
@@ -5709,8 +7063,13 @@ function hitTest(x, y) {
     return { kind: 'sky', i: -1 };
   }
   if (G.scene !== 'game') return { kind: null, i: -1 };
+  {
+    const pk = pickupAt(x, y);
+    if (pk) return { kind: 'pickup', p: pk, i: -1 };
+  }
   for (let i = G.groundLeaves.length - 1; i >= 0; i--) {
     const l = G.groundLeaves[i];
+    if (l.area && l.area !== areaId()) continue;
     if (x > l.x - 3 && x < l.x + 10 && y > l.y - 3 && y < l.y + 9) return { kind: 'leaf', i };
   }
   const s = G.squirrel;
@@ -5747,6 +7106,7 @@ const partCount = {};
 
 function touchPart(part) {
   if (G.dead || G.scene !== 'game') return;
+  if (G.asleep) { wakeHim(); return; }
   if (skipType()) return;
   G.sinceTreeClick = 0;
   const t = DATA.touch[part];
@@ -5784,7 +7144,10 @@ function onMove(ev) {
   if (G.menu) { G.menu.sel = menuRowAt(fr.x, fr.y); cv.style.cursor = G.menu.sel >= -1 ? 'pointer' : 'default'; return; }
   let onSign = false;
   for (const sg of signs) { sg.hover = signAt(fr.x, fr.y) === sg; onSign = onSign || sg.hover; }
-  if (onSign) { cv.style.cursor = 'pointer'; return; }
+  const ar = arrowAt(fr.x, fr.y);
+  for (const a of G.arrows) a.hover = a === ar;
+  G.bagHover = overBagButton(fr.x, fr.y);
+  if (onSign || ar || G.bagHover) { cv.style.cursor = 'pointer'; return; }
   DLG.hover = DLG.choices && dialogueDone() ? choiceAt(fr.x, fr.y) : -1;
   cv.style.cursor = DLG.hover >= 0 ? 'pointer' : (G.holding ? 'none' : cv.style.cursor);
 
@@ -5810,7 +7173,7 @@ function onMove(ev) {
   }
 
   // scrub the cursor quickly over him without pressing: he is ticklish
-  if (G.scene === 'game' && !G.dead && tickle.cool <= 0) {
+  if (G.scene === 'game' && atOak() && !G.dead && tickle.cool <= 0) {
     const onHim = Math.abs(p.x - CX()) < 40 && p.y > 88 && p.y < GROUND_Y;
     if (onHim && tickle.last) {
       const d = Math.abs(p.x - tickle.last.x) + Math.abs(p.y - tickle.last.y);
@@ -5919,6 +7282,13 @@ function onPress(ev) {
   const sg = signAt(fr.x, fr.y);
   if (sg) { SFX.click(); sg.act(); return; }
 
+  // the signposts at the edges, and the bag in the corner
+  if (!G.cine && G.scene === 'game') {
+    const ar = arrowAt(fr.x, fr.y);
+    if (ar) { travel(ar.dir); return; }
+    if (overBagButton(fr.x, fr.y)) { SFX.click(); toggleBag(); return; }
+  }
+
   // a reply, if one is on offer
   if (DLG.on && DLG.choices && dialogueDone()) {
     const ci = choiceAt(fr.x, fr.y);
@@ -5982,6 +7352,8 @@ function onPress(ev) {
     return;
   }
   if (h.kind === 'leaf') { collectLeaf(h.i); return; }
+  if (h.kind === 'pickup') { takePickup(h.p); return; }
+  if (h.kind === 'noc') { SFX.click(); openChat(); return; }
   if (h.kind === 'squirrel') { clickSquirrel(); return; }
   if (h.kind === 'part') {
     grab = { x: p.x, lastX: p.x, moved: 0, t: 0 };
@@ -6002,7 +7374,7 @@ function onPress(ev) {
     SFX.click();
     const rate = (b.rate * incomeMultiplier()).toFixed(2);
     say('THE WISE OAK TREE',
-        b.name + '. ' + b.desc + ' Bringing in about ' + rate + ' leaves a second, which over four hundred years is genuinely enormous.',
+        b.name + '. ' + b.desc + ' Bringing in about ' + rate + ' leaves a second, which over nine hundred years is genuinely enormous.',
         'happy');
     return;
   }
@@ -6047,18 +7419,32 @@ function eraseEverything() {
 }
 
 $('modalclose').onclick = () => { SFX.click(); closeModal(); };
-$('shopclose').onclick = (e) => { e.stopPropagation(); SFX.click(); closeShop(); };
+$('chatsend').onclick = (e) => { e.stopPropagation(); sendChat(); };
+elChatInput.addEventListener('keydown', e => {
+  if (e.key === 'Enter') { e.preventDefault(); sendChat(); }
+});
+$('bagclose').onclick = (e) => { e.stopPropagation(); SFX.click(); closeBag(); };
+$('chatclose').onclick = (e) => { e.stopPropagation(); SFX.click(); closeChat(); };
 elModal.addEventListener('mousedown', e => { if (e.target === elModal && !G.flags.confirming) closeModal(); });
 
 document.addEventListener('keydown', e => {
+  const tag = (e.target && e.target.tagName) || '';
+  if (tag === 'INPUT' || tag === 'TEXTAREA') {
+    if (e.key === 'Escape') { e.target.blur(); closeChat(); }
+    return;
+  }
   if (G.scene === 'hall') {
     if (e.key === 'ArrowRight') G.hall.target += 60;
     if (e.key === 'ArrowLeft') G.hall.target -= 60;
     if (e.key === 'Escape') closeHall();
     return;
   }
-  if (e.key === 'Escape') { if (G.menu) closeMenu(); closeModal(); closeShop(); }
+  if (e.key === 'Escape') { if (G.menu) closeMenu(); closeModal(); closeBag(); closeChat(); }
   if (e.key === ' ') { e.preventDefault(); if (!skipType() && G.scene === 'game') talkToTree(); }
+  if (e.key === 'ArrowLeft') travel(-1);
+  if (e.key === 'ArrowRight') travel(1);
+  if (e.key.toLowerCase() === 'b') toggleBag();
+  if (e.key.toLowerCase() === 't' && areaId() === 'lane') openChat();
   if (e.key.toLowerCase() === 'm') toggleMute();
   if (e.key.toLowerCase() === 'r' && e.shiftKey) eraseEverything();
   if (e.key.toLowerCase() === 'e' && G.scene === 'heaven') openEndings();
@@ -6075,6 +7461,11 @@ checkCompletionist();
 fit();
 seedCritters();
 buildHall();
+for (const id in (save.items || {})) G.inv.items[id] = true;
+G.hasBag = !!save.bag;
+G.areaNow = areaId();
+seedPickups();
+refreshArrows();
 G.muted = save.muted;
 refreshHUD();
 persist();
@@ -6086,13 +7477,33 @@ function beginGame() {
   SFX.kick(); SFX.ach();
   elTitle.classList.add('out');
   setTimeout(() => elTitle.classList.add('hidden'), 520);
+  // he was asleep on the card, so he is asleep in the world too
+  G.asleep = true; G.mood = 'asleep';
   if (hadSave) {
-    say('THE WISE OAK TREE',
-        "You came back. I did not think you would. I have been standing here in the exact same spot, which is my only move.",
-        'happy');
+    setTimeout(wakeHim, 1100);
   } else {
     startIntroCine();
   }
+}
+
+/* the actual waking: a shudder, a blink, and nine hundred years of opinions */
+function wakeHim() {
+  if (!G.asleep) return;
+  G.asleep = false; G.wakeT = 0;
+  G.blink = 0.45; G.shake = 3.2; G.mood = 'shock'; G.moodTimer = 5;
+  SFX.sneeze();
+  for (let i = 0; i < 7; i++) dropLeaf(90 + Math.random() * 76, 40 + Math.random() * 40, i < 2);
+  spawnParticles('star', CX(), 96, 6);
+  setTimeout(() => {
+    if (G.dead || G.cine) return;
+    G.mood = 'sleepy';
+    say('THE WISE OAK TREE', hadSave
+      ? "Mm. You again. I had got all the way to sleep, which for me takes about a decade. Sit down. I'll be awake in a minute."
+      : "Nnh. Someone is standing under me. Right. Give me a moment. Nine hundred years is a long nap to come out of.",
+      'sleepy');
+    if (!save.ach.lane && !save.ach.hollow) setTimeout(() => nudge('the signposts at the edges walk you west and east', 12), 7000);
+    else if (!save.bag) setTimeout(() => nudge('there is a bag somewhere east of here', 10), 7000);
+  }, 700);
 }
 $('tstart').onclick = beginGame;
 elTitle.addEventListener('mousedown', beginGame);
@@ -6105,8 +7516,10 @@ if (/[?&]debug/.test(location.search)) {
                  refreshHUD, dropLeaf, triggerSneeze, maybeSpawnSquirrel, persist,
                  skipAll: () => { if (G.cine) { G.cine.i = G.cine.stages.length - 1; skipStage(); } },
                  parkMargin, parkIncome, menuBox, closeMenu, openBuildMenu, openLedger, plotPos, hitTest,
+                 travel, takePickup, seedPickups, openChat, closeChat, sendChat, openBag, closeBag,
+                 agreePlan, completePlan, planById, areaId, wakeHim, AREAS,
                  signLabels: () => signs.map(s => s.label), signFor: (l) => signs.find(s => s.label === l),
-                 dlgText: () => DLG.text, DLG };
+                 dlgText: () => DLG.text, DLG, snails: () => snails.length, toastQueue };
 }
 
 let last = performance.now();

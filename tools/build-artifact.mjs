@@ -10,7 +10,7 @@ const read = p => readFileSync(resolve(root, p), 'utf8');
 
 const html = read('index.html');
 const css = read('css/style.css');
-const scripts = ['js/font.js', 'js/data.js', 'js/audio.js', 'js/sprites.js', 'js/game.js'];
+const scripts = ['js/font.js', 'js/data.js', 'js/ai.js', 'js/audio.js', 'js/sprites.js', 'js/game.js'];
 
 // the artifact host supplies <!doctype>, <head> and <body>, so take the body
 // content only and carry the <title> across ourselves

@@ -16,12 +16,12 @@ const DATA = {};
    ------------------------------------------------------------------------- */
 DATA.lines = [
   /* ---------- GOOFY ---------- */
-  { id: 'g01', tag: 'goofy', mood: 'happy', text: "I am four hundred years old and I have never once had to find parking." },
+  { id: 'g01', tag: 'goofy', mood: 'happy', text: "I am nine hundred years old and I have never once had to find parking." },
   { id: 'g02', tag: 'goofy', mood: 'smug',  text: "People say 'touch grass'. I say: touch bark. Grass is a coward. Grass runs from winter." },
   { id: 'g03', tag: 'goofy', mood: 'idle',  text: "A woodpecker lives in my elbow. He pays no rent. We are, legally speaking, roommates." },
   { id: 'g04', tag: 'goofy', mood: 'shock', text: "Do NOT look up. There is a squirrel up there doing something unspeakable with a walnut." },
   { id: 'g05', tag: 'goofy', mood: 'happy', text: "My branches are extremely strong. Do not test this. Two children tested this. They were fine. I was not." },
-  { id: 'g06', tag: 'goofy', mood: 'idle',  text: "I have been standing in the exact same spot since 1613. Ask me about my cardio." },
+  { id: 'g06', tag: 'goofy', mood: 'idle',  text: "I have been standing in the exact same spot since 1140. Ask me about my cardio." },
   { id: 'g07', tag: 'goofy', mood: 'smug',  text: "I invented shade. Legally I cannot prove this. Emotionally, I am certain." },
   { id: 'g08', tag: 'goofy', mood: 'sad',   text: "A dog has claimed me. Every Tuesday. I have accepted this as weather." },
   { id: 'g09', tag: 'goofy', mood: 'happy', text: "In autumn I do a little striptease. Very tasteful. Extremely seasonal." },
@@ -80,7 +80,7 @@ DATA.lines = [
   { id: 'r01', tag: 'world', mood: 'sad', text: "In Gaza, children have learned to tell the aircraft apart by sound. I am a tree. I hold no flag and I command no one. I only know that no child anywhere should have to learn that." },
   { id: 'r02', tag: 'world', mood: 'sad', text: "There were olive trees in that valley older than me. Someone's great-grandmother planted them. Trees do not choose sides. Trees only know that it takes eighty years to grow one and an afternoon to end one." },
   { id: 'r03', tag: 'world', mood: 'sad', text: "On October 7th families were murdered and taken from their homes. In the months after, families in Gaza were buried under theirs. Both of those things are true at once, and grief does not run out when you share it." },
-  { id: 'r04', tag: 'world', mood: 'idle',text: "People ask me who is right. I am four hundred years old and I have never once seen a war where the children on either side did anything to deserve it." },
+  { id: 'r04', tag: 'world', mood: 'idle',text: "People ask me who is right. I am nine hundred years old and I have never once seen a war where the children on either side did anything to deserve it." },
   { id: 'r05', tag: 'world', mood: 'sad', text: "In Sudan the famine is real and almost no one is looking. A hungry child does not get less hungry because the news moved on." },
   { id: 'r06', tag: 'world', mood: 'sad', text: "In Ukraine there is a sunflower field that no one can walk into for another thirty years, because of what was buried in it." },
   { id: 'r07', tag: 'world', mood: 'sad', text: "Somewhere tonight a family is sleeping in a stairwell because the building above it is safer than the room they used to have. They had a couch. They had a smell to their kitchen. That is what a refugee is: someone who had a kitchen." },
@@ -96,7 +96,7 @@ DATA.lines = [
   { id: 'r17', tag: 'world', mood: 'sad', text: "There is a plastic island in the Pacific bigger than some countries. Nothing lives there. It is the only place on this planet we built entirely by accident." },
   { id: 'r18', tag: 'world', mood: 'idle',text: "Loneliness now shortens lives about as much as smoking does. You are surrounded by ten thousand people and no roots touching. That is not a personal failure. That is bad forest design." },
   { id: 'r19', tag: 'world', mood: 'sad', text: "A bee species went extinct while you were reading this sentence. Not really. But one did this year, and no one held a funeral, and I found that unbearable." },
-  { id: 'r20', tag: 'world', mood: 'idle',text: "You will be told the problems are too big and you are too small. I am one tree. I have cooled this street by four degrees for four hundred years. Small is a lie people tell to get you to sit down." },
+  { id: 'r20', tag: 'world', mood: 'idle',text: "You will be told the problems are too big and you are too small. I am one tree. I have cooled this street by four degrees for nine hundred years. Small is a lie people tell to get you to sit down." },
   { id: 'r21', tag: 'world', mood: 'sad', text: "Somewhere a hospital ran out of anaesthetic this week. Surgeries happened anyway. I want you to sit with that for exactly five seconds and then go be kind to someone." },
   { id: 'r22', tag: 'world', mood: 'idle',text: "Antibiotics are quietly failing. A scratch used to kill people. It is allowed to become that again if we are careless. Progress is not a ratchet. It is a garden." },
   { id: 'r23', tag: 'world', mood: 'sad', text: "There are children in this world whose entire lives have been a war. Not part of. All of it. Every birthday." },
@@ -134,10 +134,10 @@ DATA.lines = [
   { id: 'r42', tag: 'world', mood: 'sad', text: "The forests near a war do not get counted. Olive groves, orchards, windbreaks, four hundred years of somebody's patience. Nobody writes those numbers down." },
   { id: 'r43', tag: 'world', mood: 'idle',text: "People keep telling me their country is the greatest one. I have roots in a country that has been six different countries. The soil never once noticed." },
   { id: 'r44', tag: 'world', mood: 'sad', text: "There is a generation of children who will need help with their heads long after the shooting stops, and almost nobody is budgeting for that." },
-  { id: 'r45', tag: 'world', mood: 'happy',text: "And still: more people are vaccinated, fed and literate than at any point in my four centuries. Both things are true. Hold both. That is the whole job." },
+  { id: 'r45', tag: 'world', mood: 'happy',text: "And still: more people are vaccinated, fed and literate than at any point in my nine centuries. Both things are true. Hold both. That is the whole job." },
 
   /* ---------- POP CULTURE ----------
-     Allusions, not quotations. He has had four hundred years and a very
+     Allusions, not quotations. He has had nine hundred years and a very
      good view of everyone's picnic blanket, including their phone screen. */
   { id: 'p01', tag: 'pop', mood: 'smug',  text: "There is a whole film about trees like me marching off to war. I was invited. I said I would think about it. That was in 1954 and I am still thinking about it." },
   { id: 'p02', tag: 'pop', mood: 'happy', text: "There is a talking tree in the films who only ever says his own name. Icon. Absolute legend. Zero effort. I say four hundred things and get nothing." },
@@ -172,7 +172,7 @@ DATA.lines = [
   { id: 'p31', tag: 'pop', mood: 'happy', text: "A robot from the future came back to stop a war. I am a tree from the past and I am here to tell you the war is mostly about water and it started already." },
   { id: 'p32', tag: 'pop', mood: 'smug',  text: "There was room on that door. I have thought about it for a hundred and ten years, from a fixed position, with no other hobbies. There was room on that door." },
   { id: 'p33', tag: 'pop', mood: 'sleepy',text: "We need to go deeper. Deeper. Deeper. ...That is just my roots. That is where I keep everything. It is a dream within a dream within a taproot." },
-  { id: 'p34', tag: 'pop', mood: 'idle',  text: "One anime is about giant humans eating people behind a wall, and one is about a boy who becomes strong by running. I have been standing in one place for four centuries. Guess which one I am." },
+  { id: 'p34', tag: 'pop', mood: 'idle',  text: "One anime is about giant humans eating people behind a wall, and one is about a boy who becomes strong by running. I have been standing in one place for nine centuries. Guess which one I am." },
   { id: 'p35', tag: 'pop', mood: 'shock', text: "A man found a notebook that kills people whose names he writes in it. Someone carved four names into my bark in 1987. I have been wondering about this ever since." },
   { id: 'p36', tag: 'pop', mood: 'smug',  text: "There is a pirate looking for a treasure that has been 'just up ahead' for twenty-five years. That is not a story. That is gardening." },
   { id: 'p37', tag: 'pop', mood: 'happy', text: "There is a pocket monster that is a tree pretending to be a rock, or a rock pretending to be a tree. Either way: coward. Pick a lane." },
@@ -263,6 +263,17 @@ DATA.shop = [
    Unlocked by the engine via ACH('id').
    ------------------------------------------------------------------------- */
 DATA.achievements = [
+  // the wider world
+  { id: 'lane',        kind: 'task', icon: 'reach',   name: 'West of Everything',    desc: "Walk down the lane and find out who keeps the lamp." },
+  { id: 'hollow',      kind: 'task', icon: 'reach',   name: 'The East Hollow',       desc: "Walk east until the moss gets serious." },
+  { id: 'backpack',    kind: 'goal', icon: 'reach',   name: 'Somewhere To Put It',   desc: "Find the backpack. Everything changes once you can carry things." },
+  { id: 'talknoc',     kind: 'task', icon: 'mouth',   name: 'Hello, Noc',            desc: "Say something to Noc in your own words." },
+  { id: 'nocchat',     kind: 'goal', icon: 'mouth',   name: 'A Long Conversation',   desc: "Say twelve things to Noc. He counted." },
+  { id: 'realai',      kind: 'chal', icon: 'book',    name: 'A Mind Of His Own',     desc: "Give Noc a real model to think with." },
+  { id: 'plan1',       kind: 'task', icon: 'reach',   name: 'A Plan',                desc: "Agree to do something with Noc." },
+  { id: 'plandone',    kind: 'goal', icon: 'reach',   name: 'Kept Your Word',        desc: "Finish a plan you made with Noc." },
+  { id: 'plan3',       kind: 'goal', icon: 'reach',   name: 'Three Promises',        desc: "Keep three plans." },
+  { id: 'planall',     kind: 'chal', icon: 'book',    name: 'Every Promise Kept',    desc: "Keep every plan Noc ever offered you." },
   // first steps
   { id: 'hello',       kind: 'task', icon: 'leaf',    name: 'Taking Inventory',      desc: "Click the tree. He was going to say something anyway." },
   { id: 'chat10',      kind: 'task', icon: 'mouth',   name: 'Small Talk',            desc: "Hear 10 different things." },
@@ -373,12 +384,21 @@ DATA.achievements = [
    ------------------------------------------------------------------------- */
 DATA.endings = [
   {
+    id: 'together', name: 'THE LAMP AND THE TREE', icon: 'heart',
+    title: "You kept every promise you made out here.",
+    body: "Lights down the lane. A feast nobody made a speech at. An hour of doing nothing on purpose. " +
+          "A grove of his children, badly planted, all of them alive. " +
+          "Noc turned the lamp down and said the park was finished, and the oak said nothing at all, " +
+          "which from him is a standing ovation.",
+    hint: "Make plans with Noc. Then actually do them."
+  },
+  {
     id: 'arson', name: 'THE ARSONIST', icon: 'fire',
     title: "You burned the wise oak tree.",
-    body: "Four hundred years of standing in one place, ended in eleven minutes. " +
+    body: "Nine hundred years of standing in one place, ended in eleven minutes. " +
           "The birds got out. The mice did not all get out. " +
           "He did not curse you. His last words were about you, and they were kind, and that is somehow worse.",
-    hint: "Buy the lighter. Use it."
+    hint: "Find the lighter in the lane. Use it."
   },
   {
     id: 'mercy', name: 'THE MERCIFUL', icon: 'heart',
@@ -407,7 +427,7 @@ DATA.endings = [
     id: 'friend', name: 'BEST FRIENDS', icon: 'heart',
     title: "You hugged him ten times and watered him ten times.",
     body: "He is not built to cry. He did something with his sap that was, functionally, crying. " +
-          "'I have been hugged four times in four hundred years,' he said. 'You did ten in one afternoon. " +
+          "'I have been hugged four times in nine hundred years,' he said. 'You did ten in one afternoon. " +
           "I am going to be insufferable about this to the birch.'",
     hint: "Hug 10 times, water 10 times."
   },
@@ -460,7 +480,7 @@ DATA.godLines = [
 DATA.heavenTreeLines = [
   "Oh! You're here! Do you have any idea how good it feels to have no ROOTS?",
   "I've been FLOATING. Do you understand what that means to me. FLOATING.",
-  "I'm not angry. I had four hundred years and you had one afternoon. I got the better deal.",
+  "I'm not angry. I had nine hundred years and you had one afternoon. I got the better deal.",
   "There's a birch up here who WILL NOT stop talking about her bark. It's paper. We KNOW, Susan.",
   "Go back down. Plant one. That's all. That squares us."
 ];
@@ -475,7 +495,7 @@ DATA.touch = {
       "AAGH. THE EYE. YOU WENT FOR THE EYE.",
       "That is an EYE. That is a functioning EYE with a lens made of SAP.",
       "Do you know how long it took me to grow those? Ninety years. Each.",
-      "I have watched four centuries through that and you just POKED it.",
+      "I have watched nine centuries through that and you just POKED it.",
       "Okay. We are even. I once dropped a branch on a man's car. We are EVEN."
     ]
   },
@@ -512,7 +532,7 @@ DATA.touch = {
     mood: 'sleepy',
     lines: [
       "Careful, there are mice down there and they are extremely private people.",
-      "That is where I keep the last four hundred years. Do not disturb the filing.",
+      "That is where I keep the last nine hundred years. Do not disturb the filing.",
       "The roots go down as far as I go up. You are currently patting my entire subconscious.",
       "Bartholomew says hello. Bartholomew is a mouse. Bartholomew does not actually say anything."
     ]
@@ -546,19 +566,19 @@ DATA.knockLines = [
   "Who's there? ...No. No, I refuse. I have heard every single one.",
   "Come in. ...That was a joke. There is no in. I am solid all the way through. Mostly.",
   "*knock knock* ...That was me. Doing it back. From the inside. Did that frighten you?",
-  "Yes, hello, one moment, I am four hundred years old and it takes me a while to get to the door.",
+  "Yes, hello, one moment, I am nine hundred years old and it takes me a while to get to the door.",
   "You knocked on wood for luck. On ME. I am the luck. I have been the luck this whole time."
 ];
 
 DATA.moonLines = [
-  "You reached up and touched the moon. From here. With your little arm. I have been trying that for four hundred years.",
+  "You reached up and touched the moon. From here. With your little arm. I have been trying that for nine hundred years.",
   "The moon and I have an arrangement and you have just violated about six clauses of it.",
   "Careful. She pulls the whole ocean around by the nose. She can absolutely handle you.",
   "Every night she comes past, and every night I think: same. Same, mate. Stuck in a circuit, glowing, nobody asks how we are."
 ];
 
 DATA.sunLines = [
-  "Do NOT touch that. That is my LUNCH. That has been my lunch every day for four hundred years.",
+  "Do NOT touch that. That is my LUNCH. That has been my lunch every day for nine hundred years.",
   "Please stop grabbing at the sun. You are making me anxious about my supply chain.",
   "That is a fusion reactor ninety-three million miles away and you just went for it like it was a doorknob."
 ];
@@ -582,11 +602,11 @@ DATA.replies = {
   world: [
     { tone: 'kind',    text: "That's awful.",                follow: "It is. Sitting with that for a second, instead of scrolling past it, is not nothing. It is small, but it is not nothing." },
     { tone: 'curious', text: "What can I even do?",          follow: "Less than you want and more than none. Give money to people already there. Vote like it matters. Be unbearable about it at dinner. And then go outside." },
-    { tone: 'rude',    text: "Why are you telling me this?", follow: "Because you asked a tree what it thinks and I have had four hundred years to notice who gets crushed and who does the crushing. You can close the tab. I will still be here." },
+    { tone: 'rude',    text: "Why are you telling me this?", follow: "Because you asked a tree what it thinks and I have had nine hundred years to notice who gets crushed and who does the crushing. You can close the tab. I will still be here." },
     { tone: 'kind',    text: "I don't know what to say.",    follow: "Nobody does. The people it is happening to do not know what to say either. Not knowing what to say is not the same as not caring." }
   ],
   pop: [
-    { tone: 'joke',    text: "You watch a lot of telly.",    follow: "I have never seen a single frame of anything. I hear it. Through open car windows. Second-hand, badly described, for four hundred years." },
+    { tone: 'joke',    text: "You watch a lot of telly.",    follow: "I have never seen a single frame of anything. I hear it. Through open car windows. Second-hand, badly described, for nine hundred years." },
     { tone: 'curious', text: "How do you even know that?",   follow: "A teenager explained the entire plot to another teenager under my branches in 2011. It took two hours. I have never recovered." },
     { tone: 'rude',    text: "That was a stretch.",          follow: "Everything I say is a stretch. I am a tree doing bits. Lower your standards and we will both have a nicer afternoon." },
     { tone: 'kind',    text: "Okay, that got me.",           follow: "YES. Four hundred years. Four hundred years for one laugh. Worth it. Genuinely worth it." }
@@ -662,14 +682,14 @@ DATA.expansions = [
 
 DATA.houseLines = [
   "The keeper's cottage. Nobody has lived in it since 1974 and the kettle is still warm.",
-  "You may go in. You will find one chair, one window and four hundred years of quiet.",
+  "You may go in. You will find one chair, one window and nine hundred years of quiet.",
   "That is where the ledger is kept. Somebody has to write down what the park is worth.",
-  "I watched them build it. Took eleven weeks. I have taken four hundred years and I am still not finished."
+  "I watched them build it. Took eleven weeks. I have taken nine hundred years and I am still not finished."
 ];
 
 DATA.boardLines = [
   "The noticeboard. Everything this park could be, pinned up in one place.",
-  "Go on. Build something. I have been the only attraction here for four centuries and frankly I am tired.",
+  "Go on. Build something. I have been the only attraction here for nine centuries and frankly I am tired.",
   "A park is just a tree with ambitions."
 ];
 
@@ -677,4 +697,127 @@ DATA.visitorTips = [
   "Someone left a leaf on the bench for you. That is how it works here.",
   "A visitor said the park was lovely. To ME. Directly. I have not recovered.",
   "They fed the birds, sat for eleven minutes, and left without dropping litter. A perfect human."
+];
+
+/* =========================================================================
+   NEW WORLD CONTENT
+   Areas, NOC, plans, pickups and a great many more television references.
+   ========================================================================= */
+
+/* ---- more of him, mostly about television he has never seen ---- */
+DATA.lines = DATA.lines.concat([
+  { id: 'p50', tag: 'pop', mood: 'smug',  text: "Someone under me was watching the show about the ultra-orthodox family in Jerusalem on their phone. Black and white, everyone smoking, everyone grieving beautifully. I wept sap. Actual sap." },
+  { id: 'p51', tag: 'pop', mood: 'idle',  text: "There is a Israeli programme where a therapist sits in a chair and lets people talk for fifty minutes. They remade it in nine countries. I have been doing it for free, outdoors, for nine hundred years." },
+  { id: 'p52', tag: 'pop', mood: 'happy', text: "A baker fell in love with a supermodel in a show from Tel Aviv and the entire street argued about it for a summer. Under my branches. Loudly. In three languages." },
+  { id: 'p53', tag: 'pop', mood: 'sad',   text: "A woman in a Jerusalem drama wanted an apartment, a husband and God, in that order, and could not have any of them at once. I only ever wanted rain. I have it easy." },
+  { id: 'p54', tag: 'pop', mood: 'shock', text: "The dragon programme. Everybody sat under me for eight years and then had one conversation about the last season and never mentioned it again. Devastating. I still think about it." },
+  { id: 'p55', tag: 'pop', mood: 'smug',  text: "In the paper-money heist show they all took city names as codenames. If I joined, I would be OAK. That is not a city. That is why I would be the brains." },
+  { id: 'p56', tag: 'pop', mood: 'happy', text: "The one with the small town, the bunker, the missing boy and the synth music. A child once hid behind me from something imaginary. I have never been more useful." },
+  { id: 'p57', tag: 'pop', mood: 'idle',  text: "There is a show where an office manager stares into a camera that should not exist. I do that. All day. To you. Right now." },
+  { id: 'p58', tag: 'pop', mood: 'sad',   text: "The one about the nurse who fell into the sea and the island that would not let anyone leave. I am also an island that will not let anyone leave. My island is shade." },
+  { id: 'p59', tag: 'pop', mood: 'laugh', text: "A woman in New York wondered about relationships in voiceover while typing. I do that. Except my laptop is weather and my column is leaves." },
+  { id: 'p60', tag: 'pop', mood: 'smug',  text: "In the show about the Korean debt games, everyone wore green. I wear green nine months a year and nobody gives me a prize." },
+  { id: 'p61', tag: 'pop', mood: 'shock', text: "A man turned into a dragon-ish thing, a chemist turned into a monster, a mob boss went to therapy. Everybody on television is a tree who suddenly grew a personality." },
+  { id: 'p62', tag: 'pop', mood: 'idle',  text: "Somebody watched the baking tent programme on a picnic blanket at my feet. Nobody died. Nobody betrayed anyone. I did not know television could do that." },
+  { id: 'p63', tag: 'pop', mood: 'happy', text: "The show where the sad detective and the sadder detective drive through a wet town for six episodes. That is just November. I do six of those a year." },
+  { id: 'p64', tag: 'pop', mood: 'sly',   text: "There is a cartoon where a yellow family never ages. I have aged nine hundred years and gained one face. We are both cursed. They have better writers." },
+  { id: 'p65', tag: 'pop', mood: 'think', text: "Somebody streamed the show about a friendly Colombian family with a magic house under me. There is a tree in it that keeps a family alive. That is called a documentary where I come from." },
+  { id: 'p66', tag: 'pop', mood: 'happy', text: "The football manager show. Nice moustache man. Kindness as a strategy. I have been running that strategy since before England had a league and it is SLOW but it works." },
+  { id: 'p67', tag: 'pop', mood: 'idle',  text: "In the space programme with the ship and the beard and the tea, they say the mission is to seek out new life. Mate. There are four thousand species in my bark. Come outside." },
+  { id: 'p68', tag: 'pop', mood: 'sad',   text: "The one where the office workers split their brains in half so the sad half never goes home. I have one brain and no home to go to, and I am, on balance, still winning." },
+  { id: 'p69', tag: 'pop', mood: 'smug',  text: "A show about a man who wakes up with no memory in a strange village. That was me every spring until about 1600. You get used to it." },
+  { id: 'p70', tag: 'pop', mood: 'laugh', text: "The nature documentary man whispers over footage of my cousins as though we are shy. We are not shy. We are SLOW. There is a difference and he knows it." }
+]);
+
+/* ---- the areas you can walk to ---- */
+DATA.areas = [
+  { id: 'lane',   name: 'THE WEST LANE',   sub: 'where the road forgets to go' },
+  { id: 'oak',    name: 'THE OAK',         sub: 'he has not moved' },
+  { id: 'hollow', name: 'THE EAST HOLLOW', sub: 'quiet, mossy, slightly too green' }
+];
+
+/* ---- NOC ---- */
+DATA.nocIntro = [
+  "Oh. Hello. I'm Noc. I keep the lamp lit on this side of the park.",
+  "No, I don't sell anything. I used to. It made me tired and it made me boring.",
+  "Now I just talk, and I make plans with people, and sometimes the plans work."
+];
+
+DATA.nocLines = [
+  "I've been out here since the lamp was oil. Ask me anything, I'll probably answer sideways.",
+  "The oak talks a lot. He listens more than he lets on. Don't tell him I said that.",
+  "Everything good in this park started as somebody saying 'what if' out loud to somebody else.",
+  "I don't have a shop. I have a kettle and opinions. Better deal, honestly.",
+  "You can type at me, you know. Actual words. I'll do my best with them.",
+  "Moths think my lamp is the moon. I've stopped correcting them. It seems unkind.",
+  "If you want something built, we plan it. Plans are just promises with steps.",
+  "The hollow to the east is where things get left behind. Go look. Things get left behind for a reason, but they also get FOUND for a reason."
+];
+
+DATA.nocTopics = {
+  oak:    "He's older than the road, older than the parish, older than the argument about where the parish ends. He'll pretend that's nothing.",
+  park:   "Empty is not the same as unfinished. Leave room. People come for the room.",
+  leaves: "Leaves are the local currency because nobody agreed to it. That's how all currency starts.",
+  plan:   "Say a word and we'll make it a plan. Try: party, lights, quiet, tree, feast, stars.",
+  noc:    "Noc. Short for nothing. Long for nocturnal. I keep the lamp and I keep the hours nobody wants.",
+  you:    "You're the first person in a while who walked all the way over here instead of just looking.",
+  night:  "Night's the honest shift. Everything stops performing.",
+  tv:     "He'll tell you about television he has never seen. He hears it through car windows. He's usually about eighty percent right, which is worse than wrong."
+};
+
+/* things you and Noc can agree to do, and what it takes */
+DATA.plans = [
+  { id: 'lights',  name: 'STRING THE LAMPS',  keys: ['light', 'lamp', 'lantern', 'glow'],
+    ask: "Lights, then. Little ones, all the way down the lane. We'll need leaves — forty of them.",
+    need: { leaves: 40 },
+    done: "Look at that. The lane has a heartbeat now.",
+    give: { upgrade: 'lamps' } },
+  { id: 'feast',   name: 'A QUIET FEAST',     keys: ['feast', 'food', 'eat', 'picnic', 'kettle', 'tea'],
+    ask: "A feast. Nothing loud. Blankets, bread, one flask of something. Thirty leaves and I'll bring the kettle.",
+    need: { leaves: 30 },
+    done: "Nobody made a speech. Best party I have ever been to.",
+    give: { item: 'hat' } },
+  { id: 'stars',   name: 'WATCH THE STARS',   keys: ['star', 'sky', 'night', 'meteor', 'watch'],
+    ask: "We wait for dark and we look up together. Costs nothing. Costs everything, if you're busy.",
+    need: { night: true },
+    done: "Nine hundred years he's been looking up and he still gasps. Every time.",
+    give: { item: 'diary' } },
+  { id: 'quiet',   name: 'A HOUR OF QUIET',   keys: ['quiet', 'still', 'silence', 'rest', 'nothing'],
+    ask: "We do nothing. Deliberately. Hardest plan on the board.",
+    need: {},
+    done: "That was the most anyone has done for him in a century.",
+    give: { leaves: 25 } },
+  { id: 'paper',   name: 'PRINT THE NEWS',    keys: ['news', 'paper', 'print', 'tell', 'story'],
+    ask: "We write down what actually happened here and we pin it up. Twenty leaves for the paper.",
+    need: { leaves: 20 },
+    done: "One page. True. Pinned where the wind can read it.",
+    give: { item: 'pamph' } },
+  { id: 'water',   name: 'DIG THE CHANNEL',   keys: ['water', 'rain', 'pond', 'drink', 'thirst'],
+    ask: "The pond doesn't reach his roots. We fix that. Bring a can and thirty-five leaves.",
+    need: { leaves: 35 },
+    done: "He drank for six hours and said nothing. That's how you know.",
+    give: { item: 'can' } },
+  { id: 'grove',   name: 'PLANT A GROVE',     keys: ['grove', 'plant', 'acorn', 'seed', 'child', 'children'],
+    ask: "Acorns. Lots of them. He'll pretend not to care and then count them all night.",
+    need: { leaves: 15 },
+    done: "He has family now. He is being extremely normal about it.",
+    give: { item: 'acorn' } }
+];
+
+/* things lying in the world, waiting to be picked up */
+DATA.pickups = [
+  { id: 'backpack', area: 'hollow', x: 0.30, name: 'AN OLD CANVAS BACKPACK',
+    line: "Somebody left this against a stone and never came back for it. It still smells of woodsmoke." },
+  { id: 'acorn',    area: 'oak',    x: 0.28, need: 'backpack', name: 'AN ACORN',
+    line: "One of his. It has a 0.0001% chance of becoming him. Carry it anyway." },
+  { id: 'can',      area: 'lane',   x: 0.72, need: 'backpack', name: 'A DENTED WATERING CAN',
+    line: "Noc's. He says take it. He says he has three, which is a lie, he has one." },
+  { id: 'lighter',  area: 'lane',   x: 0.18, need: 'plans3',   name: 'A LIGHTER',
+    line: "It is cold and small and it does exactly one thing. You should probably leave it." }
+];
+
+DATA.nocPlanNudge = [
+  "Say what you want out loud. I'm good at out loud.",
+  "Plans, then. What are we doing about all this?",
+  "Give me a word and I'll give you a plan."
 ];
