@@ -561,7 +561,16 @@ DATA.achievements = [
   { id: 'set3',        kind: 'goal', icon: 'reel',    name: 'Never Seen A Frame',     desc: "Get him talking about television." },
   { id: 'set4',        kind: 'goal', icon: 'eye',     name: 'The Uncomfortable Set', desc: "Let him talk about you." },
   { id: 'set5',        kind: 'goal', icon: 'ledger',  name: 'Who Decides',           desc: "Reach the set he keeps for people who come back." },
-  { id: 'set6',        kind: 'chal', icon: 'globe',   name: 'The Real Parts',        desc: "Reach the last set. He stops joking in that one." },
+  { id: 'set6',        kind: 'goal', icon: 'globe',   name: 'This Country',          desc: "Get him on to the country that grew around him." },
+  { id: 'set7',        kind: 'chal', icon: 'globe',   name: 'The Real Parts',        desc: "Reach the last set. He stops joking in that one." },
+  { id: 'church',      kind: 'task', icon: 'glass',   name: 'No Windows That Open',   desc: "Stand outside the glass church." },
+  { id: 'star',        kind: 'task', icon: 'reel',    name: 'He Does His Own Stunts', desc: "Meet the man with the clipboard." },
+  { id: 'star5',       kind: 'goal', icon: 'reel',    name: 'Forty Levels',           desc: "Let him get all the way through his pitch." },
+  { id: 'clipboard',   kind: 'chal', icon: 'clip',    name: 'On A List Now',          desc: "Take the clipboard." },
+  { id: 'stone',       kind: 'goal', icon: 'stone',  name: 'Somebody Is Remembered', desc: "Stand at the memorial stone." },
+  { id: 'tribute',     kind: 'goal', icon: 'kind',    name: 'Carried It All The Way',  desc: "Leave something at the stone." },
+  { id: 'arches',      kind: 'task', icon: 'arch',    name: 'Open All Night',         desc: "Cross the avenue to the golden arches." },
+  { id: 'mcbag',       kind: 'task', icon: 'mcbag',   name: 'The Warm Paper Bag',     desc: "Come back with something in a bag." },
   { id: 'setall',      kind: 'chal', icon: 'book',    name: 'Everything He Opens',   desc: "Have him open every set of subjects he has." },
   { id: 'power1',      kind: 'task', icon: 'ledger',  name: 'Nine Hundred Years Of It', desc: "Hear him on power for the first time." },
   { id: 'power15',     kind: 'goal', icon: 'ledger',  name: 'The Long View',         desc: "Hear fifteen things he watched happen to this field." },
@@ -1084,6 +1093,8 @@ DATA.lines = DATA.lines.concat([
 
 /* ---- the areas you can walk to ---- */
 DATA.areas = [
+  { id: 'church',  name: 'THE GLASS CHURCH',  sub: 'down the block, no windows that open',
+    need: { heard: 44 }, locked: 'He will not point you at that building until he has told you about this country.' },
   { id: 'seneca',  name: 'SENECA VILLAGE',    sub: 'it was here first',
     need: { heard: 72 }, locked: 'He will not take you there until he has told you who decided about this land.' },
   { id: 'lane',    name: 'THE RAMBLE',        sub: 'thirty-six acres of deliberate confusion',
@@ -1094,12 +1105,16 @@ DATA.areas = [
     need: {} },
   { id: 'mall',    name: 'THE MALL',          sub: 'the only straight line in the park',
     need: { heard: 8 }, locked: 'Stay and listen a while first. He has eight things to get through.' },
+  { id: 'stone',   name: 'THE MEMORIAL STONE', sub: 'somebody is remembered here',
+    need: { heard: 20 }, locked: 'Not yet. That one needs you to have sat with him a while.' },
   { id: 'hollow',  name: 'THE NORTH WOODS',   sub: 'the part they let go wild',
     need: {} },
   { id: 'terrace', name: 'BETHESDA TERRACE',  sub: 'the angel, and the water',
     need: { jobs: 1 }, locked: 'The terrace is shut for works. Finish a job for somebody and it opens.' },
   { id: 'rink',    name: 'THE WOLLMAN RINK',  sub: 'refrigerated since 1950',
-    need: { heard: 34 }, locked: 'Not yet. He is nowhere near finished with you.' }
+    need: { heard: 34 }, locked: 'Not yet. He is nowhere near finished with you.' },
+  { id: 'arches',  name: 'THE GOLDEN ARCHES', sub: 'open all night, across the avenue',
+    need: { bag: true }, locked: 'You will want somewhere to put a paper bag first.' }
 ];
 
 /* ---- NOC ---- */
@@ -1170,6 +1185,13 @@ DATA.plans = [
     give: { item: 'acorn' } }
 ];
 
+/* things you keep but never use. They sit in the bag and they mean something. */
+DATA.keepsakes = [
+  { id: 'mcbag', name: 'Warm paper bag', icon: 'mcbag' },
+  { id: 'flag',  name: 'Small paper flag', icon: 'flag' },
+  { id: 'clip',  name: 'Blank form', icon: 'clip' }
+];
+
 /* things lying in the world, waiting to be picked up */
 DATA.pickups = [
   { id: 'backpack', area: 'hollow', x: 0.30, name: 'AN OLD CANVAS BACKPACK',
@@ -1179,7 +1201,13 @@ DATA.pickups = [
   { id: 'can',      area: 'lane',   x: 0.72, need: 'backpack', name: 'A DENTED WATERING CAN',
     line: "Noc's. He says take it. He says he has three, which is a lie, he has one." },
   { id: 'lighter',  area: 'lane',   x: 0.18, need: 'plans3',   name: 'A LIGHTER',
-    line: "It is cold and small and it does exactly one thing. You should probably leave it." }
+    line: "It is cold and small and it does exactly one thing. You should probably leave it." },
+  { id: 'mcbag',    area: 'arches', x: 0.24, need: 'backpack',  name: 'A WARM PAPER BAG',
+    line: "Still hot. The paper has gone see-through at the bottom. Somebody left it on the wall and walked away." },
+  { id: 'flag',     area: 'arches', x: 0.78, need: 'backpack',  name: 'A SMALL PAPER FLAG',
+    line: "On a cocktail stick. Fifty stars, all of them slightly crooked. It was in the bag." },
+  { id: 'clip',     area: 'church', x: 0.20, need: 'backpack',  name: 'A BLANK FORM',
+    line: "Nine minutes to find out what is wrong with you. There is no line for what is right." }
 ];
 
 DATA.nocPlanNudge = [
@@ -1309,7 +1337,14 @@ DATA.oakTopics = {
   god:    "There is a shift manager. I have met him. He was very apologetic and very tired.",
   leaves: "Forty thousand a year, and I complain about each one.",
   me:     "Nine hundred years, one spot, no exercise, very good shade.",
-  park:   "It is emptier than it was, and better for it. Room is what people come for."
+  park:   "It is emptier than it was, and better for it. Room is what people come for.",
+  america: "I was six hundred years old when this country was invented. I am fond of it and I do not understand it.",
+  flag:   "There is one on a pole across the avenue that is bigger than my canopy. I hold the soil. We are both doing our bit.",
+  burger: "Across the road, in a paper bag, too hot, eaten in a car with the engine off. Nobody will admit it is a ritual.",
+  church: "Forty floors of mirror glass and a volcano on the sign. Not one window in it opens.",
+  star:   "He runs everywhere and he never blinks. He is not real. I want to be clear about that, because he is convincing.",
+  stone:  "The stone is for Charlie Kirk, who was shot while speaking in 2025. I will tell you what happened. I will not tell you what to think about him.",
+  kirk:   "The stone is for Charlie Kirk, who was shot while speaking in 2025. I will tell you what happened. I will not tell you what to think about him."
 };
 
 DATA.oakOpeners = [
@@ -1430,6 +1465,8 @@ DATA.sets = [
     intro: "There are things I do not mention on a first afternoon. You have earned them. Do not tell the squirrel." },
   { id: 'pop',   at: 34, name: 'TELEVISION HE HAS NEVER SEEN', tags: ['pop'],
     intro: "I have never watched a single frame of anything. I hear it through car windows. I still have opinions." },
+  { id: 'usa',   at: 44, name: 'THIS COUNTRY, APPARENTLY', tags: ['usa'],
+    intro: "Next thing. I have stood still while a whole country was built round me. I am fond of it and I do not understand it, and those are not in conflict." },
   { id: 'meta',  at: 52, name: 'THE UNCOMFORTABLE SET', tags: ['meta'],
     intro: "Now some things about you, and about the screen you are holding. You may not enjoy it." },
   { id: 'power', at: 72, name: 'POWER, AND WHO HAS IT', tags: ['power'],
@@ -1512,12 +1549,152 @@ DATA.areaLines = {
     "Cooled by machine since 1950. Rebuilt in 1986 by a developer from Queens after the city could not manage it.",
     "Children skate in circles here all winter and know none of that, which is right."
   ],
+  church: [
+    "Forty floors of mirror glass. You can see the whole park in it and none of the park can see in.",
+    "There is a volcano on the sign. Nobody in the lobby will explain the volcano."
+  ],
+  stone: [
+    "A stone, some flowers, and a candle somebody keeps relighting.",
+    "Read the plaque. Then leave something, or do not. Both are allowed here."
+  ],
+  arches: [
+    "Two lanes of traffic, a bus stop, and the arches humming away on the corner.",
+    "Open all night. The light in there has not gone off since the seventies."
+  ],
   hollow: [
     "Forty acres they agreed to stop tidying. The only part of this park allowed to be a wood.",
     "Things get left up here. That is why you should look."
   ]
 };
 
+
+/* -------------------------------------------------------------------------
+   THIS COUNTRY, APPARENTLY
+   He has stood in one spot while America was built around him. He is fond of
+   it and he is baffled by it, usually in the same sentence.
+   ------------------------------------------------------------------------- */
+DATA.lines = DATA.lines.concat([
+  { id: 'u01', tag: 'usa', mood: 'idle',  text: "I was already six hundred years old when this country was invented. Nobody asked me to sign anything." },
+  { id: 'u02', tag: 'usa', mood: 'smug',  text: "Every July they set fire to the sky above me to celebrate. I am made of wood. It is a strange way to say thank you." },
+  { id: 'u03', tag: 'usa', mood: 'happy', text: "There is a flag on that building that is bigger than my whole canopy. I respect the ambition." },
+  { id: 'u04', tag: 'usa', mood: 'idle',  text: "You can drive four thousand miles in this country without leaving it. I have gone nowhere and seen more." },
+  { id: 'u05', tag: 'usa', mood: 'smug',  text: "Somebody explained the drive-thru to me. You bring the queue with you, in the car. Genius, honestly." },
+  { id: 'u06', tag: 'usa', mood: 'happy', text: "The golden arches are visible from my top branch. They are the second-oldest thing on this block. I am the first." },
+  { id: 'u07', tag: 'usa', mood: 'idle',  text: "A man ate a hamburger under me every Thursday for nineteen years. Same order. I miss him more than I expected." },
+  { id: 'u08', tag: 'usa', mood: 'smug',  text: "The ice cream machine across the road has been broken since about 2009. Nobody has fixed it. It is now a landmark." },
+  { id: 'u09', tag: 'usa', mood: 'happy', text: "Children get a small toy with the food. That is the whole trick and it has worked for seventy years." },
+  { id: 'u10', tag: 'usa', mood: 'idle',  text: "The pigeons here have built an entire economy on dropped fries. I have watched empires do worse." },
+  { id: 'u11', tag: 'usa', mood: 'shock', text: "One of those hot apple pies came out of the bag at four hundred degrees and a man cried. I understood." },
+  { id: 'u12', tag: 'usa', mood: 'smug',  text: "They stop selling breakfast at half past ten. That is the only rule in this country everybody actually obeys." },
+  { id: 'u13', tag: 'usa', mood: 'idle',  text: "Every drink here comes with more ice than drink. It is a country that has decided cold is a flavour." },
+  { id: 'u14', tag: 'usa', mood: 'happy', text: "Somebody offered me a free refill. I have roots. I have had a free refill for nine hundred years." },
+  { id: 'u15', tag: 'usa', mood: 'smug',  text: "There is a red plastic cup in my roots from a party in 1998. It has outlasted everyone who was there." },
+  { id: 'u16', tag: 'usa', mood: 'happy', text: "Boys have played catch on that grass for a hundred and forty years. Same throw. Same fathers. Different shirts." },
+  { id: 'u17', tag: 'usa', mood: 'idle',  text: "The yellow taxis used to be every colour. Somebody decided yellow shows up best. That is the most American sentence I know." },
+  { id: 'u18', tag: 'usa', mood: 'smug',  text: "A school bus is the only vehicle everyone stops for. One yellow bus outranks a president. I find that hopeful." },
+  { id: 'u19', tag: 'usa', mood: 'happy', text: "In October they put a face on a pumpkin and a bedsheet on a child and call it a night out. Best holiday you have." },
+  { id: 'u20', tag: 'usa', mood: 'idle',  text: "In November everyone eats too much and argues about politics with their own family. That one is not a holiday. That is a stress test." },
+  { id: 'u21', tag: 'usa', mood: 'shock', text: "The day after that, they queue at four in the morning to fight over a television. I have watched it. I did not enjoy it." },
+  { id: 'u22', tag: 'usa', mood: 'smug',  text: "Once a year the whole country stops for a football match with more adverts than football. I hear the adverts. I have opinions." },
+  { id: 'u23', tag: 'usa', mood: 'happy', text: "Somebody sings the anthem before a game of anything. Even bowling. I have heard it done badly nine hundred times and I still stand up. I am always standing up." },
+  { id: 'u24', tag: 'usa', mood: 'idle',  text: "A fire hydrant is the only thing in this city with more legal protection than me." },
+  { id: 'u25', tag: 'usa', mood: 'smug',  text: "You are all expected to work out the tip yourselves, at the table, under pressure. In front of witnesses. Cruel." },
+  { id: 'u26', tag: 'usa', mood: 'happy', text: "There is a diner two streets over that has been open since 1932. Same coffee. Same pot, I suspect." },
+  { id: 'u27', tag: 'usa', mood: 'idle',  text: "The lady in the harbour is younger than me and gets far more visitors. I am not bitter. I am mostly not bitter." },
+  { id: 'u28', tag: 'usa', mood: 'happy', text: "They lit up that tall building on the east side in green for a week once. Nobody told me why. I took it personally, in a good way." },
+  { id: 'u29', tag: 'usa', mood: 'smug',  text: "Somebody asked me if I was patriotic. I hold the soil. That is more than most people manage." },
+  { id: 'u30', tag: 'usa', mood: 'idle',  text: "Everything here is the biggest, the first, or the best. Meanwhile the actual best thing in this postcode is free and it is grass." },
+  { id: 'u31', tag: 'usa', mood: 'happy', text: "A jazz band played under me one night in 1959 with no permit and no money. Nine hundred years and that is still the top five." },
+  { id: 'u32', tag: 'usa', mood: 'idle',  text: "Everyone here is from somewhere else, including the trees. My kind came up from the south after the ice left." },
+  { id: 'u33', tag: 'usa', mood: 'smug',  text: "You built a highway system so a man could drive somewhere quiet and take a photograph of a tree. I am flattered and I am tired." },
+  { id: 'u34', tag: 'usa', mood: 'happy', text: "The best of this country happens on a Saturday morning in a car park with folding tables. No flag. Just neighbours." }
+]);
+
+DATA.replies.usa = [
+  { tone: 'joke',    text: "Very patriotic of you.",        follow: "I am nine hundred years old and I hold the soil. Take that up with a flag." },
+  { tone: 'curious', text: "Do you like it here?",          follow: "I have never been anywhere else. But the grass is free and nobody has cut me down. That is a good country by my standards." },
+  { tone: 'rude',    text: "You sound like a tourist.",     follow: "I am the opposite of a tourist. I am the thing tourists photograph and then walk past." },
+  { tone: 'kind',    text: "Tell me more about the food.",  follow: "It arrives in a paper bag, it is too hot, it is exactly what you wanted, and you regret it in forty minutes. Nobody has improved on it." }
+];
+
+/* -------------------------------------------------------------------------
+   THE GLASS CHURCH
+   A parody. Forty floors of mirror glass with a volcano on the sign, and a
+   free personality test in the lobby. It is nobody in particular.
+   ------------------------------------------------------------------------- */
+DATA.churchLines = [
+  "Forty floors of mirror glass and a volcano on the sign. Not one window in it opens.",
+  "They give away a free test of your personality in that lobby. Everyone comes out with a worse one.",
+  "A woman went in there in 1994 to get out of the rain. I saw her again in 2011. She waved. It was not the same wave.",
+  "The sign says the answers are inside. The answers are outside. The answers are grass and about nine hours of sleep.",
+  "They asked me to join. A recruiter stood right there and asked a tree. I said I had roots. He said that was fixable.",
+  "It costs money to find out what is wrong with you, and more money to find out the next thing. That is not a church. That is a staircase.",
+  "I do not mind a religion. I have watched four of them come through this valley and two of them planted orchards. This one bought a building."
+];
+
+/* the man who comes out of it. He is not anyone. He is a film star made up
+   for this park: too many teeth, no stunt double, and a clipboard. */
+DATA.starLines = [
+  "You there. Do you have nine minutes? Nine minutes is all it takes to find out what is wrong with you.",
+  "I do all my own stunts. Every one. Ask me how many bones. Go on. Ask me.",
+  "I never walk. Walking is for people who have not committed to anywhere.",
+  "I have not blinked since the second film. It is a discipline.",
+  "Smile. Wider. There. Now you look like somebody who is about to sign something.",
+  "The building has no windows that open. That is on purpose. Fresh air is unstructured.",
+  "Everyone I love is in that building. I put them there. It was my idea.",
+  "You are at level one. There are forty levels. There is always one more level, and that is the good news.",
+  "I could hang off the side of a plane right now. I am choosing to talk to you instead. Do you understand the honour.",
+  "No, I do not know what the volcano means. I know what it costs to find out."
+];
+
+DATA.starOakAsides = [
+  "Do not take the clipboard. Once you take the clipboard you are on a list.",
+  "He runs everywhere. Nine hundred years I have stood here and he is the only man who has ever sprinted past me twice in one afternoon.",
+  "He is not real. I want to be clear about that, because he is extremely convincing and he is not real.",
+  "Watch his face. It never moves. Mine is made of bark and it moves more than that."
+];
+
+/* -------------------------------------------------------------------------
+   THE MEMORIAL STONE
+   A real person, so: the facts, the flowers, and nothing else. The oak keeps
+   his rule here as everywhere — he names no side and he tells you no vote.
+   ------------------------------------------------------------------------- */
+DATA.stone = {
+  name: 'CHARLIE KIRK',
+  dates: '1993 — 2025',
+  plaque: 'HE WAS ANSWERING A QUESTION'
+};
+
+DATA.stoneLines = [
+  "That stone is for Charlie Kirk. He was a political activist. He co-founded Turning Point USA and he argued with students on campuses for a living.",
+  "He was shot and killed on the tenth of September 2025, at a university in Utah, in front of a crowd, in the middle of answering a question. He was thirty-one.",
+  "He had a wife and two small children. Whatever anybody thought of him, that part is simply true.",
+  "I am not going to tell you whether he was right. That is not what a stone is for.",
+  "People came here to weep for him and people came here to shout about him, on the same grass, some days within the hour. Both of them were real.",
+  "Eleven wars I have stood through, and it always begins the same way: somebody decides an argument goes faster with a weapon. It never once has.",
+  "Here is the only thing I will say from nine hundred years of listening. You are allowed to argue with a man for years and still not want him dead.",
+  "Somebody brings flowers. Different people, all year round, one at a time. I watch every one of them arrive."
+];
+
+DATA.stoneTribute = [
+  "That was kind. He does not know and it still counts.",
+  "Flowers on a stone are for the living. That is not a criticism. It is what they are for.",
+  "There. Now there are two of us keeping an eye on it.",
+  "Every one of those was carried here by somebody with better things to do."
+];
+
+/* -------------------------------------------------------------------------
+   THE GOLDEN ARCHES
+   Across the avenue, open all night, older than everyone in it.
+   ------------------------------------------------------------------------- */
+DATA.archesLines = [
+  "Open all night, every night. The only thing on this block with better hours than me.",
+  "Somebody in there has been mopping the same square of floor since 1988. I salute him.",
+  "The bag is warm, the paper goes see-through, and you eat it in the car with the engine off. That is the ritual. Nobody will admit it is a ritual.",
+  "A man proposed to somebody in that car park. She said yes. They came and sat under me afterwards. Best afternoon of 2004.",
+  "Forty thousand of those restaurants and one of me. And yet you came over here.",
+  "The ice cream machine is broken. It has always been broken. I think it is load-bearing now."
+];
 
 /* =========================================================================
    THE BIRDS
@@ -1795,6 +1972,9 @@ function oakSystemPrompt(ctx) {
     "You hold no flag and take no side. When war comes up you speak plainly about the people underneath it — never about who deserves it — and you never make a joke of it.",
     "Never break character, never mention being an AI or a model, never use emoji, never use stage directions.",
     "Your neighbours: NOC, who keeps the lamp down the west lane and makes plans with people; a squirrel who now runs the settings; and whatever is living in your branches.",
+    "The park is Central Park. Down the block is a forty-floor mirror-glass church with a volcano on the sign, and a film star with a clipboard who runs everywhere; both are invented for this park and you may say anything about them.",
+    "Across the avenue there is a McDonald's, open all night, and you are fond of it.",
+    "There is a memorial stone in the park for Charlie Kirk, a real person: a political activist who was shot and killed on 10 September 2025 while speaking at a university in Utah, aged 31. About him and about any other real person, state only what is documented, never invent a quote or a scene, take no side on his politics, and say plainly that a stone is not for settling arguments. Political violence is wrong whoever it is done to.",
     "",
     "Current state — season: " + (ctx.season || '?') + ", " + (ctx.night ? "night" : "day") +
     ", leaves the player holds: " + (ctx.leaves | 0) + ", things you have said to them so far: " + (ctx.heard || 0) + "."
@@ -5615,6 +5795,301 @@ function drawLaneRoad(c, g) {
   for (let i = 0; i < 6; i++) dot(c, mx2 + rnd() * 8, my2 - 12 + rnd() * 12, sh('#4a7a32'));
 }
 
+/* =========================================================================
+   THE GLASS CHURCH
+   Forty floors of mirror glass at the end of the block, with a volcano on
+   the sign. It is a parody of nobody in particular and it reflects the park
+   back at the park, which is the whole joke.
+   ========================================================================= */
+function drawChurchScene(c, g) {
+  const dk = darkness(g.timeOfDay);
+  const sh = col => mix(col, '#0a1226', dk * 0.7);
+  const night = dk > 0.4;
+
+  // the rest of the block, set back
+  for (let i = 0; i < 7; i++) {
+    const bx = (i * 47) % (W + 30) - 20, bw = 22 + (i % 3) * 9;
+    const bh = 34 + ((i * 29) % 40);
+    px(c, bx, GROUND_Y - 30 - bh, bw, bh, sh(mix('#5a6270', '#7e8896', (i % 3) / 3)));
+    for (let wy = 4; wy < bh - 4; wy += 7) {
+      for (let wx = 3; wx < bw - 4; wx += 6) {
+        const lit = ((i * 5 + wx + wy) % 6) < 2;
+        px(c, bx + wx, GROUND_Y - 30 - bh + wy, 2, 3,
+           lit && night ? '#ffe9a0' : sh('#3e4652'));
+      }
+    }
+  }
+
+  // the tower itself, dead centre, taller than the frame
+  const tw = Math.min(96, Math.round(W * 0.34));
+  const tx = Math.round(W / 2 - tw / 2);
+  const top = 0;          // it goes up past the top of the frame
+  px(c, tx - 2, top, tw + 4, GROUND_Y - 28 - top, sh('#2e4650'));
+  px(c, tx, top + 2, tw, GROUND_Y - 30 - top, sh('#4f7d90'));
+  // mirror glass: the park, reflected back at you in strips
+  for (let y = top + 4; y < GROUND_Y - 30; y += 5) {
+    const t = (y - top) / (GROUND_Y - 30 - top);
+    const band = t < 0.55
+      ? mix('#8fc6d8', '#bfe0ea', Math.sin(y * 0.7) * 0.5 + 0.5)   // sky
+      : mix('#4a7a4c', '#79ab63', Math.sin(y * 1.1) * 0.5 + 0.5);  // the park
+    px(c, tx + 2, y, tw - 4, 4, sh(band));
+    // the mullions
+    for (let x = tx + 2; x < tx + tw - 3; x += 7) px(c, x, y, 1, 4, sh('#2e4650'));
+  }
+  for (let y = top + 4; y < GROUND_Y - 30; y += 5) px(c, tx + 2, y, tw - 4, 1, sh('#dff0f6'));
+  // one window, high up, that somebody has covered over
+  px(c, tx + tw - 18, 78, 12, 9, sh('#211a14'));
+
+  // the sign at the top: a volcano
+  const sy = 44, scx = tx + Math.round(tw / 2);
+  px(c, scx - 22, sy, 44, 16, sh('#1a1410'));
+  px(c, scx - 21, sy + 1, 42, 14, sh('#2a2018'));
+  for (let i = -8; i <= 8; i++) {
+    const hh = 9 - Math.abs(i);
+    px(c, scx + i, sy + 13 - hh, 1, hh, night ? '#c9453b' : sh('#8a3a30'));
+  }
+  px(c, scx - 3, sy + 3, 7, 2, night ? '#ffd24a' : sh('#b08030'));
+  // the smoke coming off it, animated
+  for (let i = 0; i < 4; i++) {
+    const ph = g.t * 0.6 + i * 0.9;
+    const ox = Math.sin(ph) * 5;
+    px(c, scx + ox - 1, sy - 3 - i * 4 - (ph % 1) * 2, 3, 2,
+       sh(night ? '#6a5a52' : '#8a7a70'));
+  }
+  if (night) { glow(c, scx, sy + 8, 30, 'rgba(220,90,60,0.16)'); }
+
+  // the pavement and the doors
+  px(c, 0, GROUND_Y - 30, W, 30, sh('#4a4a52'));
+  px(c, 0, GROUND_Y - 30, W, 2, sh('#5e5e68'));
+  px(c, 0, GROUND_Y, W, H, sh('#3e3e46'));
+  for (let x = 0; x < W; x += 22) px(c, x, GROUND_Y, 1, H, sh('#33333a'));
+  // revolving doors, lit from inside
+  const dx = scx - 13;
+  px(c, dx, GROUND_Y - 30, 26, 30, sh('#23343c'));
+  px(c, dx + 2, GROUND_Y - 27, 22, 27, night ? mix('#ffe9a0', '#c9b070', 0.3) : sh('#cfe0e6'));
+  px(c, dx + 12, GROUND_Y - 27, 2, 27, sh('#23343c'));
+  px(c, dx + 2, GROUND_Y - 27, 22, 2, sh('#3e5a64'));
+  // A-board on the pavement: the free test
+  const bx2 = scx + 34;
+  px(c, bx2 - 8, GROUND_Y - 13, 16, 13, sh('#e8e2d0'));
+  px(c, bx2 - 8, GROUND_Y - 13, 16, 3, sh('#c9453b'));
+  for (let i = 0; i < 3; i++) px(c, bx2 - 6, GROUND_Y - 8 + i * 3, 12, 1, sh('#5a5a5a'));
+}
+
+/* the man from the building. He is not anybody: too many teeth, a clipboard,
+   and he runs everywhere. */
+function drawStar(c, g, s) {
+  const dk = darkness(g.timeOfDay);
+  const sh = col => mix(col, '#0a1226', dk * 0.7);
+  const x = Math.round(s.x), y = Math.round(s.y);
+  const run = s.moving ? Math.sin(g.t * 14) : 0;
+  const yy = y - Math.abs(run) * 2.5;
+  const jacket = sh('#2a2a30'), lit = sh('#41414c'), skin = sh('#e8b184');
+
+  c.globalAlpha = 0.3; pellipse(c, x, y + 1, 8, 3, '#0d1a08'); c.globalAlpha = 1;
+
+  // legs, mid-sprint even when he is standing still
+  px(c, x - 4 + run * 3, yy - 10, 3, 11, sh('#1e2028'));
+  px(c, x + 1 - run * 3, yy - 10, 3, 11, sh('#262932'));
+  // the jacket
+  px(c, x - 5, yy - 24, 11, 15, jacket);
+  px(c, x - 5, yy - 24, 4, 15, lit);
+  px(c, x - 1, yy - 23, 3, 13, sh('#f4f4f4'));
+  // arms: one pumping, one holding the clipboard out at you
+  px(c, x - 8 - run * 2, yy - 22, 3, 9, lit);
+  px(c, x + 6, yy - 20, 4, 3, jacket);
+  if (!s.gave) {
+    px(c, x + 9, yy - 22, 7, 9, sh('#c9a06a'));
+    px(c, x + 10, yy - 21, 5, 7, sh('#f6ecd6'));
+    px(c, x + 11, yy - 23, 3, 2, sh('#b0b6c0'));
+  }
+  // head
+  pcircle(c, x, yy - 28, 4.2, skin);
+  px(c, x - 4, yy - 32, 9, 3, sh('#2a1c12'));
+  px(c, x - 4, yy - 31, 3, 2, sh('#3e2a1c'));
+  // the eyes never close and never move
+  px(c, x - 3, yy - 29, 2, 2, sh('#ffffff')); px(c, x - 3, yy - 29, 1, 1, '#120a04');
+  px(c, x + 2, yy - 29, 2, 2, sh('#ffffff')); px(c, x + 2, yy - 29, 1, 1, '#120a04');
+  // the smile. All of the teeth, all of the time.
+  px(c, x - 3, yy - 25, 7, 2, sh('#1a0f08'));
+  px(c, x - 3, yy - 25, 7, 1, '#ffffff');
+  if (dk > 0.4) glow(c, x, yy - 26, 9, 'rgba(255,255,255,0.10)');
+}
+
+/* =========================================================================
+   THE MEMORIAL STONE
+   A low granite stone on a mown square, with flowers laid along the bottom
+   and a candle in a jar that somebody keeps relighting.
+   ========================================================================= */
+function drawStoneScene(c, g, tributes) {
+  const dk = darkness(g.timeOfDay);
+  const sh = col => mix(col, '#0a1226', dk * 0.7);
+  // a mown square, kept shorter than the rest of the park
+  px(c, 0, GROUND_Y - 18, W, 18, sh('#5d9440'));
+  px(c, 0, GROUND_Y - 18, W, 1, sh('#79b356'));
+  px(c, 0, GROUND_Y, W, H, sh('#4a7a32'));
+  const rnd = mulberry(2025);
+  for (let i = 0; i < 70; i++) {
+    const x = rnd() * W, y = GROUND_Y - 14 + rnd() * (H - GROUND_Y + 14);
+    px(c, x, y, 1, 2, sh('#528a36'));
+  }
+  // a few small flags somebody pushed into the turf, set back from the stone
+  for (let i = 0; i < 5; i++) {
+    const fx = Math.round(W * 0.72 + i * 11);
+    if (fx > W - 6) continue;
+    px(c, fx, GROUND_Y - 13, 1, 6, sh('#8a7a5a'));
+    px(c, fx + 1, GROUND_Y - 13, 4, 2, sh('#c9453b'));
+    px(c, fx + 1, GROUND_Y - 12, 4, 1, sh('#f4f4f4'));
+  }
+  // two young trees somebody planted either side
+  for (const side of [-1, 1]) {
+    const tx = Math.round(W / 2 + side * Math.min(90, W * 0.3));
+    px(c, tx, GROUND_Y - 34, 2, 34, sh('#6b4a2a'));
+    pcircle(c, tx + 1, GROUND_Y - 40, 11, sh('#4a8a30'));
+    pcircle(c, tx - 2, GROUND_Y - 43, 7, sh('#6cc73f'));
+  }
+}
+
+/* the stone itself, drawn into the outlined actor layer so it does not get
+   buried by the planting */
+function drawStone(c, g, cx, tributes) {
+  const dk = darkness(g.timeOfDay);
+  const sh = col => mix(col, '#0a1226', dk * 0.7);
+  const F = window.FONT_API;
+  const x = Math.round(cx), base = GROUND_Y - 2;
+
+  // the plinth
+  px(c, x - 46, base - 5, 92, 6, sh('#8a8f96'));
+  px(c, x - 46, base - 5, 92, 2, sh('#a6acb4'));
+  // the stone
+  px(c, x - 42, base - 58, 84, 53, sh('#8a9098'));
+  px(c, x - 40, base - 56, 80, 49, sh('#b4bac2'));
+  px(c, x - 40, base - 56, 80, 2, sh('#d2d8e0'));
+  px(c, x - 40, base - 9, 80, 2, sh('#8a9098'));
+  px(c, x - 40, base - 56, 3, 49, sh('#c6ccd4'));
+  // the carving
+  if (F) {
+    const S = DATA.stone || {};
+    F.drawTextCentered(c, x, base - 51, S.name || '', sh('#32383e'), 1);
+    F.drawTextCentered(c, x, base - 42, S.dates || '', sh('#464c54'), 1);
+    px(c, x - 22, base - 34, 44, 1, sh('#7a8088'));
+    const lines = F.wrapText(S.plaque || '', 74, 1);
+    for (let i = 0; i < Math.min(3, lines.length); i++) {
+      F.drawTextCentered(c, x, base - 29 + i * 7, lines[i], sh('#4a5058'), 1);
+    }
+  }
+
+  // flowers along the foot of it — one more for every tribute left
+  const n = 5 + Math.min(14, tributes | 0);
+  const rnd = mulberry(910);
+  for (let i = 0; i < n; i++) {
+    const fx = x - 44 + rnd() * 88, fy = base + 1 + rnd() * 4;
+    const col = ['#ff5b78', '#ffd24a', '#f4f4f4', '#b183e8'][i % 4];
+    px(c, fx, fy - 3, 1, 3, sh('#3f7a2a'));
+    pcircle(c, fx, fy - 4, 1.6, sh(col));
+  }
+  // the candle in a jar, still going
+  const jx = x + 50;
+  px(c, jx - 3, base - 8, 6, 8, sh('#cfe0e6'));
+  px(c, jx - 3, base - 8, 2, 8, sh('#e8f2f6'));
+  const fl = Math.sin(g.t * 9) * 0.6;
+  px(c, jx - 1, base - 7 + fl, 2, 3, '#ffd24a');
+  px(c, jx, base - 8 + fl, 1, 2, '#fff6d0');
+  glow(c, jx, base - 7, 11, 'rgba(255,190,90,' + (0.10 + dk * 0.22) + ')');
+}
+
+/* =========================================================================
+   THE GOLDEN ARCHES
+   Across two lanes of traffic. Open all night. Older than everyone in it.
+   ========================================================================= */
+function drawArchesScene(c, g) {
+  const dk = darkness(g.timeOfDay);
+  const sh = col => mix(col, '#0a1226', dk * 0.7);
+  const night = dk > 0.4;
+
+  // the block behind
+  for (let i = 0; i < 6; i++) {
+    const bx = (i * 53) % (W + 30) - 20, bw = 26 + (i % 3) * 12;
+    const bh = 30 + ((i * 31) % 34);
+    px(c, bx, GROUND_Y - 44 - bh, bw, bh, sh(mix('#6a5a52', '#8e7a6c', (i % 3) / 3)));
+    for (let wy = 4; wy < bh - 4; wy += 7)
+      for (let wx = 3; wx < bw - 4; wx += 7)
+        px(c, bx + wx, GROUND_Y - 44 - bh + wy, 3, 3,
+           ((i * 3 + wx + wy) % 5) < 2 && night ? '#ffe9a0' : sh('#463a34'));
+  }
+
+  // the restaurant: low, wide, brick and glass
+  const rw = Math.min(150, Math.round(W * 0.56));
+  const rx = Math.round(W / 2 - rw / 2), ry = GROUND_Y - 44;
+  px(c, rx, ry, rw, 26, sh('#8a4a3a'));
+  px(c, rx, ry, rw, 3, sh('#c9453b'));
+  px(c, rx, ry + 3, rw, 2, sh('#ffc72c'));
+  // the window, and the people inside it
+  px(c, rx + 5, ry + 7, rw - 10, 15, night ? mix('#ffe9a0', '#e8d090', 0.2) : sh('#cfe4ee'));
+  for (let x = rx + 5; x < rx + rw - 6; x += 13) px(c, x, ry + 7, 1, 15, sh('#6a3a2e'));
+  const rnd = mulberry(1955);
+  for (let i = 0; i < 6; i++) {
+    const px2 = rx + 10 + rnd() * (rw - 22);
+    px(c, px2, ry + 13, 4, 9, sh(['#3a4a6a', '#6a3a4a', '#3a5a3a', '#5a4a2a'][i % 4]));
+    pcircle(c, px2 + 2, ry + 11, 2.2, sh('#e0a878'));
+  }
+  // the doors
+  px(c, rx + Math.round(rw / 2) - 9, ry + 9, 18, 17, sh('#5e3a2e'));
+  px(c, rx + Math.round(rw / 2) - 7, ry + 11, 14, 15, night ? '#ffe9a0' : sh('#dfeef4'));
+
+  // THE ARCHES, on a pole, above everything
+  const ax = rx + rw - 22, ay = ry - 40;
+  px(c, ax - 1, ay, 3, 40, sh('#7a7a82'));
+  const A = night ? '#ffc72c' : sh('#e8b21f');
+  for (const off of [-11, 1]) {
+    px(c, ax + off, ay + 6, 4, 16, A);
+    px(c, ax + off + 6, ay + 6, 4, 16, A);
+    px(c, ax + off + 2, ay + 2, 6, 5, A);
+    px(c, ax + off, ay + 4, 4, 4, A);
+    px(c, ax + off + 6, ay + 4, 4, 4, A);
+  }
+  if (night) glow(c, ax, ay + 12, 26, 'rgba(255,200,60,0.20)');
+
+  // the flag on the other pole, because of course there is one
+  const fx = rx + 12;
+  px(c, fx, ry - 34, 1, 34, sh('#9aa0a8'));
+  const wave = Math.sin(g.t * 2) * 1.5;
+  for (let i = 0; i < 7; i++) {
+    px(c, fx + 1, ry - 33 + i + wave * (i > 3 ? 1 : 0), 14, 1,
+       sh(i % 2 ? '#f4f4f4' : '#c9453b'));
+  }
+  px(c, fx + 1, ry - 33 + wave * 0, 6, 4, sh('#3c4a8a'));
+
+  // the avenue: two lanes, a crossing, and the cars that never stop
+  px(c, 0, GROUND_Y - 18, W, 18, sh('#3e3e46'));
+  px(c, 0, GROUND_Y - 18, W, 2, sh('#4e4e58'));
+  for (let x = ((g.t * 0) | 0); x < W; x += 18) px(c, x, GROUND_Y - 10, 9, 1, sh('#d8d24a'));
+  px(c, 0, GROUND_Y, W, H, sh('#55555e'));
+  for (let x = 6; x < W; x += 12) px(c, x, GROUND_Y + 1, 7, 3, sh('#c8c8d0'));   // the crossing
+  // three cars, looping
+  for (let i = 0; i < 3; i++) {
+    const sp = 26 + i * 9, dir = i === 1 ? -1 : 1;
+    let cx2 = dir === 1
+      ? ((g.t * sp + i * 90) % (W + 70)) - 35
+      : W + 35 - ((g.t * sp + i * 90) % (W + 70));
+    const cy = GROUND_Y - 14 + (dir === 1 ? 0 : 4);
+    const body = sh(['#c9453b', '#e8b23a', '#3a5a8a'][i]);
+    px(c, cx2 - 12, cy - 5, 24, 6, body);
+    px(c, cx2 - 7, cy - 9, 13, 5, body);
+    px(c, cx2 - 6, cy - 8, 11, 3, sh('#8fb8c9'));
+    px(c, cx2 - 12, cy - 3, 24, 2, sh('#2a2a30'));
+    pcircle(c, cx2 - 7, cy + 1, 2.2, sh('#1a1a20'));
+    pcircle(c, cx2 + 7, cy + 1, 2.2, sh('#1a1a20'));
+    if (night) {
+      px(c, cx2 + dir * 12, cy - 4, 2, 2, '#fff6d0');
+      glow(c, cx2 + dir * 16, cy - 3, 10, 'rgba(255,240,190,0.18)');
+    }
+  }
+  // a bin and a bus stop, because it is a street
+  px(c, 10, GROUND_Y - 12, 8, 12, sh('#4a5a4a'));
+  px(c, 9, GROUND_Y - 13, 10, 2, sh('#5e6e5e'));
+}
+
 window.SPR = {
   get W() { return W; }, H, GROUND_Y, get CX() { return CX; }, setLogicalWidth, layerBegin, layerEnd, outlinedSprite, makeCanvas, CANOPY, TWIGS, SEASON, SEASON_NAMES, TROPHY_ART, HALL,
   px, dot, pcircle, pellipse, glow, mix, mulberry, star, quant,
@@ -5629,6 +6104,7 @@ window.SPR = {
   drawGarden, gardenSlotPos, gardenWidth, GARDEN, drawCloudTunnel, drawLetterbox, drawRays, drawGrowingTree, flame,
   drawZzz, drawGear, drawSnailParcel, drawBird, drawBirdPortrait, drawWordPop, drawImpactLines, squashTransform, drawScrollFrame, drawSheet, drawRod, drawSeal, PAPER, snailSkin, drawShell, SNAIL_SHELLS, SNAIL_PATTERNS, drawNoc, drawNocCamp, drawTravelArrow, travelArrowBox, drawAreaTitle, drawPickup,
   drawSenecaScene, drawBridgeScene, drawMallScene, drawTerraceScene, drawRinkScene, drawSuit, drawStillWater,
+  drawChurchScene, drawStar, drawStoneScene, drawStone, drawArchesScene,
   drawCosyFoliage, drawFallenLog, drawStandingStone, drawVines, drawHedgerow, drawLaneRoad,
   drawBackpackSprite, drawBagButton
 };
@@ -5655,6 +6131,7 @@ const defaultSave = () => ({
   bag: false, items: {}, taken: {}, plans: {}, planDone: {},
   quests: {}, questDone: {}, unread: [], snails: {}, setSeen: {}, areasSeen: { oak: 1 },
   birds: {}, birdBook: false, metNoc: false,
+  tributes: 0, readStone: false, stoneHeard: 0, churchHeard: 0, archesHeard: 0, starHeard: 0,
   stats: { leavesTotal: 0, sneezes: 0, hugs: 0, waters: 0, plants: 0, trades: 0,
            sqChats: 0, rebirths: 0, flicks: 0, seasons: {}, boughtAll: false }
 });
@@ -5705,8 +6182,9 @@ const G = {
   inv: { leaves: 0, items: {} }, tools: [], holding: null, holdT: 0, critters: [],
   parkPending: 0, parkMotes: [], visitors: [], visitorTimer: 6, menu: null,
   // where you are standing, and the walk between places
-  area: 3, areaFade: 0, areaFadeDir: 0, areaTitle: 0, arrows: [], pickups: [],
+  area: 0, areaFade: 0,          // set to wherever the oak is, at boot areaFadeDir: 0, areaTitle: 0, arrows: [], pickups: [],
   suit: null, suitTimer: 40,
+  star: null, starTimer: 3, starIdx: 0,
   noc: { x: 0, y: GROUND_Y + 8, look: 0, talking: 0, thinking: 0 },
   asleep: false, wakeT: 0, squash: 0, squashV: 0,
   boardPop: 0, cottagePop: 0,
@@ -5807,7 +6285,7 @@ function checkSets() {
   save.setSeen[next.id] = 1; persist();
   checkAreas();
   const idx = DATA.sets.indexOf(next);
-  if (idx > 0) ACH('set' + Math.min(6, idx));
+  if (idx > 0) ACH('set' + Math.min(7, idx));
   if (DATA.sets.every(st => save.setSeen[st.id])) ACH('setall');
   if (!next.intro) return false;
   refillBag();
@@ -6686,6 +7164,10 @@ function bagItems() {
     out.push({ t: 'row', label: it.name, icon: it.icon, right: 'TAKE', act: () => holdFromBag(it.id) });
   }
 
+  for (const k of DATA.keepsakes) {
+    if (G.inv.items[k.id]) out.push({ t: 'row', label: k.name, icon: k.icon, dim: true });
+  }
+
   const unread = save.unread || [];
   for (const n of unread) {
     out.push({ t: 'row', label: 'Sealed parcel', icon: 'paper', right: 'OPEN', act: () => openPost(n, true) });
@@ -7123,6 +7605,28 @@ function drawIcon(c, id, size) {
     case 'tv':
       P(1, 3, 14, 10, '#3a3a44'); P(2, 4, 12, 8, '#6ba8d8'); P(2, 4, 12, 2, '#9fd0ee');
       P(6, 13, 4, 2, '#555'); P(3, 1, 1, 3, '#888'); P(12, 1, 1, 3, '#888'); break;
+    case 'glass':
+      P(2, 1, 12, 14, '#4a6a7a'); P(3, 2, 10, 12, '#7fb0c4');
+      for (let i = 0; i < 4; i++) P(4, 3 + i * 3, 8, 1, '#a8d4e4');
+      P(6, 0, 4, 2, '#ef5330'); dot(c, 8, 0, '#ffd24a'); break;
+    case 'clip':
+      P(2, 2, 12, 13, '#8a6141'); P(3, 4, 10, 10, '#f6ecd6'); P(6, 1, 4, 3, '#b0b6c0');
+      for (let i = 0; i < 3; i++) P(5, 6 + i * 3, 6, 1, '#5a4028'); break;
+    case 'stone':
+      P(3, 4, 10, 11, '#9aa0a8'); P(4, 5, 8, 9, '#b6bcc4'); P(3, 2, 10, 3, '#8a9098');
+      P(5, 7, 6, 1, '#6a7078'); P(6, 10, 4, 1, '#6a7078');
+      P(2, 14, 12, 1, '#4a7a32'); dot(c, 4, 13, '#ff5b78'); break;
+    case 'arch':
+      P(1, 12, 14, 3, '#c9453b');
+      for (const ax of [3, 8]) { P(ax, 4, 2, 8, '#ffc72c'); P(ax + 3, 4, 2, 8, '#ffc72c'); P(ax + 1, 3, 3, 2, '#ffc72c'); }
+      break;
+    case 'mcbag':
+      P(3, 4, 10, 11, '#c9a06a'); P(4, 5, 8, 9, '#e0b878'); P(3, 3, 10, 2, '#a8845a');
+      P(6, 7, 4, 4, '#c9453b'); P(7, 8, 2, 2, '#ffc72c'); break;
+    case 'flag':
+      P(3, 2, 1, 13, '#8a7a5a');
+      for (let i = 0; i < 6; i++) P(4, 2 + i, 9, 1, i % 2 ? '#f4f4f4' : '#c9453b');
+      P(4, 2, 4, 3, '#3c4a8a'); dot(c, 5, 3, '#fff'); break;
     case 'reel':
       pcircle(c, 8, 8, 7, '#2a2a34'); pcircle(c, 8, 8, 6, '#4a4a58'); pcircle(c, 8, 8, 2, '#ddd');
       for (let i = 0; i < 4; i++) { const A = i / 4 * 6.28 + .4; pcircle(c, 8 + Math.cos(A) * 3.6, 8 + Math.sin(A) * 3.6, 1.6, '#1e1e26'); } break;
@@ -7772,6 +8276,32 @@ function arriveArea() {
   seedCritters();
   if (areaId() === 'rink') { ACH('rink'); G.suitTimer = 3; }
   else G.suit = null;
+  if (areaId() === 'church') { ACH('church'); G.starTimer = 2.5; }
+  else G.star = null;
+  if (areaId() === 'arches') ACH('arches');
+  if (areaId() === 'stone') {
+    ACH('stone');
+    // he tells you about the stone himself, next time you are back under him
+    const seen = save.stoneHeard || 0;
+    if (seen < DATA.stoneLines.length) {
+      save.stoneHeard = seen + 1; persist();
+      tellHimLater(DATA.stoneLines[seen], 'sad');
+    }
+  }
+  if (areaId() === 'church') {
+    const seen = save.churchHeard || 0;
+    if (seen < DATA.churchLines.length) {
+      save.churchHeard = seen + 1; persist();
+      tellHimLater(DATA.churchLines[seen], 'think');
+    }
+  }
+  if (areaId() === 'arches') {
+    const seen = save.archesHeard || 0;
+    if (seen < DATA.archesLines.length) {
+      save.archesHeard = seen + 1; persist();
+      tellHimLater(DATA.archesLines[seen], 'happy');
+    }
+  }
   // a note to yourself about wherever you have just walked into, but only if
   // nothing has happened in the meantime
   const lines = DATA.areaLines[areaId() === 'lane' ? 'ramble' : areaId()];
@@ -7818,6 +8348,7 @@ function takePickup(p) {
     ACH('trade1');
     if (DATA.shop.every(it => has(it.id))) ACH('tradeall');
     pushNote('goal', p.name, 'It went into your bag.', p.id === 'lighter' ? 'flame' : 'reach', 'item:' + p.id);
+    if (p.id === 'mcbag') ACH('mcbag');
     if (p.id === 'lighter') {
       ACH('lighter');
       persist(); seedPickups(); refreshHUD();
@@ -8567,6 +9098,7 @@ function update(dt) {
 
     updateCritters(dt);
     updateSuit(dt);
+    updateStar(dt);
     if (atOak()) {
       updatePark(dt); updateVisitors(dt);
       // things that have just turned up are still bouncing
@@ -9277,6 +9809,7 @@ function drawSideArea() {
   const id = areaId();
   const lane = id === 'lane';
   const wild = lane || id === 'hollow' || id === 'seneca';
+  const city = id === 'church' || id === 'arches';
 
   SPR.drawBackdrop(dc, G);
   SPR.drawGround(dc, G);
@@ -9287,6 +9820,9 @@ function drawSideArea() {
   else if (id === 'mall') SPR.drawMallScene(dc, G);
   else if (id === 'terrace') SPR.drawTerraceScene(dc, G);
   else if (id === 'rink') SPR.drawRinkScene(dc, G);
+  else if (id === 'church') SPR.drawChurchScene(dc, G);
+  else if (id === 'arches') SPR.drawArchesScene(dc, G);
+  else if (id === 'stone') SPR.drawStoneScene(dc, G);
 
   if (wild) SPR.drawHedgerow(dc, G, lane ? W() * 0.22 : undefined);
   if (wild) SPR.drawCosyFoliage(dc, G, lane ? 707 : id === 'seneca' ? 1857 : 909,
@@ -9303,7 +9839,9 @@ function drawSideArea() {
   } else if (id === 'seneca') {
     SPR.drawSenecaScene(L, G);
   }
+  if (id === 'stone') SPR.drawStone(L, G, stoneX(), save.tributes || 0);
   if (G.suit && id === 'rink') SPR.drawSuit(L, G, G.suit);
+  if (G.star && id === 'church') SPR.drawStar(L, G, G.star);
   if (wild) SPR.drawCritters(L, G);
   SPR.layerEnd(dc, '#1a0f08');
 
@@ -9312,7 +9850,7 @@ function drawSideArea() {
   if (wild) SPR.drawForeground(dc, G);
   drawPickups(dc);
   if (wild) SPR.drawVines(dc, G, lane ? 61 : 71);
-  SPR.drawFrameFoliage(dc, G);
+  if (!city) SPR.drawFrameFoliage(dc, G);
   SPR.drawBokeh(dc, G);
   SPR.drawOverlay(dc, G);
 }
@@ -9351,6 +9889,105 @@ function updateSuit(dt) {
     tellHimLater(pool[Math.floor(Math.random() * pool.length)], 'think');
   }
   if (s.x < -40 || s.x > W() + 40) G.suit = null;
+}
+
+/* =========================================================================
+   THE STAR
+   He comes out of the glass church, sprints up the pavement, stops in front
+   of you and pitches. He is not a real person and he is not based on one
+   thing anybody actually said: he is a caricature written for this park.
+   ========================================================================= */
+function updateStar(dt) {
+  if (areaId() !== 'church' || G.dead) { G.star = null; return; }
+  if (!G.star) {
+    G.starTimer -= dt;
+    if (G.starTimer <= 0) {
+      G.starTimer = 40 + Math.random() * 30;
+      const dir = Math.random() < 0.5 ? 1 : -1;
+      G.star = { x: dir === 1 ? -26 : W() + 26, y: GROUND_Y + 18, dir,
+                 moving: true, stop: W() * (0.32 + Math.random() * 0.36),
+                 wait: 0, said: false, gave: false, t: 0 };
+      ACH('star');
+    }
+    return;
+  }
+  const s = G.star;
+  s.t += dt;
+  if (s.moving) {
+    s.x += s.dir * 74 * dt;                       // he runs. He always runs.
+    if ((s.dir === 1 && s.x >= s.stop) || (s.dir === -1 && s.x <= s.stop)) {
+      s.moving = false; s.wait = 9;
+      s.dir = s.x > W() / 2 ? -1 : 1;
+      if (!s.said) {
+        s.said = true;
+        sayStar();
+        sweat(s.x, s.y - 30);
+      }
+    }
+  } else {
+    s.wait -= dt;
+    if (s.wait <= 0) { s.moving = true; s.stop = s.dir === 1 ? W() + 40 : -40; }
+  }
+  if (s.x < -44 || s.x > W() + 44) G.star = null;
+}
+
+function sayStar() {
+  const pool = DATA.starLines;
+  const i = G.starIdx % pool.length;
+  say('THE STAR', pool[i], null, 'serious');
+  G.starIdx++;
+  save.starHeard = Math.max(save.starHeard || 0, G.starIdx);
+  if (save.starHeard >= pool.length) ACH('star5');
+  persist();
+  // and the oak has something to say about him when you get back
+  if (Math.random() < 0.5) {
+    const a = DATA.starOakAsides[Math.floor(Math.random() * DATA.starOakAsides.length)];
+    tellHimLater(a, 'think');
+  }
+}
+
+function takeClipboard() {
+  const s = G.star;
+  if (!s || s.gave) return;
+  s.gave = true;
+  ACH('clipboard');
+  SFX.pickup();
+  pop('LEVEL 1', s.x, s.y - 48, '#ffd24a');
+  ring(s.x, s.y - 20, '#ffd24a', 1.1);
+  say('THE STAR', "Wonderful. You are level one. Do not lose that. There is no way to lose that.", null, 'serious');
+  tellHimLater("You took the clipboard. I did say. It is only paper. It is never only paper.", 'sad');
+}
+
+function starAt(x, y) {
+  const s = G.star;
+  if (!s) return false;
+  return x > s.x - 12 && x < s.x + 17 && y > s.y - 36 && y < s.y + 4;
+}
+
+function stoneX() { return Math.round(W() * 0.42); }
+
+function stoneAt(x, y) {
+  if (areaId() !== 'stone') return false;
+  const cx = stoneX();
+  return x > cx - 48 && x < cx + 48 && y > GROUND_Y - 62 && y < GROUND_Y + 2;
+}
+
+/* something of your own, left at the foot of it */
+function leaveTribute() {
+  if (G.inv.leaves < 1) {
+    sayYou('You have nothing on you to leave. There are leaves all over the park.');
+    return;
+  }
+  G.inv.leaves--;
+  save.tributes = (save.tributes || 0) + 1;
+  persist(); refreshHUD();
+  SFX.pickup();
+  ring(stoneX() + 6, GROUND_Y - 6, '#ff5b78', 1.0);
+  spawnParticles('heart', stoneX(), GROUND_Y - 18, 5);
+  ACH('tribute');
+  const t = DATA.stoneTribute[(save.tributes - 1) % DATA.stoneTribute.length];
+  tellHimLater(t, 'sad');
+  sayYou('You put it with the others.');
 }
 
 function suitAt(x, y) {
@@ -9635,6 +10272,8 @@ function hitTest(x, y) {
     if (areaId() === 'lane' && Math.abs(x - G.noc.x) < 14 && y > G.noc.y - 40 && y < G.noc.y + 4)
       return { kind: 'noc', i: -1 };
     if (suitAt(x, y)) return { kind: 'suit', i: -1 };
+    if (starAt(x, y)) return { kind: 'star', i: -1 };
+    if (stoneAt(x, y)) return { kind: 'stone', i: -1 };
     return { kind: null, i: -1 };
   }
 
@@ -9991,6 +10630,22 @@ function onPress(ev) {
   if (h.kind === 'pickup') { takePickup(h.p); return; }
   if (h.kind === 'noc') { SFX.click(); openChat('noc'); return; }
   if (h.kind === 'suit') { SFX.click(); sayYou('A dark coat, a long red tie, two people keeping pace with him.'); return; }
+  if (h.kind === 'star') {
+    SFX.click();
+    const s = G.star;
+    if (s && !s.moving && G.starIdx > 0 && !s.gave && (G.starIdx % DATA.starLines.length) === 0) takeClipboard();
+    else { s.moving = false; s.wait = Math.max(s.wait, 7); sayStar(); }
+    return;
+  }
+  if (h.kind === 'stone') {
+    SFX.click();
+    if (!save.readStone) {
+      save.readStone = true; persist();
+      const S = DATA.stone;
+      sayYou(S.name + '. ' + S.dates + '. ' + S.plaque.toLowerCase().replace(/^./, ch => ch.toUpperCase()));
+    } else leaveTribute();
+    return;
+  }
   if (h.kind === 'squirrel') { clickSquirrel(); return; }
   if (h.kind === 'part') {
     grab = { x: p.x, lastX: p.x, moved: 0, t: 0 };
@@ -10107,6 +10762,8 @@ seedCritters();
 buildHall();
 for (const id in (save.items || {})) G.inv.items[id] = true;
 G.hasBag = !!save.bag;
+// you always start the game standing under him, wherever he is on the map
+G.area = Math.max(0, AREAS.findIndex(a => a.id === 'oak'));
 G.areaNow = areaId();
 seedPickups();
 refreshArrows();
@@ -10170,6 +10827,7 @@ if (/[?&]debug/.test(location.search)) {
                  skipAll: () => { if (G.cine) { G.cine.i = G.cine.stages.length - 1; skipStage(); } },
                  parkMargin, parkIncome, parkFill, talkSignBox, pressTalkSign, heardTotal, openSets, nextSet, openTopics,
                  unlockedTags, setHeard, setTotal, checkSets, talkToTree, openMap, areaOpen, areaWants, updateSuit, checkAreas,
+                 updateStar, sayStar, takeClipboard, leaveTribute, starAt, stoneAt, stoneX, camRect, toLogical,
                  openBirdDiary, openJobs, openPlans, sayYou, tellHimLater, birdsHere,
                  startTyping, stopTyping, typeBarBox, typeBarShown, sendChat, chatPartner,
                  seedCritters, touchCritter, refreshPanel, boardHere, cottageHere, puff, ring, pop, squash, PANEL, openPanel, closePanel, panelIs, panelOpen, openQuestBoard, openJournal, acceptQuest, checkQuests, questStatus, plotPos, hitTest,

@@ -288,7 +288,16 @@ DATA.achievements = [
   { id: 'set3',        kind: 'goal', icon: 'reel',    name: 'Never Seen A Frame',     desc: "Get him talking about television." },
   { id: 'set4',        kind: 'goal', icon: 'eye',     name: 'The Uncomfortable Set', desc: "Let him talk about you." },
   { id: 'set5',        kind: 'goal', icon: 'ledger',  name: 'Who Decides',           desc: "Reach the set he keeps for people who come back." },
-  { id: 'set6',        kind: 'chal', icon: 'globe',   name: 'The Real Parts',        desc: "Reach the last set. He stops joking in that one." },
+  { id: 'set6',        kind: 'goal', icon: 'globe',   name: 'This Country',          desc: "Get him on to the country that grew around him." },
+  { id: 'set7',        kind: 'chal', icon: 'globe',   name: 'The Real Parts',        desc: "Reach the last set. He stops joking in that one." },
+  { id: 'church',      kind: 'task', icon: 'glass',   name: 'No Windows That Open',   desc: "Stand outside the glass church." },
+  { id: 'star',        kind: 'task', icon: 'reel',    name: 'He Does His Own Stunts', desc: "Meet the man with the clipboard." },
+  { id: 'star5',       kind: 'goal', icon: 'reel',    name: 'Forty Levels',           desc: "Let him get all the way through his pitch." },
+  { id: 'clipboard',   kind: 'chal', icon: 'clip',    name: 'On A List Now',          desc: "Take the clipboard." },
+  { id: 'stone',       kind: 'goal', icon: 'stone',  name: 'Somebody Is Remembered', desc: "Stand at the memorial stone." },
+  { id: 'tribute',     kind: 'goal', icon: 'kind',    name: 'Carried It All The Way',  desc: "Leave something at the stone." },
+  { id: 'arches',      kind: 'task', icon: 'arch',    name: 'Open All Night',         desc: "Cross the avenue to the golden arches." },
+  { id: 'mcbag',       kind: 'task', icon: 'mcbag',   name: 'The Warm Paper Bag',     desc: "Come back with something in a bag." },
   { id: 'setall',      kind: 'chal', icon: 'book',    name: 'Everything He Opens',   desc: "Have him open every set of subjects he has." },
   { id: 'power1',      kind: 'task', icon: 'ledger',  name: 'Nine Hundred Years Of It', desc: "Hear him on power for the first time." },
   { id: 'power15',     kind: 'goal', icon: 'ledger',  name: 'The Long View',         desc: "Hear fifteen things he watched happen to this field." },
@@ -811,6 +820,8 @@ DATA.lines = DATA.lines.concat([
 
 /* ---- the areas you can walk to ---- */
 DATA.areas = [
+  { id: 'church',  name: 'THE GLASS CHURCH',  sub: 'down the block, no windows that open',
+    need: { heard: 44 }, locked: 'He will not point you at that building until he has told you about this country.' },
   { id: 'seneca',  name: 'SENECA VILLAGE',    sub: 'it was here first',
     need: { heard: 72 }, locked: 'He will not take you there until he has told you who decided about this land.' },
   { id: 'lane',    name: 'THE RAMBLE',        sub: 'thirty-six acres of deliberate confusion',
@@ -821,12 +832,16 @@ DATA.areas = [
     need: {} },
   { id: 'mall',    name: 'THE MALL',          sub: 'the only straight line in the park',
     need: { heard: 8 }, locked: 'Stay and listen a while first. He has eight things to get through.' },
+  { id: 'stone',   name: 'THE MEMORIAL STONE', sub: 'somebody is remembered here',
+    need: { heard: 20 }, locked: 'Not yet. That one needs you to have sat with him a while.' },
   { id: 'hollow',  name: 'THE NORTH WOODS',   sub: 'the part they let go wild',
     need: {} },
   { id: 'terrace', name: 'BETHESDA TERRACE',  sub: 'the angel, and the water',
     need: { jobs: 1 }, locked: 'The terrace is shut for works. Finish a job for somebody and it opens.' },
   { id: 'rink',    name: 'THE WOLLMAN RINK',  sub: 'refrigerated since 1950',
-    need: { heard: 34 }, locked: 'Not yet. He is nowhere near finished with you.' }
+    need: { heard: 34 }, locked: 'Not yet. He is nowhere near finished with you.' },
+  { id: 'arches',  name: 'THE GOLDEN ARCHES', sub: 'open all night, across the avenue',
+    need: { bag: true }, locked: 'You will want somewhere to put a paper bag first.' }
 ];
 
 /* ---- NOC ---- */
@@ -897,6 +912,13 @@ DATA.plans = [
     give: { item: 'acorn' } }
 ];
 
+/* things you keep but never use. They sit in the bag and they mean something. */
+DATA.keepsakes = [
+  { id: 'mcbag', name: 'Warm paper bag', icon: 'mcbag' },
+  { id: 'flag',  name: 'Small paper flag', icon: 'flag' },
+  { id: 'clip',  name: 'Blank form', icon: 'clip' }
+];
+
 /* things lying in the world, waiting to be picked up */
 DATA.pickups = [
   { id: 'backpack', area: 'hollow', x: 0.30, name: 'AN OLD CANVAS BACKPACK',
@@ -906,7 +928,13 @@ DATA.pickups = [
   { id: 'can',      area: 'lane',   x: 0.72, need: 'backpack', name: 'A DENTED WATERING CAN',
     line: "Noc's. He says take it. He says he has three, which is a lie, he has one." },
   { id: 'lighter',  area: 'lane',   x: 0.18, need: 'plans3',   name: 'A LIGHTER',
-    line: "It is cold and small and it does exactly one thing. You should probably leave it." }
+    line: "It is cold and small and it does exactly one thing. You should probably leave it." },
+  { id: 'mcbag',    area: 'arches', x: 0.24, need: 'backpack',  name: 'A WARM PAPER BAG',
+    line: "Still hot. The paper has gone see-through at the bottom. Somebody left it on the wall and walked away." },
+  { id: 'flag',     area: 'arches', x: 0.78, need: 'backpack',  name: 'A SMALL PAPER FLAG',
+    line: "On a cocktail stick. Fifty stars, all of them slightly crooked. It was in the bag." },
+  { id: 'clip',     area: 'church', x: 0.20, need: 'backpack',  name: 'A BLANK FORM',
+    line: "Nine minutes to find out what is wrong with you. There is no line for what is right." }
 ];
 
 DATA.nocPlanNudge = [
@@ -1036,7 +1064,14 @@ DATA.oakTopics = {
   god:    "There is a shift manager. I have met him. He was very apologetic and very tired.",
   leaves: "Forty thousand a year, and I complain about each one.",
   me:     "Nine hundred years, one spot, no exercise, very good shade.",
-  park:   "It is emptier than it was, and better for it. Room is what people come for."
+  park:   "It is emptier than it was, and better for it. Room is what people come for.",
+  america: "I was six hundred years old when this country was invented. I am fond of it and I do not understand it.",
+  flag:   "There is one on a pole across the avenue that is bigger than my canopy. I hold the soil. We are both doing our bit.",
+  burger: "Across the road, in a paper bag, too hot, eaten in a car with the engine off. Nobody will admit it is a ritual.",
+  church: "Forty floors of mirror glass and a volcano on the sign. Not one window in it opens.",
+  star:   "He runs everywhere and he never blinks. He is not real. I want to be clear about that, because he is convincing.",
+  stone:  "The stone is for Charlie Kirk, who was shot while speaking in 2025. I will tell you what happened. I will not tell you what to think about him.",
+  kirk:   "The stone is for Charlie Kirk, who was shot while speaking in 2025. I will tell you what happened. I will not tell you what to think about him."
 };
 
 DATA.oakOpeners = [
@@ -1157,6 +1192,8 @@ DATA.sets = [
     intro: "There are things I do not mention on a first afternoon. You have earned them. Do not tell the squirrel." },
   { id: 'pop',   at: 34, name: 'TELEVISION HE HAS NEVER SEEN', tags: ['pop'],
     intro: "I have never watched a single frame of anything. I hear it through car windows. I still have opinions." },
+  { id: 'usa',   at: 44, name: 'THIS COUNTRY, APPARENTLY', tags: ['usa'],
+    intro: "Next thing. I have stood still while a whole country was built round me. I am fond of it and I do not understand it, and those are not in conflict." },
   { id: 'meta',  at: 52, name: 'THE UNCOMFORTABLE SET', tags: ['meta'],
     intro: "Now some things about you, and about the screen you are holding. You may not enjoy it." },
   { id: 'power', at: 72, name: 'POWER, AND WHO HAS IT', tags: ['power'],
@@ -1239,12 +1276,152 @@ DATA.areaLines = {
     "Cooled by machine since 1950. Rebuilt in 1986 by a developer from Queens after the city could not manage it.",
     "Children skate in circles here all winter and know none of that, which is right."
   ],
+  church: [
+    "Forty floors of mirror glass. You can see the whole park in it and none of the park can see in.",
+    "There is a volcano on the sign. Nobody in the lobby will explain the volcano."
+  ],
+  stone: [
+    "A stone, some flowers, and a candle somebody keeps relighting.",
+    "Read the plaque. Then leave something, or do not. Both are allowed here."
+  ],
+  arches: [
+    "Two lanes of traffic, a bus stop, and the arches humming away on the corner.",
+    "Open all night. The light in there has not gone off since the seventies."
+  ],
   hollow: [
     "Forty acres they agreed to stop tidying. The only part of this park allowed to be a wood.",
     "Things get left up here. That is why you should look."
   ]
 };
 
+
+/* -------------------------------------------------------------------------
+   THIS COUNTRY, APPARENTLY
+   He has stood in one spot while America was built around him. He is fond of
+   it and he is baffled by it, usually in the same sentence.
+   ------------------------------------------------------------------------- */
+DATA.lines = DATA.lines.concat([
+  { id: 'u01', tag: 'usa', mood: 'idle',  text: "I was already six hundred years old when this country was invented. Nobody asked me to sign anything." },
+  { id: 'u02', tag: 'usa', mood: 'smug',  text: "Every July they set fire to the sky above me to celebrate. I am made of wood. It is a strange way to say thank you." },
+  { id: 'u03', tag: 'usa', mood: 'happy', text: "There is a flag on that building that is bigger than my whole canopy. I respect the ambition." },
+  { id: 'u04', tag: 'usa', mood: 'idle',  text: "You can drive four thousand miles in this country without leaving it. I have gone nowhere and seen more." },
+  { id: 'u05', tag: 'usa', mood: 'smug',  text: "Somebody explained the drive-thru to me. You bring the queue with you, in the car. Genius, honestly." },
+  { id: 'u06', tag: 'usa', mood: 'happy', text: "The golden arches are visible from my top branch. They are the second-oldest thing on this block. I am the first." },
+  { id: 'u07', tag: 'usa', mood: 'idle',  text: "A man ate a hamburger under me every Thursday for nineteen years. Same order. I miss him more than I expected." },
+  { id: 'u08', tag: 'usa', mood: 'smug',  text: "The ice cream machine across the road has been broken since about 2009. Nobody has fixed it. It is now a landmark." },
+  { id: 'u09', tag: 'usa', mood: 'happy', text: "Children get a small toy with the food. That is the whole trick and it has worked for seventy years." },
+  { id: 'u10', tag: 'usa', mood: 'idle',  text: "The pigeons here have built an entire economy on dropped fries. I have watched empires do worse." },
+  { id: 'u11', tag: 'usa', mood: 'shock', text: "One of those hot apple pies came out of the bag at four hundred degrees and a man cried. I understood." },
+  { id: 'u12', tag: 'usa', mood: 'smug',  text: "They stop selling breakfast at half past ten. That is the only rule in this country everybody actually obeys." },
+  { id: 'u13', tag: 'usa', mood: 'idle',  text: "Every drink here comes with more ice than drink. It is a country that has decided cold is a flavour." },
+  { id: 'u14', tag: 'usa', mood: 'happy', text: "Somebody offered me a free refill. I have roots. I have had a free refill for nine hundred years." },
+  { id: 'u15', tag: 'usa', mood: 'smug',  text: "There is a red plastic cup in my roots from a party in 1998. It has outlasted everyone who was there." },
+  { id: 'u16', tag: 'usa', mood: 'happy', text: "Boys have played catch on that grass for a hundred and forty years. Same throw. Same fathers. Different shirts." },
+  { id: 'u17', tag: 'usa', mood: 'idle',  text: "The yellow taxis used to be every colour. Somebody decided yellow shows up best. That is the most American sentence I know." },
+  { id: 'u18', tag: 'usa', mood: 'smug',  text: "A school bus is the only vehicle everyone stops for. One yellow bus outranks a president. I find that hopeful." },
+  { id: 'u19', tag: 'usa', mood: 'happy', text: "In October they put a face on a pumpkin and a bedsheet on a child and call it a night out. Best holiday you have." },
+  { id: 'u20', tag: 'usa', mood: 'idle',  text: "In November everyone eats too much and argues about politics with their own family. That one is not a holiday. That is a stress test." },
+  { id: 'u21', tag: 'usa', mood: 'shock', text: "The day after that, they queue at four in the morning to fight over a television. I have watched it. I did not enjoy it." },
+  { id: 'u22', tag: 'usa', mood: 'smug',  text: "Once a year the whole country stops for a football match with more adverts than football. I hear the adverts. I have opinions." },
+  { id: 'u23', tag: 'usa', mood: 'happy', text: "Somebody sings the anthem before a game of anything. Even bowling. I have heard it done badly nine hundred times and I still stand up. I am always standing up." },
+  { id: 'u24', tag: 'usa', mood: 'idle',  text: "A fire hydrant is the only thing in this city with more legal protection than me." },
+  { id: 'u25', tag: 'usa', mood: 'smug',  text: "You are all expected to work out the tip yourselves, at the table, under pressure. In front of witnesses. Cruel." },
+  { id: 'u26', tag: 'usa', mood: 'happy', text: "There is a diner two streets over that has been open since 1932. Same coffee. Same pot, I suspect." },
+  { id: 'u27', tag: 'usa', mood: 'idle',  text: "The lady in the harbour is younger than me and gets far more visitors. I am not bitter. I am mostly not bitter." },
+  { id: 'u28', tag: 'usa', mood: 'happy', text: "They lit up that tall building on the east side in green for a week once. Nobody told me why. I took it personally, in a good way." },
+  { id: 'u29', tag: 'usa', mood: 'smug',  text: "Somebody asked me if I was patriotic. I hold the soil. That is more than most people manage." },
+  { id: 'u30', tag: 'usa', mood: 'idle',  text: "Everything here is the biggest, the first, or the best. Meanwhile the actual best thing in this postcode is free and it is grass." },
+  { id: 'u31', tag: 'usa', mood: 'happy', text: "A jazz band played under me one night in 1959 with no permit and no money. Nine hundred years and that is still the top five." },
+  { id: 'u32', tag: 'usa', mood: 'idle',  text: "Everyone here is from somewhere else, including the trees. My kind came up from the south after the ice left." },
+  { id: 'u33', tag: 'usa', mood: 'smug',  text: "You built a highway system so a man could drive somewhere quiet and take a photograph of a tree. I am flattered and I am tired." },
+  { id: 'u34', tag: 'usa', mood: 'happy', text: "The best of this country happens on a Saturday morning in a car park with folding tables. No flag. Just neighbours." }
+]);
+
+DATA.replies.usa = [
+  { tone: 'joke',    text: "Very patriotic of you.",        follow: "I am nine hundred years old and I hold the soil. Take that up with a flag." },
+  { tone: 'curious', text: "Do you like it here?",          follow: "I have never been anywhere else. But the grass is free and nobody has cut me down. That is a good country by my standards." },
+  { tone: 'rude',    text: "You sound like a tourist.",     follow: "I am the opposite of a tourist. I am the thing tourists photograph and then walk past." },
+  { tone: 'kind',    text: "Tell me more about the food.",  follow: "It arrives in a paper bag, it is too hot, it is exactly what you wanted, and you regret it in forty minutes. Nobody has improved on it." }
+];
+
+/* -------------------------------------------------------------------------
+   THE GLASS CHURCH
+   A parody. Forty floors of mirror glass with a volcano on the sign, and a
+   free personality test in the lobby. It is nobody in particular.
+   ------------------------------------------------------------------------- */
+DATA.churchLines = [
+  "Forty floors of mirror glass and a volcano on the sign. Not one window in it opens.",
+  "They give away a free test of your personality in that lobby. Everyone comes out with a worse one.",
+  "A woman went in there in 1994 to get out of the rain. I saw her again in 2011. She waved. It was not the same wave.",
+  "The sign says the answers are inside. The answers are outside. The answers are grass and about nine hours of sleep.",
+  "They asked me to join. A recruiter stood right there and asked a tree. I said I had roots. He said that was fixable.",
+  "It costs money to find out what is wrong with you, and more money to find out the next thing. That is not a church. That is a staircase.",
+  "I do not mind a religion. I have watched four of them come through this valley and two of them planted orchards. This one bought a building."
+];
+
+/* the man who comes out of it. He is not anyone. He is a film star made up
+   for this park: too many teeth, no stunt double, and a clipboard. */
+DATA.starLines = [
+  "You there. Do you have nine minutes? Nine minutes is all it takes to find out what is wrong with you.",
+  "I do all my own stunts. Every one. Ask me how many bones. Go on. Ask me.",
+  "I never walk. Walking is for people who have not committed to anywhere.",
+  "I have not blinked since the second film. It is a discipline.",
+  "Smile. Wider. There. Now you look like somebody who is about to sign something.",
+  "The building has no windows that open. That is on purpose. Fresh air is unstructured.",
+  "Everyone I love is in that building. I put them there. It was my idea.",
+  "You are at level one. There are forty levels. There is always one more level, and that is the good news.",
+  "I could hang off the side of a plane right now. I am choosing to talk to you instead. Do you understand the honour.",
+  "No, I do not know what the volcano means. I know what it costs to find out."
+];
+
+DATA.starOakAsides = [
+  "Do not take the clipboard. Once you take the clipboard you are on a list.",
+  "He runs everywhere. Nine hundred years I have stood here and he is the only man who has ever sprinted past me twice in one afternoon.",
+  "He is not real. I want to be clear about that, because he is extremely convincing and he is not real.",
+  "Watch his face. It never moves. Mine is made of bark and it moves more than that."
+];
+
+/* -------------------------------------------------------------------------
+   THE MEMORIAL STONE
+   A real person, so: the facts, the flowers, and nothing else. The oak keeps
+   his rule here as everywhere — he names no side and he tells you no vote.
+   ------------------------------------------------------------------------- */
+DATA.stone = {
+  name: 'CHARLIE KIRK',
+  dates: '1993 — 2025',
+  plaque: 'HE WAS ANSWERING A QUESTION'
+};
+
+DATA.stoneLines = [
+  "That stone is for Charlie Kirk. He was a political activist. He co-founded Turning Point USA and he argued with students on campuses for a living.",
+  "He was shot and killed on the tenth of September 2025, at a university in Utah, in front of a crowd, in the middle of answering a question. He was thirty-one.",
+  "He had a wife and two small children. Whatever anybody thought of him, that part is simply true.",
+  "I am not going to tell you whether he was right. That is not what a stone is for.",
+  "People came here to weep for him and people came here to shout about him, on the same grass, some days within the hour. Both of them were real.",
+  "Eleven wars I have stood through, and it always begins the same way: somebody decides an argument goes faster with a weapon. It never once has.",
+  "Here is the only thing I will say from nine hundred years of listening. You are allowed to argue with a man for years and still not want him dead.",
+  "Somebody brings flowers. Different people, all year round, one at a time. I watch every one of them arrive."
+];
+
+DATA.stoneTribute = [
+  "That was kind. He does not know and it still counts.",
+  "Flowers on a stone are for the living. That is not a criticism. It is what they are for.",
+  "There. Now there are two of us keeping an eye on it.",
+  "Every one of those was carried here by somebody with better things to do."
+];
+
+/* -------------------------------------------------------------------------
+   THE GOLDEN ARCHES
+   Across the avenue, open all night, older than everyone in it.
+   ------------------------------------------------------------------------- */
+DATA.archesLines = [
+  "Open all night, every night. The only thing on this block with better hours than me.",
+  "Somebody in there has been mopping the same square of floor since 1988. I salute him.",
+  "The bag is warm, the paper goes see-through, and you eat it in the car with the engine off. That is the ritual. Nobody will admit it is a ritual.",
+  "A man proposed to somebody in that car park. She said yes. They came and sat under me afterwards. Best afternoon of 2004.",
+  "Forty thousand of those restaurants and one of me. And yet you came over here.",
+  "The ice cream machine is broken. It has always been broken. I think it is load-bearing now."
+];
 
 /* =========================================================================
    THE BIRDS

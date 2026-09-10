@@ -3634,6 +3634,301 @@ function drawLaneRoad(c, g) {
   for (let i = 0; i < 6; i++) dot(c, mx2 + rnd() * 8, my2 - 12 + rnd() * 12, sh('#4a7a32'));
 }
 
+/* =========================================================================
+   THE GLASS CHURCH
+   Forty floors of mirror glass at the end of the block, with a volcano on
+   the sign. It is a parody of nobody in particular and it reflects the park
+   back at the park, which is the whole joke.
+   ========================================================================= */
+function drawChurchScene(c, g) {
+  const dk = darkness(g.timeOfDay);
+  const sh = col => mix(col, '#0a1226', dk * 0.7);
+  const night = dk > 0.4;
+
+  // the rest of the block, set back
+  for (let i = 0; i < 7; i++) {
+    const bx = (i * 47) % (W + 30) - 20, bw = 22 + (i % 3) * 9;
+    const bh = 34 + ((i * 29) % 40);
+    px(c, bx, GROUND_Y - 30 - bh, bw, bh, sh(mix('#5a6270', '#7e8896', (i % 3) / 3)));
+    for (let wy = 4; wy < bh - 4; wy += 7) {
+      for (let wx = 3; wx < bw - 4; wx += 6) {
+        const lit = ((i * 5 + wx + wy) % 6) < 2;
+        px(c, bx + wx, GROUND_Y - 30 - bh + wy, 2, 3,
+           lit && night ? '#ffe9a0' : sh('#3e4652'));
+      }
+    }
+  }
+
+  // the tower itself, dead centre, taller than the frame
+  const tw = Math.min(96, Math.round(W * 0.34));
+  const tx = Math.round(W / 2 - tw / 2);
+  const top = 0;          // it goes up past the top of the frame
+  px(c, tx - 2, top, tw + 4, GROUND_Y - 28 - top, sh('#2e4650'));
+  px(c, tx, top + 2, tw, GROUND_Y - 30 - top, sh('#4f7d90'));
+  // mirror glass: the park, reflected back at you in strips
+  for (let y = top + 4; y < GROUND_Y - 30; y += 5) {
+    const t = (y - top) / (GROUND_Y - 30 - top);
+    const band = t < 0.55
+      ? mix('#8fc6d8', '#bfe0ea', Math.sin(y * 0.7) * 0.5 + 0.5)   // sky
+      : mix('#4a7a4c', '#79ab63', Math.sin(y * 1.1) * 0.5 + 0.5);  // the park
+    px(c, tx + 2, y, tw - 4, 4, sh(band));
+    // the mullions
+    for (let x = tx + 2; x < tx + tw - 3; x += 7) px(c, x, y, 1, 4, sh('#2e4650'));
+  }
+  for (let y = top + 4; y < GROUND_Y - 30; y += 5) px(c, tx + 2, y, tw - 4, 1, sh('#dff0f6'));
+  // one window, high up, that somebody has covered over
+  px(c, tx + tw - 18, 78, 12, 9, sh('#211a14'));
+
+  // the sign at the top: a volcano
+  const sy = 44, scx = tx + Math.round(tw / 2);
+  px(c, scx - 22, sy, 44, 16, sh('#1a1410'));
+  px(c, scx - 21, sy + 1, 42, 14, sh('#2a2018'));
+  for (let i = -8; i <= 8; i++) {
+    const hh = 9 - Math.abs(i);
+    px(c, scx + i, sy + 13 - hh, 1, hh, night ? '#c9453b' : sh('#8a3a30'));
+  }
+  px(c, scx - 3, sy + 3, 7, 2, night ? '#ffd24a' : sh('#b08030'));
+  // the smoke coming off it, animated
+  for (let i = 0; i < 4; i++) {
+    const ph = g.t * 0.6 + i * 0.9;
+    const ox = Math.sin(ph) * 5;
+    px(c, scx + ox - 1, sy - 3 - i * 4 - (ph % 1) * 2, 3, 2,
+       sh(night ? '#6a5a52' : '#8a7a70'));
+  }
+  if (night) { glow(c, scx, sy + 8, 30, 'rgba(220,90,60,0.16)'); }
+
+  // the pavement and the doors
+  px(c, 0, GROUND_Y - 30, W, 30, sh('#4a4a52'));
+  px(c, 0, GROUND_Y - 30, W, 2, sh('#5e5e68'));
+  px(c, 0, GROUND_Y, W, H, sh('#3e3e46'));
+  for (let x = 0; x < W; x += 22) px(c, x, GROUND_Y, 1, H, sh('#33333a'));
+  // revolving doors, lit from inside
+  const dx = scx - 13;
+  px(c, dx, GROUND_Y - 30, 26, 30, sh('#23343c'));
+  px(c, dx + 2, GROUND_Y - 27, 22, 27, night ? mix('#ffe9a0', '#c9b070', 0.3) : sh('#cfe0e6'));
+  px(c, dx + 12, GROUND_Y - 27, 2, 27, sh('#23343c'));
+  px(c, dx + 2, GROUND_Y - 27, 22, 2, sh('#3e5a64'));
+  // A-board on the pavement: the free test
+  const bx2 = scx + 34;
+  px(c, bx2 - 8, GROUND_Y - 13, 16, 13, sh('#e8e2d0'));
+  px(c, bx2 - 8, GROUND_Y - 13, 16, 3, sh('#c9453b'));
+  for (let i = 0; i < 3; i++) px(c, bx2 - 6, GROUND_Y - 8 + i * 3, 12, 1, sh('#5a5a5a'));
+}
+
+/* the man from the building. He is not anybody: too many teeth, a clipboard,
+   and he runs everywhere. */
+function drawStar(c, g, s) {
+  const dk = darkness(g.timeOfDay);
+  const sh = col => mix(col, '#0a1226', dk * 0.7);
+  const x = Math.round(s.x), y = Math.round(s.y);
+  const run = s.moving ? Math.sin(g.t * 14) : 0;
+  const yy = y - Math.abs(run) * 2.5;
+  const jacket = sh('#2a2a30'), lit = sh('#41414c'), skin = sh('#e8b184');
+
+  c.globalAlpha = 0.3; pellipse(c, x, y + 1, 8, 3, '#0d1a08'); c.globalAlpha = 1;
+
+  // legs, mid-sprint even when he is standing still
+  px(c, x - 4 + run * 3, yy - 10, 3, 11, sh('#1e2028'));
+  px(c, x + 1 - run * 3, yy - 10, 3, 11, sh('#262932'));
+  // the jacket
+  px(c, x - 5, yy - 24, 11, 15, jacket);
+  px(c, x - 5, yy - 24, 4, 15, lit);
+  px(c, x - 1, yy - 23, 3, 13, sh('#f4f4f4'));
+  // arms: one pumping, one holding the clipboard out at you
+  px(c, x - 8 - run * 2, yy - 22, 3, 9, lit);
+  px(c, x + 6, yy - 20, 4, 3, jacket);
+  if (!s.gave) {
+    px(c, x + 9, yy - 22, 7, 9, sh('#c9a06a'));
+    px(c, x + 10, yy - 21, 5, 7, sh('#f6ecd6'));
+    px(c, x + 11, yy - 23, 3, 2, sh('#b0b6c0'));
+  }
+  // head
+  pcircle(c, x, yy - 28, 4.2, skin);
+  px(c, x - 4, yy - 32, 9, 3, sh('#2a1c12'));
+  px(c, x - 4, yy - 31, 3, 2, sh('#3e2a1c'));
+  // the eyes never close and never move
+  px(c, x - 3, yy - 29, 2, 2, sh('#ffffff')); px(c, x - 3, yy - 29, 1, 1, '#120a04');
+  px(c, x + 2, yy - 29, 2, 2, sh('#ffffff')); px(c, x + 2, yy - 29, 1, 1, '#120a04');
+  // the smile. All of the teeth, all of the time.
+  px(c, x - 3, yy - 25, 7, 2, sh('#1a0f08'));
+  px(c, x - 3, yy - 25, 7, 1, '#ffffff');
+  if (dk > 0.4) glow(c, x, yy - 26, 9, 'rgba(255,255,255,0.10)');
+}
+
+/* =========================================================================
+   THE MEMORIAL STONE
+   A low granite stone on a mown square, with flowers laid along the bottom
+   and a candle in a jar that somebody keeps relighting.
+   ========================================================================= */
+function drawStoneScene(c, g, tributes) {
+  const dk = darkness(g.timeOfDay);
+  const sh = col => mix(col, '#0a1226', dk * 0.7);
+  // a mown square, kept shorter than the rest of the park
+  px(c, 0, GROUND_Y - 18, W, 18, sh('#5d9440'));
+  px(c, 0, GROUND_Y - 18, W, 1, sh('#79b356'));
+  px(c, 0, GROUND_Y, W, H, sh('#4a7a32'));
+  const rnd = mulberry(2025);
+  for (let i = 0; i < 70; i++) {
+    const x = rnd() * W, y = GROUND_Y - 14 + rnd() * (H - GROUND_Y + 14);
+    px(c, x, y, 1, 2, sh('#528a36'));
+  }
+  // a few small flags somebody pushed into the turf, set back from the stone
+  for (let i = 0; i < 5; i++) {
+    const fx = Math.round(W * 0.72 + i * 11);
+    if (fx > W - 6) continue;
+    px(c, fx, GROUND_Y - 13, 1, 6, sh('#8a7a5a'));
+    px(c, fx + 1, GROUND_Y - 13, 4, 2, sh('#c9453b'));
+    px(c, fx + 1, GROUND_Y - 12, 4, 1, sh('#f4f4f4'));
+  }
+  // two young trees somebody planted either side
+  for (const side of [-1, 1]) {
+    const tx = Math.round(W / 2 + side * Math.min(90, W * 0.3));
+    px(c, tx, GROUND_Y - 34, 2, 34, sh('#6b4a2a'));
+    pcircle(c, tx + 1, GROUND_Y - 40, 11, sh('#4a8a30'));
+    pcircle(c, tx - 2, GROUND_Y - 43, 7, sh('#6cc73f'));
+  }
+}
+
+/* the stone itself, drawn into the outlined actor layer so it does not get
+   buried by the planting */
+function drawStone(c, g, cx, tributes) {
+  const dk = darkness(g.timeOfDay);
+  const sh = col => mix(col, '#0a1226', dk * 0.7);
+  const F = window.FONT_API;
+  const x = Math.round(cx), base = GROUND_Y - 2;
+
+  // the plinth
+  px(c, x - 46, base - 5, 92, 6, sh('#8a8f96'));
+  px(c, x - 46, base - 5, 92, 2, sh('#a6acb4'));
+  // the stone
+  px(c, x - 42, base - 58, 84, 53, sh('#8a9098'));
+  px(c, x - 40, base - 56, 80, 49, sh('#b4bac2'));
+  px(c, x - 40, base - 56, 80, 2, sh('#d2d8e0'));
+  px(c, x - 40, base - 9, 80, 2, sh('#8a9098'));
+  px(c, x - 40, base - 56, 3, 49, sh('#c6ccd4'));
+  // the carving
+  if (F) {
+    const S = DATA.stone || {};
+    F.drawTextCentered(c, x, base - 51, S.name || '', sh('#32383e'), 1);
+    F.drawTextCentered(c, x, base - 42, S.dates || '', sh('#464c54'), 1);
+    px(c, x - 22, base - 34, 44, 1, sh('#7a8088'));
+    const lines = F.wrapText(S.plaque || '', 74, 1);
+    for (let i = 0; i < Math.min(3, lines.length); i++) {
+      F.drawTextCentered(c, x, base - 29 + i * 7, lines[i], sh('#4a5058'), 1);
+    }
+  }
+
+  // flowers along the foot of it — one more for every tribute left
+  const n = 5 + Math.min(14, tributes | 0);
+  const rnd = mulberry(910);
+  for (let i = 0; i < n; i++) {
+    const fx = x - 44 + rnd() * 88, fy = base + 1 + rnd() * 4;
+    const col = ['#ff5b78', '#ffd24a', '#f4f4f4', '#b183e8'][i % 4];
+    px(c, fx, fy - 3, 1, 3, sh('#3f7a2a'));
+    pcircle(c, fx, fy - 4, 1.6, sh(col));
+  }
+  // the candle in a jar, still going
+  const jx = x + 50;
+  px(c, jx - 3, base - 8, 6, 8, sh('#cfe0e6'));
+  px(c, jx - 3, base - 8, 2, 8, sh('#e8f2f6'));
+  const fl = Math.sin(g.t * 9) * 0.6;
+  px(c, jx - 1, base - 7 + fl, 2, 3, '#ffd24a');
+  px(c, jx, base - 8 + fl, 1, 2, '#fff6d0');
+  glow(c, jx, base - 7, 11, 'rgba(255,190,90,' + (0.10 + dk * 0.22) + ')');
+}
+
+/* =========================================================================
+   THE GOLDEN ARCHES
+   Across two lanes of traffic. Open all night. Older than everyone in it.
+   ========================================================================= */
+function drawArchesScene(c, g) {
+  const dk = darkness(g.timeOfDay);
+  const sh = col => mix(col, '#0a1226', dk * 0.7);
+  const night = dk > 0.4;
+
+  // the block behind
+  for (let i = 0; i < 6; i++) {
+    const bx = (i * 53) % (W + 30) - 20, bw = 26 + (i % 3) * 12;
+    const bh = 30 + ((i * 31) % 34);
+    px(c, bx, GROUND_Y - 44 - bh, bw, bh, sh(mix('#6a5a52', '#8e7a6c', (i % 3) / 3)));
+    for (let wy = 4; wy < bh - 4; wy += 7)
+      for (let wx = 3; wx < bw - 4; wx += 7)
+        px(c, bx + wx, GROUND_Y - 44 - bh + wy, 3, 3,
+           ((i * 3 + wx + wy) % 5) < 2 && night ? '#ffe9a0' : sh('#463a34'));
+  }
+
+  // the restaurant: low, wide, brick and glass
+  const rw = Math.min(150, Math.round(W * 0.56));
+  const rx = Math.round(W / 2 - rw / 2), ry = GROUND_Y - 44;
+  px(c, rx, ry, rw, 26, sh('#8a4a3a'));
+  px(c, rx, ry, rw, 3, sh('#c9453b'));
+  px(c, rx, ry + 3, rw, 2, sh('#ffc72c'));
+  // the window, and the people inside it
+  px(c, rx + 5, ry + 7, rw - 10, 15, night ? mix('#ffe9a0', '#e8d090', 0.2) : sh('#cfe4ee'));
+  for (let x = rx + 5; x < rx + rw - 6; x += 13) px(c, x, ry + 7, 1, 15, sh('#6a3a2e'));
+  const rnd = mulberry(1955);
+  for (let i = 0; i < 6; i++) {
+    const px2 = rx + 10 + rnd() * (rw - 22);
+    px(c, px2, ry + 13, 4, 9, sh(['#3a4a6a', '#6a3a4a', '#3a5a3a', '#5a4a2a'][i % 4]));
+    pcircle(c, px2 + 2, ry + 11, 2.2, sh('#e0a878'));
+  }
+  // the doors
+  px(c, rx + Math.round(rw / 2) - 9, ry + 9, 18, 17, sh('#5e3a2e'));
+  px(c, rx + Math.round(rw / 2) - 7, ry + 11, 14, 15, night ? '#ffe9a0' : sh('#dfeef4'));
+
+  // THE ARCHES, on a pole, above everything
+  const ax = rx + rw - 22, ay = ry - 40;
+  px(c, ax - 1, ay, 3, 40, sh('#7a7a82'));
+  const A = night ? '#ffc72c' : sh('#e8b21f');
+  for (const off of [-11, 1]) {
+    px(c, ax + off, ay + 6, 4, 16, A);
+    px(c, ax + off + 6, ay + 6, 4, 16, A);
+    px(c, ax + off + 2, ay + 2, 6, 5, A);
+    px(c, ax + off, ay + 4, 4, 4, A);
+    px(c, ax + off + 6, ay + 4, 4, 4, A);
+  }
+  if (night) glow(c, ax, ay + 12, 26, 'rgba(255,200,60,0.20)');
+
+  // the flag on the other pole, because of course there is one
+  const fx = rx + 12;
+  px(c, fx, ry - 34, 1, 34, sh('#9aa0a8'));
+  const wave = Math.sin(g.t * 2) * 1.5;
+  for (let i = 0; i < 7; i++) {
+    px(c, fx + 1, ry - 33 + i + wave * (i > 3 ? 1 : 0), 14, 1,
+       sh(i % 2 ? '#f4f4f4' : '#c9453b'));
+  }
+  px(c, fx + 1, ry - 33 + wave * 0, 6, 4, sh('#3c4a8a'));
+
+  // the avenue: two lanes, a crossing, and the cars that never stop
+  px(c, 0, GROUND_Y - 18, W, 18, sh('#3e3e46'));
+  px(c, 0, GROUND_Y - 18, W, 2, sh('#4e4e58'));
+  for (let x = ((g.t * 0) | 0); x < W; x += 18) px(c, x, GROUND_Y - 10, 9, 1, sh('#d8d24a'));
+  px(c, 0, GROUND_Y, W, H, sh('#55555e'));
+  for (let x = 6; x < W; x += 12) px(c, x, GROUND_Y + 1, 7, 3, sh('#c8c8d0'));   // the crossing
+  // three cars, looping
+  for (let i = 0; i < 3; i++) {
+    const sp = 26 + i * 9, dir = i === 1 ? -1 : 1;
+    let cx2 = dir === 1
+      ? ((g.t * sp + i * 90) % (W + 70)) - 35
+      : W + 35 - ((g.t * sp + i * 90) % (W + 70));
+    const cy = GROUND_Y - 14 + (dir === 1 ? 0 : 4);
+    const body = sh(['#c9453b', '#e8b23a', '#3a5a8a'][i]);
+    px(c, cx2 - 12, cy - 5, 24, 6, body);
+    px(c, cx2 - 7, cy - 9, 13, 5, body);
+    px(c, cx2 - 6, cy - 8, 11, 3, sh('#8fb8c9'));
+    px(c, cx2 - 12, cy - 3, 24, 2, sh('#2a2a30'));
+    pcircle(c, cx2 - 7, cy + 1, 2.2, sh('#1a1a20'));
+    pcircle(c, cx2 + 7, cy + 1, 2.2, sh('#1a1a20'));
+    if (night) {
+      px(c, cx2 + dir * 12, cy - 4, 2, 2, '#fff6d0');
+      glow(c, cx2 + dir * 16, cy - 3, 10, 'rgba(255,240,190,0.18)');
+    }
+  }
+  // a bin and a bus stop, because it is a street
+  px(c, 10, GROUND_Y - 12, 8, 12, sh('#4a5a4a'));
+  px(c, 9, GROUND_Y - 13, 10, 2, sh('#5e6e5e'));
+}
+
 window.SPR = {
   get W() { return W; }, H, GROUND_Y, get CX() { return CX; }, setLogicalWidth, layerBegin, layerEnd, outlinedSprite, makeCanvas, CANOPY, TWIGS, SEASON, SEASON_NAMES, TROPHY_ART, HALL,
   px, dot, pcircle, pellipse, glow, mix, mulberry, star, quant,
@@ -3648,6 +3943,7 @@ window.SPR = {
   drawGarden, gardenSlotPos, gardenWidth, GARDEN, drawCloudTunnel, drawLetterbox, drawRays, drawGrowingTree, flame,
   drawZzz, drawGear, drawSnailParcel, drawBird, drawBirdPortrait, drawWordPop, drawImpactLines, squashTransform, drawScrollFrame, drawSheet, drawRod, drawSeal, PAPER, snailSkin, drawShell, SNAIL_SHELLS, SNAIL_PATTERNS, drawNoc, drawNocCamp, drawTravelArrow, travelArrowBox, drawAreaTitle, drawPickup,
   drawSenecaScene, drawBridgeScene, drawMallScene, drawTerraceScene, drawRinkScene, drawSuit, drawStillWater,
+  drawChurchScene, drawStar, drawStoneScene, drawStone, drawArchesScene,
   drawCosyFoliage, drawFallenLog, drawStandingStone, drawVines, drawHedgerow, drawLaneRoad,
   drawBackpackSprite, drawBagButton
 };

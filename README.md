@@ -23,18 +23,21 @@ arrives with a puff of dust and a bounce.
 **The park is Central Park.** He is standing in the middle of eight hundred and
 forty-three acres of Manhattan, and he was standing there before any of it was
 a park. Signposts at the edges of the frame walk you west and east through
-**eight places**, and most of them are shut when you arrive:
+**eleven places**, and most of them are shut when you arrive:
 
 | | Place | Opens on |
 | --- | --- | --- |
-| 1 | Seneca Village | 72 things heard |
-| 2 | The Ramble | open — **Noc** keeps the lamp here |
-| 3 | Bow Bridge | finding something to carry things in |
-| 4 | **The Great Oak** | you start here |
-| 5 | The Mall | 8 things heard |
-| 6 | The North Woods | open — the backpack is up here |
-| 7 | Bethesda Terrace | one job finished |
-| 8 | The Wollman Rink | 34 things heard |
+| 1 | The Glass Church | 44 things heard |
+| 2 | Seneca Village | 72 things heard |
+| 3 | The Ramble | open — **Noc** keeps the lamp here |
+| 4 | Bow Bridge | finding something to carry things in |
+| 5 | **The Great Oak** | you start here |
+| 6 | The Mall | 8 things heard |
+| 7 | The Memorial Stone | 20 things heard |
+| 8 | The North Woods | open — the backpack is up here |
+| 9 | Bethesda Terrace | one job finished |
+| 10 | The Wollman Rink | 34 things heard |
+| 11 | The Golden Arches | finding something to carry things in |
 
 Nothing is bought: every gate opens on something you did, and almost all of it
 is listening. There is a map scroll in your backpack showing what is open, what
@@ -94,7 +97,7 @@ species arrives as post. Filling it is its own ending; Noc never got past nine.
 
 ## Talking is the game
 
-**He says things plainly.** Every one of his 233 lines is written to be short
+**He says things plainly.** Every one of his 267 lines is written to be short
 and direct: one or two sentences, ordinary words, the point first. He is still
 vain and dry and nine hundred years old, he just does not make you work for it.
 The live typed conversation is held to the same rule, whether it is answered by
@@ -106,7 +109,7 @@ do next — POKE HIM, TALK TO HIM, GO ON, TELL ME ANOTHER — so the whole
 conversation can be had with a single thumb on a phone. Above it he keeps a
 running count of how much further it is to the next subject.
 
-**He does not hand over nine hundred years at once.** There are seven **sets**
+**He does not hand over nine hundred years at once.** There are eight **sets**
 of things he will talk about, and he opens them himself, one at a time, when
 you have listened to enough of the last one:
 
@@ -116,9 +119,10 @@ you have listened to enough of the last one:
 | 2 | Things he has worked out | 8 things heard |
 | 3 | The odd business | 20 |
 | 4 | Television he has never seen | 34 |
-| 5 | The uncomfortable set — about you, and the screen | 52 |
-| 6 | **Power, and who has it** | 72 |
-| 7 | The real parts | 100 |
+| 5 | **This country, apparently** | 44 |
+| 6 | The uncomfortable set — about you, and the screen | 52 |
+| 7 | **Power, and who has it** | 72 |
+| 8 | The real parts | 100 |
 
 He stops mid-conversation to introduce each one, a snail brings the news, and
 the pool of things he can say grows. Nothing from a set he has not opened will
@@ -131,9 +135,55 @@ are carrying, and a way into the map, the topics, the bird diary, your jobs and
 your plans. The long lists live in their own scrolls instead of sprawling down
 the bag.
 
+## This country, apparently
+
+The fifth set is the American one: thirty-four lines about the country that got
+built around a tree that was already six hundred years old when it was invented.
+The drive-thru, breakfast stopping at half past ten, the ice cream machine that
+has been broken since about 2009, the pigeons running an economy on dropped
+fries, the school bus that outranks a president, the flag that is bigger than
+his canopy, and the Saturday-morning car park with folding tables that he thinks
+is the best of it. He is fond of the place and he does not understand it, and he
+does not think those are in conflict.
+
+Three of the eleven places on the map came with that set:
+
+- **THE GOLDEN ARCHES** — across two lanes of traffic, open all night, cars
+  looping past a crossing under a flag on a pole. There is a warm paper bag on
+  the wall and a small paper flag on a cocktail stick, and both go in your bag
+  and stay there.
+- **THE GLASS CHURCH** — forty floors of mirror glass down the block with a
+  volcano on the sign, the park reflected back at the park, one window somebody
+  has covered over, and a free personality test in the lobby. **THE STAR**
+  comes out of it: a film star who runs everywhere, never blinks, does all his
+  own stunts and holds a clipboard out at you. Take the clipboard and you are
+  level one of forty. He is invented for this park and the oak says so out
+  loud — *"He is not real. I want to be clear about that, because he is
+  extremely convincing and he is not real."*
+- **THE MEMORIAL STONE** — below.
+
+## The memorial stone
+
+There is a stone in the park for **Charlie Kirk**, a real person: a political
+activist who co-founded Turning Point USA and was shot and killed on 10
+September 2025 while speaking at a university in Utah. He was thirty-one. The
+stone carries his name, his dates, and the line HE WAS ANSWERING A QUESTION.
+
+The square is deliberately the quietest place on the map — no critters, no
+butterflies, nothing fluttering over it. A candle in a jar that somebody keeps
+relighting, flowers along the foot of it, two young trees planted either side,
+and one more flower for every tribute you leave. Click the stone to read it;
+click it again to leave something of your own.
+
+The oak keeps exactly the rule he keeps everywhere else. He tells you what
+happened, with the date attached, when you get back under him. He does not tell
+you whether the man was right, because **that is not what a stone is for**. What
+he does say, out of nine hundred years and eleven wars, is this: *"You are
+allowed to argue with a man for years and still not want him dead."*
+
 ## Power, and who has it
 
-The sixth set is the political one, and it is the one only a tree that was here
+The seventh set is the political one, and it is the one only a tree that was here
 first can do: he watched the city take eight hundred acres by eminent domain in
 1856, and he watched **Seneca Village** — founded 1825, mostly Black
 landowners, three churches, a school, about two hundred and twenty-five people
@@ -176,7 +226,7 @@ are being.
 ## What you do
 
 - **Click the tree.** He never repeats himself — every line is drawn from a
-  shuffled bag of the subjects he has opened, so you hear all 233 of them before you hear any of them twice.
+  shuffled bag of the subjects he has opened, so you hear all 267 of them before you hear any of them twice.
   45 of those are war and politics — Gaza, Sudan, Ukraine, famine, displacement,
   ceasefires, aid convoys, press freedom, the arithmetic nobody should be doing
   — and another 66 are pop-culture references picked up by eavesdropping on the bench —
@@ -386,7 +436,7 @@ promise.
 
 **You cannot get in until you die.** Death is not the end of the collection. In heaven there is a marble gallery
 under vaulted arches, with a red carpet running away into the light and a
-plinth for every one of the **125 achievements** — each with its own carved
+plinth for every one of the **134 achievements** — each with its own carved
 trophy on a gold mount: a stone tissue for the sneeze, a leaf vault for the
 hoarder, a lighter sinking into water for the one who threw it away, a film
 reel for the whole canon. Chandeliers burn overhead, a skylight throws shafts

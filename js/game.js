@@ -19,6 +19,7 @@ const defaultSave = () => ({
   bag: false, items: {}, taken: {}, plans: {}, planDone: {},
   quests: {}, questDone: {}, unread: [], snails: {}, setSeen: {}, areasSeen: { oak: 1 },
   birds: {}, birdBook: false, metNoc: false,
+  tributes: 0, readStone: false, stoneHeard: 0, churchHeard: 0, archesHeard: 0, starHeard: 0,
   stats: { leavesTotal: 0, sneezes: 0, hugs: 0, waters: 0, plants: 0, trades: 0,
            sqChats: 0, rebirths: 0, flicks: 0, seasons: {}, boughtAll: false }
 });
@@ -69,8 +70,9 @@ const G = {
   inv: { leaves: 0, items: {} }, tools: [], holding: null, holdT: 0, critters: [],
   parkPending: 0, parkMotes: [], visitors: [], visitorTimer: 6, menu: null,
   // where you are standing, and the walk between places
-  area: 3, areaFade: 0, areaFadeDir: 0, areaTitle: 0, arrows: [], pickups: [],
+  area: 0, areaFade: 0,          // set to wherever the oak is, at boot areaFadeDir: 0, areaTitle: 0, arrows: [], pickups: [],
   suit: null, suitTimer: 40,
+  star: null, starTimer: 3, starIdx: 0,
   noc: { x: 0, y: GROUND_Y + 8, look: 0, talking: 0, thinking: 0 },
   asleep: false, wakeT: 0, squash: 0, squashV: 0,
   boardPop: 0, cottagePop: 0,
@@ -171,7 +173,7 @@ function checkSets() {
   save.setSeen[next.id] = 1; persist();
   checkAreas();
   const idx = DATA.sets.indexOf(next);
-  if (idx > 0) ACH('set' + Math.min(6, idx));
+  if (idx > 0) ACH('set' + Math.min(7, idx));
   if (DATA.sets.every(st => save.setSeen[st.id])) ACH('setall');
   if (!next.intro) return false;
   refillBag();
@@ -1050,6 +1052,10 @@ function bagItems() {
     out.push({ t: 'row', label: it.name, icon: it.icon, right: 'TAKE', act: () => holdFromBag(it.id) });
   }
 
+  for (const k of DATA.keepsakes) {
+    if (G.inv.items[k.id]) out.push({ t: 'row', label: k.name, icon: k.icon, dim: true });
+  }
+
   const unread = save.unread || [];
   for (const n of unread) {
     out.push({ t: 'row', label: 'Sealed parcel', icon: 'paper', right: 'OPEN', act: () => openPost(n, true) });
@@ -1487,6 +1493,28 @@ function drawIcon(c, id, size) {
     case 'tv':
       P(1, 3, 14, 10, '#3a3a44'); P(2, 4, 12, 8, '#6ba8d8'); P(2, 4, 12, 2, '#9fd0ee');
       P(6, 13, 4, 2, '#555'); P(3, 1, 1, 3, '#888'); P(12, 1, 1, 3, '#888'); break;
+    case 'glass':
+      P(2, 1, 12, 14, '#4a6a7a'); P(3, 2, 10, 12, '#7fb0c4');
+      for (let i = 0; i < 4; i++) P(4, 3 + i * 3, 8, 1, '#a8d4e4');
+      P(6, 0, 4, 2, '#ef5330'); dot(c, 8, 0, '#ffd24a'); break;
+    case 'clip':
+      P(2, 2, 12, 13, '#8a6141'); P(3, 4, 10, 10, '#f6ecd6'); P(6, 1, 4, 3, '#b0b6c0');
+      for (let i = 0; i < 3; i++) P(5, 6 + i * 3, 6, 1, '#5a4028'); break;
+    case 'stone':
+      P(3, 4, 10, 11, '#9aa0a8'); P(4, 5, 8, 9, '#b6bcc4'); P(3, 2, 10, 3, '#8a9098');
+      P(5, 7, 6, 1, '#6a7078'); P(6, 10, 4, 1, '#6a7078');
+      P(2, 14, 12, 1, '#4a7a32'); dot(c, 4, 13, '#ff5b78'); break;
+    case 'arch':
+      P(1, 12, 14, 3, '#c9453b');
+      for (const ax of [3, 8]) { P(ax, 4, 2, 8, '#ffc72c'); P(ax + 3, 4, 2, 8, '#ffc72c'); P(ax + 1, 3, 3, 2, '#ffc72c'); }
+      break;
+    case 'mcbag':
+      P(3, 4, 10, 11, '#c9a06a'); P(4, 5, 8, 9, '#e0b878'); P(3, 3, 10, 2, '#a8845a');
+      P(6, 7, 4, 4, '#c9453b'); P(7, 8, 2, 2, '#ffc72c'); break;
+    case 'flag':
+      P(3, 2, 1, 13, '#8a7a5a');
+      for (let i = 0; i < 6; i++) P(4, 2 + i, 9, 1, i % 2 ? '#f4f4f4' : '#c9453b');
+      P(4, 2, 4, 3, '#3c4a8a'); dot(c, 5, 3, '#fff'); break;
     case 'reel':
       pcircle(c, 8, 8, 7, '#2a2a34'); pcircle(c, 8, 8, 6, '#4a4a58'); pcircle(c, 8, 8, 2, '#ddd');
       for (let i = 0; i < 4; i++) { const A = i / 4 * 6.28 + .4; pcircle(c, 8 + Math.cos(A) * 3.6, 8 + Math.sin(A) * 3.6, 1.6, '#1e1e26'); } break;
@@ -2136,6 +2164,32 @@ function arriveArea() {
   seedCritters();
   if (areaId() === 'rink') { ACH('rink'); G.suitTimer = 3; }
   else G.suit = null;
+  if (areaId() === 'church') { ACH('church'); G.starTimer = 2.5; }
+  else G.star = null;
+  if (areaId() === 'arches') ACH('arches');
+  if (areaId() === 'stone') {
+    ACH('stone');
+    // he tells you about the stone himself, next time you are back under him
+    const seen = save.stoneHeard || 0;
+    if (seen < DATA.stoneLines.length) {
+      save.stoneHeard = seen + 1; persist();
+      tellHimLater(DATA.stoneLines[seen], 'sad');
+    }
+  }
+  if (areaId() === 'church') {
+    const seen = save.churchHeard || 0;
+    if (seen < DATA.churchLines.length) {
+      save.churchHeard = seen + 1; persist();
+      tellHimLater(DATA.churchLines[seen], 'think');
+    }
+  }
+  if (areaId() === 'arches') {
+    const seen = save.archesHeard || 0;
+    if (seen < DATA.archesLines.length) {
+      save.archesHeard = seen + 1; persist();
+      tellHimLater(DATA.archesLines[seen], 'happy');
+    }
+  }
   // a note to yourself about wherever you have just walked into, but only if
   // nothing has happened in the meantime
   const lines = DATA.areaLines[areaId() === 'lane' ? 'ramble' : areaId()];
@@ -2182,6 +2236,7 @@ function takePickup(p) {
     ACH('trade1');
     if (DATA.shop.every(it => has(it.id))) ACH('tradeall');
     pushNote('goal', p.name, 'It went into your bag.', p.id === 'lighter' ? 'flame' : 'reach', 'item:' + p.id);
+    if (p.id === 'mcbag') ACH('mcbag');
     if (p.id === 'lighter') {
       ACH('lighter');
       persist(); seedPickups(); refreshHUD();
@@ -2931,6 +2986,7 @@ function update(dt) {
 
     updateCritters(dt);
     updateSuit(dt);
+    updateStar(dt);
     if (atOak()) {
       updatePark(dt); updateVisitors(dt);
       // things that have just turned up are still bouncing
@@ -3641,6 +3697,7 @@ function drawSideArea() {
   const id = areaId();
   const lane = id === 'lane';
   const wild = lane || id === 'hollow' || id === 'seneca';
+  const city = id === 'church' || id === 'arches';
 
   SPR.drawBackdrop(dc, G);
   SPR.drawGround(dc, G);
@@ -3651,6 +3708,9 @@ function drawSideArea() {
   else if (id === 'mall') SPR.drawMallScene(dc, G);
   else if (id === 'terrace') SPR.drawTerraceScene(dc, G);
   else if (id === 'rink') SPR.drawRinkScene(dc, G);
+  else if (id === 'church') SPR.drawChurchScene(dc, G);
+  else if (id === 'arches') SPR.drawArchesScene(dc, G);
+  else if (id === 'stone') SPR.drawStoneScene(dc, G);
 
   if (wild) SPR.drawHedgerow(dc, G, lane ? W() * 0.22 : undefined);
   if (wild) SPR.drawCosyFoliage(dc, G, lane ? 707 : id === 'seneca' ? 1857 : 909,
@@ -3667,7 +3727,9 @@ function drawSideArea() {
   } else if (id === 'seneca') {
     SPR.drawSenecaScene(L, G);
   }
+  if (id === 'stone') SPR.drawStone(L, G, stoneX(), save.tributes || 0);
   if (G.suit && id === 'rink') SPR.drawSuit(L, G, G.suit);
+  if (G.star && id === 'church') SPR.drawStar(L, G, G.star);
   if (wild) SPR.drawCritters(L, G);
   SPR.layerEnd(dc, '#1a0f08');
 
@@ -3676,7 +3738,7 @@ function drawSideArea() {
   if (wild) SPR.drawForeground(dc, G);
   drawPickups(dc);
   if (wild) SPR.drawVines(dc, G, lane ? 61 : 71);
-  SPR.drawFrameFoliage(dc, G);
+  if (!city) SPR.drawFrameFoliage(dc, G);
   SPR.drawBokeh(dc, G);
   SPR.drawOverlay(dc, G);
 }
@@ -3715,6 +3777,105 @@ function updateSuit(dt) {
     tellHimLater(pool[Math.floor(Math.random() * pool.length)], 'think');
   }
   if (s.x < -40 || s.x > W() + 40) G.suit = null;
+}
+
+/* =========================================================================
+   THE STAR
+   He comes out of the glass church, sprints up the pavement, stops in front
+   of you and pitches. He is not a real person and he is not based on one
+   thing anybody actually said: he is a caricature written for this park.
+   ========================================================================= */
+function updateStar(dt) {
+  if (areaId() !== 'church' || G.dead) { G.star = null; return; }
+  if (!G.star) {
+    G.starTimer -= dt;
+    if (G.starTimer <= 0) {
+      G.starTimer = 40 + Math.random() * 30;
+      const dir = Math.random() < 0.5 ? 1 : -1;
+      G.star = { x: dir === 1 ? -26 : W() + 26, y: GROUND_Y + 18, dir,
+                 moving: true, stop: W() * (0.32 + Math.random() * 0.36),
+                 wait: 0, said: false, gave: false, t: 0 };
+      ACH('star');
+    }
+    return;
+  }
+  const s = G.star;
+  s.t += dt;
+  if (s.moving) {
+    s.x += s.dir * 74 * dt;                       // he runs. He always runs.
+    if ((s.dir === 1 && s.x >= s.stop) || (s.dir === -1 && s.x <= s.stop)) {
+      s.moving = false; s.wait = 9;
+      s.dir = s.x > W() / 2 ? -1 : 1;
+      if (!s.said) {
+        s.said = true;
+        sayStar();
+        sweat(s.x, s.y - 30);
+      }
+    }
+  } else {
+    s.wait -= dt;
+    if (s.wait <= 0) { s.moving = true; s.stop = s.dir === 1 ? W() + 40 : -40; }
+  }
+  if (s.x < -44 || s.x > W() + 44) G.star = null;
+}
+
+function sayStar() {
+  const pool = DATA.starLines;
+  const i = G.starIdx % pool.length;
+  say('THE STAR', pool[i], null, 'serious');
+  G.starIdx++;
+  save.starHeard = Math.max(save.starHeard || 0, G.starIdx);
+  if (save.starHeard >= pool.length) ACH('star5');
+  persist();
+  // and the oak has something to say about him when you get back
+  if (Math.random() < 0.5) {
+    const a = DATA.starOakAsides[Math.floor(Math.random() * DATA.starOakAsides.length)];
+    tellHimLater(a, 'think');
+  }
+}
+
+function takeClipboard() {
+  const s = G.star;
+  if (!s || s.gave) return;
+  s.gave = true;
+  ACH('clipboard');
+  SFX.pickup();
+  pop('LEVEL 1', s.x, s.y - 48, '#ffd24a');
+  ring(s.x, s.y - 20, '#ffd24a', 1.1);
+  say('THE STAR', "Wonderful. You are level one. Do not lose that. There is no way to lose that.", null, 'serious');
+  tellHimLater("You took the clipboard. I did say. It is only paper. It is never only paper.", 'sad');
+}
+
+function starAt(x, y) {
+  const s = G.star;
+  if (!s) return false;
+  return x > s.x - 12 && x < s.x + 17 && y > s.y - 36 && y < s.y + 4;
+}
+
+function stoneX() { return Math.round(W() * 0.42); }
+
+function stoneAt(x, y) {
+  if (areaId() !== 'stone') return false;
+  const cx = stoneX();
+  return x > cx - 48 && x < cx + 48 && y > GROUND_Y - 62 && y < GROUND_Y + 2;
+}
+
+/* something of your own, left at the foot of it */
+function leaveTribute() {
+  if (G.inv.leaves < 1) {
+    sayYou('You have nothing on you to leave. There are leaves all over the park.');
+    return;
+  }
+  G.inv.leaves--;
+  save.tributes = (save.tributes || 0) + 1;
+  persist(); refreshHUD();
+  SFX.pickup();
+  ring(stoneX() + 6, GROUND_Y - 6, '#ff5b78', 1.0);
+  spawnParticles('heart', stoneX(), GROUND_Y - 18, 5);
+  ACH('tribute');
+  const t = DATA.stoneTribute[(save.tributes - 1) % DATA.stoneTribute.length];
+  tellHimLater(t, 'sad');
+  sayYou('You put it with the others.');
 }
 
 function suitAt(x, y) {
@@ -3999,6 +4160,8 @@ function hitTest(x, y) {
     if (areaId() === 'lane' && Math.abs(x - G.noc.x) < 14 && y > G.noc.y - 40 && y < G.noc.y + 4)
       return { kind: 'noc', i: -1 };
     if (suitAt(x, y)) return { kind: 'suit', i: -1 };
+    if (starAt(x, y)) return { kind: 'star', i: -1 };
+    if (stoneAt(x, y)) return { kind: 'stone', i: -1 };
     return { kind: null, i: -1 };
   }
 
@@ -4355,6 +4518,22 @@ function onPress(ev) {
   if (h.kind === 'pickup') { takePickup(h.p); return; }
   if (h.kind === 'noc') { SFX.click(); openChat('noc'); return; }
   if (h.kind === 'suit') { SFX.click(); sayYou('A dark coat, a long red tie, two people keeping pace with him.'); return; }
+  if (h.kind === 'star') {
+    SFX.click();
+    const s = G.star;
+    if (s && !s.moving && G.starIdx > 0 && !s.gave && (G.starIdx % DATA.starLines.length) === 0) takeClipboard();
+    else { s.moving = false; s.wait = Math.max(s.wait, 7); sayStar(); }
+    return;
+  }
+  if (h.kind === 'stone') {
+    SFX.click();
+    if (!save.readStone) {
+      save.readStone = true; persist();
+      const S = DATA.stone;
+      sayYou(S.name + '. ' + S.dates + '. ' + S.plaque.toLowerCase().replace(/^./, ch => ch.toUpperCase()));
+    } else leaveTribute();
+    return;
+  }
   if (h.kind === 'squirrel') { clickSquirrel(); return; }
   if (h.kind === 'part') {
     grab = { x: p.x, lastX: p.x, moved: 0, t: 0 };
@@ -4471,6 +4650,8 @@ seedCritters();
 buildHall();
 for (const id in (save.items || {})) G.inv.items[id] = true;
 G.hasBag = !!save.bag;
+// you always start the game standing under him, wherever he is on the map
+G.area = Math.max(0, AREAS.findIndex(a => a.id === 'oak'));
 G.areaNow = areaId();
 seedPickups();
 refreshArrows();
@@ -4534,6 +4715,7 @@ if (/[?&]debug/.test(location.search)) {
                  skipAll: () => { if (G.cine) { G.cine.i = G.cine.stages.length - 1; skipStage(); } },
                  parkMargin, parkIncome, parkFill, talkSignBox, pressTalkSign, heardTotal, openSets, nextSet, openTopics,
                  unlockedTags, setHeard, setTotal, checkSets, talkToTree, openMap, areaOpen, areaWants, updateSuit, checkAreas,
+                 updateStar, sayStar, takeClipboard, leaveTribute, starAt, stoneAt, stoneX, camRect, toLogical,
                  openBirdDiary, openJobs, openPlans, sayYou, tellHimLater, birdsHere,
                  startTyping, stopTyping, typeBarBox, typeBarShown, sendChat, chatPartner,
                  seedCritters, touchCritter, refreshPanel, boardHere, cottageHere, puff, ring, pop, squash, PANEL, openPanel, closePanel, panelIs, panelOpen, openQuestBoard, openJournal, acceptQuest, checkQuests, questStatus, plotPos, hitTest,
