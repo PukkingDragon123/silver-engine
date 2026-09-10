@@ -2984,7 +2984,7 @@ function drawZzz(c, g, x, y, sc) {
 }
 
 /* -------------------------------------------------------------------------
-   NOC — lamp-keeper. Long coat, wide hat, one lantern, no shop.
+   PUKKIRK — lamp-keeper. Long coat, wide hat, one lantern, no shop.
    ------------------------------------------------------------------------- */
 function drawNoc(c, g, n) {
   const dk = darkness(g.timeOfDay);
@@ -3057,7 +3057,7 @@ function drawNoc(c, g, n) {
   }
 }
 
-/* Noc's camp: a stool, a kettle on a ring, a crate of nothing for sale */
+/* Pukkirk's camp: a stool, a kettle on a ring, a crate of nothing for sale */
 function drawNocCamp(c, g, x, y) {
   const dk = darkness(g.timeOfDay);
   const sh = col => mix(col, '#0a1226', dk * 0.72);
@@ -3929,6 +3929,113 @@ function drawArchesScene(c, g) {
   px(c, 9, GROUND_Y - 13, 10, 2, sh('#5e6e5e'));
 }
 
+/* =========================================================================
+   THE PARKING LOT
+   Forty painted bays, a trolley nobody took back, two lamp posts, and — on a
+   good day — six folding tables with somebody's tomatoes on them.
+   ========================================================================= */
+function drawLotScene(c, g) {
+  const dk = darkness(g.timeOfDay);
+  const sh = col => mix(col, '#0a1226', dk * 0.7);
+  const night = dk > 0.4;
+  const market = (g.season === 'summer' || g.season === 'spring');
+
+  // low buildings and a chainlink fence at the back
+  for (let i = 0; i < 5; i++) {
+    const bx = (i * 67) % (W + 40) - 24, bw = 34 + (i % 3) * 16;
+    const bh = 20 + ((i * 23) % 22);
+    px(c, bx, GROUND_Y - 40 - bh, bw, bh, sh(mix('#7a6a60', '#94847a', (i % 3) / 3)));
+    px(c, bx, GROUND_Y - 40 - bh, bw, 2, sh('#a89888'));
+    for (let wx = 4; wx < bw - 5; wx += 9)
+      px(c, bx + wx, GROUND_Y - 40 - bh + 6, 5, 5, night ? '#ffe9a0' : sh('#4e433c'));
+  }
+  // the fence
+  for (let x = 0; x < W; x += 4) px(c, x, GROUND_Y - 40, 1, 12, sh('#8a9098'));
+  for (let y = GROUND_Y - 40; y < GROUND_Y - 28; y += 4) px(c, 0, y, W, 1, sh('#8a9098'));
+  px(c, 0, GROUND_Y - 41, W, 2, sh('#6a7078'));
+
+  // the tarmac
+  px(c, 0, GROUND_Y - 28, W, 28, sh('#4a4a52'));
+  px(c, 0, GROUND_Y - 28, W, 2, sh('#5a5a64'));
+  px(c, 0, GROUND_Y, W, H, sh('#42424a'));
+  // patches and repairs, because tarmac is never one colour
+  const rnd = mulberry(404);
+  for (let i = 0; i < 16; i++) {
+    const x = rnd() * W, y = GROUND_Y - 26 + rnd() * (H - GROUND_Y + 26);
+    px(c, x, y, 8 + rnd() * 20, 2 + rnd() * 3, sh(rnd() < 0.5 ? '#3e3e46' : '#52525c'));
+  }
+  // the painted bays, in two rows, in perspective
+  for (let i = -1; i < 14; i++) {
+    px(c, i * 22 + 4, GROUND_Y - 26, 1, 9, sh('#c8c04a'));
+    px(c, i * 26 + 10, GROUND_Y - 6, 2, 13, sh('#d8d05a'));
+  }
+  px(c, 0, GROUND_Y - 17, W, 1, sh('#c8c04a'));
+
+  // one crack, one weed. The weed is winning.
+  px(c, Math.round(W * 0.62), GROUND_Y - 2, 14, 1, sh('#33333a'));
+  px(c, Math.round(W * 0.66), GROUND_Y - 6, 1, 5, sh('#4a8a30'));
+  pcircle(c, Math.round(W * 0.66), GROUND_Y - 7, 2.2, sh('#6cc73f'));
+  dot(c, Math.round(W * 0.66) + 1, GROUND_Y - 8, sh('#ffd24a'));
+
+  // two lamp posts
+  for (const lx of [Math.round(W * 0.2), Math.round(W * 0.8)]) {
+    px(c, lx, GROUND_Y - 62, 2, 36, sh('#6a7078'));
+    px(c, lx - 4, GROUND_Y - 64, 10, 3, sh('#8a9098'));
+    px(c, lx - 3, GROUND_Y - 61, 8, 2, night ? '#ffe9a0' : sh('#c8ccd0'));
+    if (night) glow(c, lx + 1, GROUND_Y - 58, 30, 'rgba(255,225,150,0.13)');
+  }
+
+  // parked cars in the back row
+  for (let i = 0; i < 5; i++) {
+    const cx = 16 + i * Math.max(44, (W - 40) / 5);
+    if (cx > W - 14) break;
+    const body = sh(['#c9453b', '#3a5a8a', '#e8b23a', '#4a7a52', '#b6bcc4'][i % 5]);
+    const cy = GROUND_Y - 18;
+    px(c, cx - 11, cy - 5, 22, 6, body);
+    px(c, cx - 6, cy - 9, 12, 5, body);
+    px(c, cx - 5, cy - 8, 10, 3, sh('#8fb8c9'));
+    px(c, cx - 11, cy - 3, 22, 2, sh('#2a2a30'));
+    pcircle(c, cx - 6, cy + 1, 2, sh('#1a1a20'));
+    pcircle(c, cx + 6, cy + 1, 2, sh('#1a1a20'));
+  }
+
+  // the trolley nobody took back
+  const tx = Math.round(W * 0.3);
+  px(c, tx - 7, GROUND_Y - 12, 14, 9, sh('#b6bcc4'));
+  for (let i = 0; i < 4; i++) px(c, tx - 7, GROUND_Y - 12 + i * 3, 14, 1, sh('#8a9098'));
+  for (let i = 0; i < 3; i++) px(c, tx - 5 + i * 5, GROUND_Y - 12, 1, 9, sh('#8a9098'));
+  px(c, tx + 7, GROUND_Y - 15, 2, 6, sh('#8a9098'));
+  pcircle(c, tx - 5, GROUND_Y - 2, 1.6, sh('#3a3a42'));
+  pcircle(c, tx + 5, GROUND_Y - 2, 1.6, sh('#3a3a42'));
+
+  // and on a good day, the folding tables
+  if (market) {
+    for (let i = 0; i < 3; i++) {
+      const mx = Math.round(W * 0.44) + i * 34;
+      if (mx > W - 20) break;
+      px(c, mx - 13, GROUND_Y - 9, 26, 3, sh('#d8cdb0'));
+      px(c, mx - 11, GROUND_Y - 6, 2, 7, sh('#9a9088'));
+      px(c, mx + 9, GROUND_Y - 6, 2, 7, sh('#9a9088'));
+      // what is on the table
+      for (let k = 0; k < 5; k++) {
+        pcircle(c, mx - 10 + k * 5, GROUND_Y - 11, 1.8,
+                sh(['#c9453b', '#e8b23a', '#6cc73f', '#c9453b', '#e07a2a'][k]));
+      }
+      // a striped awning over the middle one
+      if (i === 1) {
+        for (let k = 0; k < 26; k++)
+          px(c, mx - 13 + k, GROUND_Y - 30, 1, 3, sh(k % 4 < 2 ? '#c9453b' : '#f4f4f4'));
+        px(c, mx - 13, GROUND_Y - 30, 1, 21, sh('#9a9088'));
+        px(c, mx + 12, GROUND_Y - 30, 1, 21, sh('#9a9088'));
+      }
+      // and somebody sitting behind it in a folding chair
+      px(c, mx + 3, GROUND_Y - 20, 5, 11, sh(['#4a6a9a', '#7a4a6a', '#4a7a52'][i]));
+      pcircle(c, mx + 5, GROUND_Y - 23, 2.6, sh('#e0a878'));
+      px(c, mx + 2, GROUND_Y - 26, 7, 2, sh('#3a2a1a'));
+    }
+  }
+}
+
 window.SPR = {
   get W() { return W; }, H, GROUND_Y, get CX() { return CX; }, setLogicalWidth, layerBegin, layerEnd, outlinedSprite, makeCanvas, CANOPY, TWIGS, SEASON, SEASON_NAMES, TROPHY_ART, HALL,
   px, dot, pcircle, pellipse, glow, mix, mulberry, star, quant,
@@ -3943,7 +4050,7 @@ window.SPR = {
   drawGarden, gardenSlotPos, gardenWidth, GARDEN, drawCloudTunnel, drawLetterbox, drawRays, drawGrowingTree, flame,
   drawZzz, drawGear, drawSnailParcel, drawBird, drawBirdPortrait, drawWordPop, drawImpactLines, squashTransform, drawScrollFrame, drawSheet, drawRod, drawSeal, PAPER, snailSkin, drawShell, SNAIL_SHELLS, SNAIL_PATTERNS, drawNoc, drawNocCamp, drawTravelArrow, travelArrowBox, drawAreaTitle, drawPickup,
   drawSenecaScene, drawBridgeScene, drawMallScene, drawTerraceScene, drawRinkScene, drawSuit, drawStillWater,
-  drawChurchScene, drawStar, drawStoneScene, drawStone, drawArchesScene,
+  drawChurchScene, drawStar, drawStoneScene, drawStone, drawArchesScene, drawLotScene,
   drawCosyFoliage, drawFallenLog, drawStandingStone, drawVines, drawHedgerow, drawLaneRoad,
   drawBackpackSprite, drawBagButton
 };

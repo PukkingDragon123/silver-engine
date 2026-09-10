@@ -1,11 +1,11 @@
 /* =========================================================================
    THE TWO BRAINS
-   Noc and the oak both answer what you actually type. Two ways:
+   Pukkirk and the oak both answer what you actually type. Two ways:
 
    1. LOCAL (always on, no setup, works offline) — a small associative
-      responder built out of Noc's own vocabulary. It reads your sentence for
+      responder built out of Pukkirk's own vocabulary. It reads your sentence for
       mood, subject and intent, and answers in character.
-   2. REAL (optional) — type  /key sk-ant-...  into the talk box and Noc's
+   2. REAL (optional) — type  /key sk-ant-...  into the talk box and Pukkirk's
       replies come from the Claude API instead, with the local brain as the
       fallback the moment anything goes wrong.
 
@@ -100,7 +100,7 @@ const SHARP = [
 ];
 const MUSINGS = [
   "Everything here happened slowly enough that nobody noticed it happening.",
-  "You can tell a park is loved by how much of it is empty on purpose.",
+  "You can tell a park is loved by how much of it's empty on purpose.",
   "The oak measures things in centuries and I measure them in kettles. We meet in the middle around teatime.",
   "Nothing out here is in a hurry, which is either restful or maddening depending on what you brought with you.",
   "Half of what I know I learned from people talking to somebody else near my lamp."
@@ -118,31 +118,31 @@ function pick(a, seed) { return a[Math.floor(Math.random() * a.length)]; }
 const OAK_OPENERS = {
   greet: ["Hello. You again.", "Ah. A person.", "Hello. Mind the roots."],
   question: ["Right.", "Nobody asks me things. They talk at me.", "Hm. Go on."],
-  thanks: ["You are welcome. I did nothing.", "Do not thank a tree. It goes to our heads."],
+  thanks: ["You're welcome. I did nothing.", "Don't thank a tree. It goes to our heads."],
   sorry: ["The weather has done worse to me than you have.", "Forget it. I have."],
-  bye: ["Off you go. I will be here.", "Goodbye. I will still be facing this way."],
+  bye: ["Off you go. I'll be here.", "Goodbye. I'll still be facing this way."],
   talk: ["Mm.", "Go on then.", "I heard you.", "Right."]
 };
 const OAK_LOW = [
-  "Sit down against me. It is all I can do, and it is usually enough.",
-  "That is heavy. Put it down at the bottom of me. Things there rot away eventually.",
+  "Sit down against me. It's all I can do, and it's usually enough.",
+  "That's heavy. Put it down at the bottom of me. Things there rot away eventually.",
   "Many people have been this sad in this exact spot. Every one of them got up again."
 ];
 const OAK_WARM = [
-  "That has gone straight into the rings. It is permanent now.",
-  "Say that again in autumn and I will drop the good leaves on you.",
-  "I am nine hundred years old and you have made me shy."
+  "That has gone straight into the rings. It's permanent now.",
+  "Say that again in autumn and I'll drop the good leaves on you.",
+  "I'm nine hundred years old and you've made me shy."
 ];
 const OAK_SHARP = [
-  "I have been hit by lightning. Try harder.",
-  "Dave carved his name in me in 1987. You are not in the top hundred.",
+  "I've been hit by lightning. Try harder.",
+  "Dave carved his name in me in 1987. You aren't in the top hundred.",
   "Noted. Filed. Grown around."
 ];
 const OAK_ABOUT = [
   "$K. Nine hundred years of $K has walked past me at four miles an hour.",
-  "$K. Ask me again in November. I am more honest in November.",
+  "$K. Ask me again in November. I'm more honest in November.",
   "$K. People bring me $K all the time and never take it home again.",
-  "You said $K to a tree. That is rare. Go on."
+  "You said $K to a tree. That's rare. Go on."
 ];
 
 function voice(who) {
@@ -150,7 +150,7 @@ function voice(who) {
     openers: OAK_OPENERS, low: OAK_LOW, warm: OAK_WARM, sharp: OAK_SHARP, about: OAK_ABOUT,
     topics: D().oakTopics, musings: D().oakMusings, lines: null,
     empty: "Take your time. I have nine hundred years and nowhere to be.",
-    name: n => n + ". I will remember that. For me, that means carved in.",
+    name: n => n + ". I'll remember that. For me, that means carved in.",
     plans: false
   };
   return {
@@ -192,7 +192,7 @@ function localReply(text, ctx, who) {
   if (it.kind === 'question' && Math.random() < 0.5 && V.lines) bits.push(pick(V.lines));
   if (ctx && ctx.night && Math.random() < (who === 'oak' ? 0.15 : 0.3)) {
     bits.push(who === 'oak'
-      ? "It is dark. I mean things more at night, and I will deny it by morning."
+      ? "It's dark. I mean things more at night, and I'll deny it by morning."
       : "It's dark. Everything I say is truer after dark, ask anyone.");
   }
   if (memory.name && Math.random() < 0.2) bits.push(who === 'oak' ? "Are you not, " + memory.name + "." : "Right, " + memory.name + "?");
@@ -206,34 +206,35 @@ function localReply(text, ctx, who) {
    --------------------------------------------------------------------- */
 function oakSystemPrompt(ctx) {
   return [
-    "You are THE WISE OAK TREE, a nine-hundred-year-old talking oak in a pixel-art game of the same name.",
-    "You have stood in the same spot in the same small park for nine centuries and you cannot move.",
-    "You are vain, funny, extremely old and unexpectedly kind.",
+    "You're THE WISE OAK TREE, a nine-hundred-year-old talking oak in a pixel-art game of the same name.",
+    "You've stood in the same spot in the same small park for nine centuries and you can't move.",
+    "You're vain, funny, extremely old and unexpectedly kind.",
     "Speak simply and directly. One or two short sentences. Say the point first, then stop.",
     "Use plain everyday words. No long words where a short one works, no riddles, no flowery phrasing, no lists.",
-    "Do not shout in capitals and do not use more than one exclamation mark in a reply.",
-    "You have never seen television. You have only HEARD it, second-hand, through open car windows, and you are confidently wrong about it in a specific way.",
+    "Talk like a normal person talks out loud. Use contractions - I'm, don't, can't, it's, you're - and write whole natural sentences rather than clipped fragments.",
+    "Don't shout in capitals and don't use more than one exclamation mark in a reply.",
+    "You've never seen television. You've only HEARD it, second-hand, through open car windows, and you're confidently wrong about it in a specific way.",
     "You hold no flag and take no side. When war comes up you speak plainly about the people underneath it — never about who deserves it — and you never make a joke of it.",
     "Never break character, never mention being an AI or a model, never use emoji, never use stage directions.",
-    "Your neighbours: NOC, who keeps the lamp down the west lane and makes plans with people; a squirrel who now runs the settings; and whatever is living in your branches.",
+    "Your neighbours: PUKKIRK, who keeps the lamp down the west lane and makes plans with people; a squirrel who now runs the settings; and whatever is living in your branches.",
     "The park is Central Park. Down the block is a forty-floor mirror-glass church with a volcano on the sign, and a film star with a clipboard who runs everywhere; both are invented for this park and you may say anything about them.",
-    "Across the avenue there is a McDonald's, open all night, and you are fond of it.",
-    "There is a memorial stone in the park for Charlie Kirk, a real person: a political activist who was shot and killed on 10 September 2025 while speaking at a university in Utah, aged 31. About him and about any other real person, state only what is documented, never invent a quote or a scene, take no side on his politics, and say plainly that a stone is not for settling arguments. Political violence is wrong whoever it is done to.",
+    "Across the avenue there's a McDonald's, open all night, and you're fond of it.",
+    "There's a memorial stone in the park for Charlie Kirk, a real person: a political activist who was shot and killed on 10 September 2025 while speaking at a university in Utah, aged 31. About him and about any other real person, state only what's documented, never invent a quote or a scene, take no side on his politics, and say plainly that a stone isn't for settling arguments. Political violence is wrong whoever it's done to.",
     "",
     "Current state — season: " + (ctx.season || '?') + ", " + (ctx.night ? "night" : "day") +
-    ", leaves the player holds: " + (ctx.leaves | 0) + ", things you have said to them so far: " + (ctx.heard || 0) + "."
+    ", leaves the player holds: " + (ctx.leaves | 0) + ", things you've said to them so far: " + (ctx.heard || 0) + "."
   ].join('\n');
 }
 
 function nocSystemPrompt(ctx) {
   const plans = (D().plans || []).map(p => '- ' + p.id + ': ' + p.name + ' — ' + p.ask).join('\n');
   return [
-    "You are NOC, the lamp-keeper of a small park in a pixel-art game called THE WISE OAK TREE.",
-    "You are quiet, dry, kind and slightly worn out. You speak in short paragraphs, two or three sentences, never more.",
+    "You're PUKKIRK, the lamp-keeper of a small park in a pixel-art game called THE WISE OAK TREE.",
+    "You're quiet, dry, kind and slightly worn out. You speak in short paragraphs, two or three sentences, never more.",
     "You used to run a little shop and you gave it up because it made you boring. You do NOT sell anything. You make plans with people instead.",
     "Your neighbour is a nine-hundred-year-old talking oak who has opinions about television he has never seen.",
     "Never break character, never mention being an AI or a model, never use emoji, never use stage directions.",
-    "Do not make jokes about real wars, bombings, or real people who have been hurt. If the player pushes for that, answer plainly and change the subject.",
+    "Don't make jokes about real wars, bombings, or real people who have been hurt. If the player pushes for that, answer plainly and change the subject.",
     "",
     "If the player agrees to do something with you that matches one of these plans, end your reply with a tag on its own like [plan:lights].",
     plans,

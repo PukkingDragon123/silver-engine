@@ -23,13 +23,13 @@ arrives with a puff of dust and a bounce.
 **The park is Central Park.** He is standing in the middle of eight hundred and
 forty-three acres of Manhattan, and he was standing there before any of it was
 a park. Signposts at the edges of the frame walk you west and east through
-**eleven places**, and most of them are shut when you arrive:
+**twelve places**, and most of them are shut when you arrive:
 
 | | Place | Opens on |
 | --- | --- | --- |
 | 1 | The Glass Church | 44 things heard |
 | 2 | Seneca Village | 72 things heard |
-| 3 | The Ramble | open — **Noc** keeps the lamp here |
+| 3 | The Ramble | open — **Pukkirk** keeps the lamp here |
 | 4 | Bow Bridge | finding something to carry things in |
 | 5 | **The Great Oak** | you start here |
 | 6 | The Mall | 8 things heard |
@@ -38,6 +38,7 @@ a park. Signposts at the edges of the frame walk you west and east through
 | 9 | Bethesda Terrace | one job finished |
 | 10 | The Wollman Rink | 34 things heard |
 | 11 | The Golden Arches | finding something to carry things in |
+| 12 | The Parking Lot | two jobs finished |
 
 Nothing is bought: every gate opens on something you did, and almost all of it
 is listening. There is a map scroll in your backpack showing what is open, what
@@ -81,7 +82,7 @@ no log: a strip of paper sits at the bottom of the world whenever there is
 somebody in front of you, and you type on it. Your words go up in your own
 balloon, his answer comes back in his, and the screen never changes. Tapping
 **TALK TO HIM** and typing a question are the same act, equally available. When
-Noc turns something you said into a plan, agreeing to it is just one of the
+Pukkirk turns something you said into a plan, agreeing to it is just one of the
 replies under the balloon.
 
 ## The birds
@@ -91,17 +92,35 @@ beak, and each turning up only where and when it should — the mallards and
 egrets at the water, pigeons on the Mall, hawks over the north woods, and a
 screech owl that only appears after dark. Greet one and it goes in the book.
 
-**Noc gives you the book.** Come back to the Ramble a second time and he hands
+**Pukkirk gives you the book.** Come back to the Ramble a second time and he hands
 over the bird diary he has kept for forty years, and after that every new
-species arrives as post. Filling it is its own ending; Noc never got past nine.
+species arrives as post. Filling it is its own ending; Pukkirk never got past nine.
+
+## What to do next
+
+There is always one line on screen, nailed up top-left as a little wooden tag:
+**NEXT: FIND THE BACKPACK**, or whatever it actually is right now. Tap the tag
+and the whole list unrolls as a scroll — nineteen goals in order, the current
+one at the top with a sentence saying exactly where to go, and everything you
+have already done marked DONE. It is also a row in your backpack. The list is
+computed from your save every frame, so it is never stale and it never asks you
+for something you have already done.
+
+Snails carry every trophy in this game, and it used to be possible to miss
+that. Now the one in front wears a **TAP TO OPEN** tag joined to him by a
+dotted line and an arrowhead, and it stays up for as long as he is carrying
+something you have not opened.
 
 ## Talking is the game
 
-**He says things plainly.** Every one of his 267 lines is written to be short
-and direct: one or two sentences, ordinary words, the point first. He is still
-vain and dry and nine hundred years old, he just does not make you work for it.
-The live typed conversation is held to the same rule, whether it is answered by
-the local brain or by the API.
+**He says things plainly, and he talks like a person.** Every one of his 267
+lines is short and direct: one or two sentences, ordinary words, the point
+first. He also uses contractions — *I'm, don't, can't, it's, you're* — and
+speaks in whole natural sentences rather than clipped fragments, which is most
+of the difference between a character and a monument. He is still vain and dry
+and nine hundred years old; he just sounds like somebody talking. The live
+typed conversation is held to the same rule, whether it is answered by the
+local brain or by the API.
 
 **Everything else in the park is a side effect of keeping him talking.** There
 is one thumb-sized wooden sign under him and it always says the thing you can
@@ -160,6 +179,10 @@ Three of the eleven places on the map came with that set:
   level one of forty. He is invented for this park and the oak says so out
   loud — *"He is not real. I want to be clear about that, because he is
   extremely convincing and he is not real."*
+- **THE PARKING LOT** — forty painted bays, a chainlink fence, two lamp posts,
+  a trolley nobody took back, and one weed coming up through a crack that he is
+  openly betting on. In spring and summer six folding tables go out and somebody
+  sells tomatoes off them, which he thinks is the best thing in the country.
 - **THE MEMORIAL STONE** — below.
 
 ## The memorial stone
@@ -281,12 +304,12 @@ Six of them, all letterboxed and captioned, all skippable with a click.
 
 ## Talking in your own words
 
-**Both of them will answer anything you type.** Click Noc, or press `T`, and a
-scroll unrolls in front of whoever is standing there — Noc in the lane, the
+**Both of them will answer anything you type.** Click Pukkirk, or press `T`, and a
+scroll unrolls in front of whoever is standing there — Pukkirk in the lane, the
 oak everywhere else. You type straight onto the paper. The oak also offers it as a reply option every time he
 speaks: *"let me say something myself"*.
 
-They are not the same voice. Noc is quiet and consoling and turns what you say
+They are not the same voice. Pukkirk is quiet and consoling and turns what you say
 into plans. The oak is nine hundred years old, vain, and has never seen a
 single frame of television but will tell you about it anyway.
 
@@ -311,7 +334,7 @@ own. Keep all seven and there is an ending in it.
 
 There is no shop and nothing to buy. Everything in the park arrived because
 somebody asked you for something and you did it. The noticeboard is **the
-board**: 14 jobs, seven from the oak and seven from Noc, each one a thing you
+board**: 14 jobs, seven from the oak and seven from Pukkirk, each one a thing you
 can only finish by playing — hear ten different things out of him, water him
 three times, plant two of his acorns, say hello to four living creatures, stay
 long enough to see all four seasons, get three visitors to sit down and leave
@@ -383,7 +406,7 @@ its parcel again.
 ## The settings, and the credits
 
 There is still no interface for either. **The squirrel** used to run an
-unlicensed goods operation out of a hollow; Noc put him out of business by
+unlicensed goods operation out of a hollow; Pukkirk put him out of business by
 being nice to people, so he carries a gear now and keeps the settings — sound,
 the API key, the trophy room, and the erase button. Click him.
 
@@ -396,7 +419,7 @@ and it sparkles. Catch it.
 There is no shop, so there is nothing to buy. There is a **canvas backpack**
 lying against a stone in the east hollow, and until you find it you cannot
 carry anything at all. Once you have it, a bag appears in the bottom-left
-corner (or press `B`). Everything you pick up and everything Noc gives you
+corner (or press `B`). Everything you pick up and everything Pukkirk gives you
 lives in it, along with your leaves and the plans you have made. Take a thing
 out of the bag and you are holding it; drop it on him to use it.
 
@@ -429,14 +452,14 @@ leaves gather themselves; the gate doubles the visitors; the sign and the
 compost heap multiply the lot.
 
 None of it is for sale. All of it comes off the board. Leaves are still a
-currency, but the only person who takes them is Noc, and all he sells is a
+currency, but the only person who takes them is Pukkirk, and all he sells is a
 promise.
 
 ## The Hall of Trophies
 
 **You cannot get in until you die.** Death is not the end of the collection. In heaven there is a marble gallery
 under vaulted arches, with a red carpet running away into the light and a
-plinth for every one of the **134 achievements** — each with its own carved
+plinth for every one of the **137 achievements** — each with its own carved
 trophy on a gold mount: a stone tissue for the sneeze, a leaf vault for the
 hoarder, a lighter sinking into water for the one who threw it away, a film
 reel for the whole canon. Chandeliers burn overhead, a skylight throws shafts
@@ -475,7 +498,7 @@ to forget you.
 | Click a snail | Open the post it is carrying |
 | Click the noticeboard | The board — take a job |
 | Click a signpost, or `←` / `→` | Walk west to the lane or east to the hollow |
-| Click Noc, or `T` | Open the talk box — Noc in the lane, the oak elsewhere |
+| Click Pukkirk, or `T` | Open the talk box — Pukkirk in the lane, the oak elsewhere |
 | Click the bag, or `B` | Open the backpack |
 | Click a thing lying in the grass | Put it in your bag |
 | `Space` | Talk / skip |

@@ -19,7 +19,8 @@ const defaultSave = () => ({
   bag: false, items: {}, taken: {}, plans: {}, planDone: {},
   quests: {}, questDone: {}, unread: [], snails: {}, setSeen: {}, areasSeen: { oak: 1 },
   birds: {}, birdBook: false, metNoc: false,
-  tributes: 0, readStone: false, stoneHeard: 0, churchHeard: 0, archesHeard: 0, starHeard: 0,
+  tributes: 0, readStone: false, stoneHeard: 0, churchHeard: 0, archesHeard: 0, starHeard: 0, lotHeard: 0,
+  openedParcels: 0,
   stats: { leavesTotal: 0, sneezes: 0, hugs: 0, waters: 0, plants: 0, trades: 0,
            sqChats: 0, rebirths: 0, flicks: 0, seasons: {}, boughtAll: false }
 });
@@ -76,7 +77,7 @@ const G = {
   noc: { x: 0, y: GROUND_Y + 8, look: 0, talking: 0, thinking: 0 },
   asleep: false, wakeT: 0, squash: 0, squashV: 0,
   boardPop: 0, cottagePop: 0,
-  hasBag: false, bagOpen: false, bagHover: false, bagBadge: 0, talkHover: false, typing: false,
+  hasBag: false, bagOpen: false, bagHover: false, bagBadge: 0, talkHover: false, goalHover: false, typing: false,
   activePlan: null, chatWho: null, veil: 0, toTell: [],
   hintText: '', hintShown: false, hintCine: false,
   sessionTime: 0, sinceTreeClick: 0, spamCount: 0, spamTimer: 0,
@@ -646,9 +647,10 @@ function updateToasts(dt) {
     const sn = snails[i];
     sn.life += dt;
     sn.x += sn.speed * dt;
-    // a nudge upward when he first appears, so you know to stop him
-    if (!sn.opened && sn.life > 0.6 && sn.life < 4.2) sn.hint = Math.min(1, sn.hint + dt * 2);
-    else sn.hint = Math.max(0, sn.hint - dt * 2);
+    // the label stays up the whole time he is carrying something unopened,
+    // because a hint you can miss is not a hint
+    if (!sn.opened && sn.life > 0.5) sn.hint = Math.min(1, sn.hint + dt * 3);
+    else sn.hint = Math.max(0, sn.hint - dt * 3);
     if (sn.x > W() + 50) {
       if (!sn.opened) {
         // he got away with it. It goes in the bag as unopened post.
@@ -992,6 +994,7 @@ let lastNote = null;
 function openPost(note, fromBag) {
   if (!note) return;
   ACH('openpost');
+  if (fromBag) { save.openedParcels = (save.openedParcels || 0) + 1; checkGoals(); }
   lastNote = note;
   if (save.unread) {
     save.unread = save.unread.filter(u => u.id !== note.id);
@@ -1062,6 +1065,9 @@ function bagItems() {
   }
 
   out.push({ t: 'rule' });
+  const gl = goalList();
+  out.push({ t: 'row', icon: 'flag', label: 'What to do next',
+             right: gl.filter(x => x.done).length + '/' + gl.length, act: openGoals });
   out.push({ t: 'row', icon: 'globe', label: 'Map',
              right: AREAS.filter((a2, i) => areaOpen(i)).length + '/' + AREAS.length, act: openMap });
   out.push({ t: 'row', icon: 'mouth', label: 'Topics',
@@ -1096,7 +1102,7 @@ function openPlans() {
   openPanel({
     id: 'plans', anchor: 'mid', wide: true, maxH: H - 30,
     build: () => {
-      const out = [{ t: 'title', s: 'PLANS WITH NOC' }];
+      const out = [{ t: 'title', s: 'PLANS WITH PUKKIRK' }];
       const open = DATA.plans.filter(p => save.plans[p.id]);
       const done = DATA.plans.filter(p => save.planDone[p.id]);
       if (!open.length && !done.length) out.push({ t: 'text', s: 'None yet. Go and talk to him.', align: 'center', col: SPR.PAPER.ink3 });
@@ -1263,7 +1269,7 @@ function openCredits() {
       { t: 'title', s: 'CREDITS' },
       { t: 'text', s: 'THE WISE OAK TREE', col: SPR.PAPER.ink, align: 'center' },
       { t: 'gap', h: 3 },
-      { t: 'text', s: 'A nine-hundred-year-old oak, a lamp-keeper called Noc, a squirrel who gave up retail for technical support, and one butterfly that would not stay in the background.' },
+      { t: 'text', s: 'A nine-hundred-year-old oak, a lamp-keeper called Pukkirk, a squirrel who gave up retail for technical support, and one butterfly that would not stay in the background.' },
       { t: 'rule' },
       { t: 'text', s: 'Every pixel is drawn at runtime on one canvas: the tree, the wood, the weather, the trophies, these words. The font is a 5x7 bitmap written for it. There are no images and no dependencies.', col: SPR.PAPER.ink3 },
       { t: 'gap', h: 3 },
@@ -1382,6 +1388,102 @@ function showEndingCard(e) {
 }
 
 
+/* =========================================================================
+   WHAT TO DO NEXT
+   A short ordered list. The first unfinished one is nailed up on screen as a
+   little wooden tag, so there is never a moment where the game has not told
+   you what it wants next. Tapping the tag opens the whole list.
+   ========================================================================= */
+function goalList() {
+  const jobs = Object.keys(save.questDone).length;
+  const openN = AREAS.filter((a, i) => areaOpen(i)).length;
+  const birds = Object.keys(save.birds).length;
+  const sets = openSets().length;
+  const trophies = Object.keys(save.ach).length;
+  const parcels = save.openedParcels || 0;
+  return [
+    { id: 'talk',   label: 'Talk to the oak',             hint: 'Tap him, or tap the sign under him.',              done: heardTotal() >= 1 },
+    { id: 'leaf',   label: 'Pick up a leaf',              hint: 'Every new thing he says shakes one loose.',         done: (save.stats.leavesTotal || 0) >= 1 },
+    { id: 'parcel', label: 'Open a snail parcel',         hint: 'A snail carries every trophy. Tap the snail.',      done: parcels >= 1 },
+    { id: 'walk',   label: 'Walk to another place',       hint: 'Signposts at the left and right edges of the screen.', done: Object.keys(save.areasSeen).length >= 2 },
+    { id: 'noc',    label: 'Meet Pukkirk',                hint: 'West, down the lane, where the lamp is.',           done: !!save.metNoc },
+    { id: 'bag',    label: 'Find the backpack',           hint: 'East, in the north woods, leaning on a stone.',     done: !!save.bag },
+    { id: 'bird',   label: 'Say hello to a bird',         hint: 'Tap anything with wings.',                          done: birds >= 1 },
+    { id: 'job',    label: 'Take a job from the board',   hint: 'The board is nailed up beside him.',                done: Object.keys(save.quests).length >= 1 },
+    { id: 'job1',   label: 'Finish a job',                hint: 'JOBS in your bag says what each one still needs.',  done: jobs >= 1 },
+    { id: 'plan',   label: 'Agree a plan with Pukkirk',   hint: 'Talk to him and say yes to something.',             done: plansDone() >= 1 },
+    { id: 'set2',   label: 'Get him on to a new subject', hint: 'Keep listening. He opens them himself.',            done: sets >= 2 },
+    { id: 'jobs2',  label: 'Finish two jobs',             hint: 'Two finished jobs opens the parking lot.',          done: jobs >= 2 },
+    { id: 'areas4', label: 'Get four places open',        hint: 'The map in your bag says what each shut one wants.', done: openN >= 4 },
+    { id: 'stone',  label: 'Visit the memorial stone',    hint: 'East of the Mall, once you have heard twenty things.', done: !!save.ach.stone },
+    { id: 'birds5', label: 'Log five birds',              hint: 'Pukkirk hands you the diary on your second visit.', done: birds >= 5 },
+    { id: 'areasall', label: 'Open every place',          hint: 'Eleven of them. Each one opens on something you did.', done: openN >= AREAS.length },
+    { id: 'sets',   label: 'Open all eight subjects',     hint: 'The last one opens at a hundred things heard.',     done: sets >= DATA.sets.length },
+    { id: 'trophy', label: 'Earn fifty trophies',         hint: 'The snails keep bringing them.',                    done: trophies >= 50 },
+    { id: 'all',    label: 'Hear everything he has',      hint: DATA.lines.length + ' things. He is counting.',      done: heardTotal() >= DATA.lines.length }
+  ];
+}
+
+function nextGoal() {
+  for (const it of goalList()) if (!it.done) return it;
+  return null;
+}
+
+function checkGoals() { if (!nextGoal()) ACH('goalsall'); }
+
+function openGoals() {
+  ACH('goals');
+  openPanel({
+    id: 'goals', anchor: 'mid', wide: true, maxH: H - 30,
+    build: () => {
+      const list = goalList();
+      const done = list.filter(x => x.done).length;
+      const out = [{ t: 'title', s: 'WHAT TO DO NEXT' }];
+      out.push({ t: 'text', s: done + ' of ' + list.length + ' done', align: 'center', col: SPR.PAPER.ink3 });
+      out.push({ t: 'rule' });
+      const now = nextGoal();
+      if (now) {
+        out.push({ t: 'row', label: now.label, icon: 'flag' });
+        out.push({ t: 'text', s: now.hint, col: SPR.PAPER.ink3 });
+        out.push({ t: 'rule' });
+      }
+      for (const it of list) {
+        if (now && it.id === now.id) continue;
+        out.push({ t: 'row', label: it.label, right: it.done ? 'DONE' : '', dim: it.done });
+      }
+      out.push({ t: 'gap', h: 4 });
+      return out;
+    }
+  });
+}
+
+/* the tag, drawn in screen pixels after the blit */
+function goalTagBox() {
+  if (G.scene !== 'game' || G.dead || G.cine || panelOpen()) return null;
+  const it = nextGoal();
+  if (!it) return null;
+  const label = 'NEXT: ' + it.label.toUpperCase();
+  const w = Math.min(W() - 16, F.textWidth(label, 1) + 12);
+  return { x: 8, y: 7, w, h: 13, label };
+}
+
+function drawGoalTag(c) {
+  const b = goalTagBox();
+  if (!b) return;
+  const hot = G.goalHover;
+  px(c, b.x, b.y, b.w, b.h, '#1a0f08');
+  px(c, b.x + 1, b.y + 1, b.w - 2, b.h - 2, hot ? '#6a4a26' : '#4a3620');
+  px(c, b.x + 1, b.y + 1, b.w - 2, 1, hot ? '#8a6a3c' : '#6a4a26');
+  F.drawText(c, b.x + 4, b.y + 3, b.label, '#ffe9b0', 1, '#2a1508');
+  SPR.dot(c, b.x + 2, b.y + 2, '#c9a04a');
+  SPR.dot(c, b.x + b.w - 3, b.y + b.h - 3, '#c9a04a');
+}
+
+function overGoalTag(x, y) {
+  const b = goalTagBox();
+  return !!b && x > b.x && x < b.x + b.w && y > b.y && y < b.y + b.h;
+}
+
 function snailAt(x, y) {
   for (const sn of snails) {
     if (Math.abs(x - sn.x) < 14 && Math.abs(y - sn.y) < 12) return sn;
@@ -1390,14 +1492,29 @@ function snailAt(x, y) {
 }
 
 function drawPost(c) {
+  // only the one in front gets labelled, or two snails at once turns into
+  // wallpaper
+  const label1 = snails.find(sn => !sn.opened);
   for (const sn of snails) {
     SPR.drawSnail(c, G, sn);
-    if (sn.hint > 0 && !sn.opened) {
-      // one word, once, so the first parcel is not missed
+    if (sn.hint > 0 && !sn.opened && sn === label1) {
+      // a little tag over his shell with an arrow pointing down at him. It
+      // stays there until you tap him, and it says what tapping him does.
       c.globalAlpha = sn.hint;
-      const hw = F.textWidth('POST \u2014 TAP IT', 1) / 2 + 4;
-      const hy = talkSignShown() ? sn.y - 46 : sn.y - 22;
-      F.drawTextCentered(c, Math.max(hw, Math.min(W() - hw, sn.x)), hy, 'POST \u2014 TAP IT', '#ffe9b0', 1, '#000000');
+      const label = 'TAP TO OPEN';
+      const tw = F.textWidth(label, 1) + 10;
+      const bob = Math.round(Math.sin(G.t * 4) * 1.5);
+      const cx2 = Math.max(tw / 2 + 2, Math.min(W() - tw / 2 - 2, sn.x + 4));
+      // the tag has to sit clear of the talk sign, so it is joined to the
+      // snail by a dotted line and an arrowhead rather than floating loose
+      const ty = (talkSignShown() ? sn.y - 54 : sn.y - 34) + bob;
+      const foot = sn.y - 14;
+      for (let y = ty + 13; y < foot; y += 4) px(c, cx2, y, 1, 2, '#ffe9b0');
+      for (let i = 0; i < 4; i++) px(c, cx2 - 3 + i, foot + i, 7 - i * 2, 1, '#ffe9b0');
+      px(c, cx2 - tw / 2, ty, tw, 12, '#1a0f08');
+      px(c, cx2 - tw / 2 + 1, ty + 1, tw - 2, 10, '#4a3620');
+      px(c, cx2 - tw / 2 + 1, ty + 1, tw - 2, 1, '#6a4a26');
+      F.drawTextCentered(c, cx2, ty + 3, label, '#ffe9b0', 1, '#2a1508');
       c.globalAlpha = 1;
     }
   }
@@ -1511,6 +1628,10 @@ function drawIcon(c, id, size) {
     case 'mcbag':
       P(3, 4, 10, 11, '#c9a06a'); P(4, 5, 8, 9, '#e0b878'); P(3, 3, 10, 2, '#a8845a');
       P(6, 7, 4, 4, '#c9453b'); P(7, 8, 2, 2, '#ffc72c'); break;
+    case 'lot':
+      P(1, 6, 14, 9, '#4a4a52'); P(1, 6, 14, 1, '#5a5a64');
+      P(4, 8, 1, 5, '#c8c04a'); P(8, 8, 1, 5, '#c8c04a'); P(12, 8, 1, 5, '#c8c04a');
+      P(2, 2, 9, 4, '#c9453b'); P(3, 3, 3, 2, '#8fb8c9'); break;
     case 'flag':
       P(3, 2, 1, 13, '#8a7a5a');
       for (let i = 0; i < 6; i++) P(4, 2 + i, 9, 1, i % 2 ? '#f4f4f4' : '#c9453b');
@@ -1560,6 +1681,7 @@ function refreshHUD() {
      and the bag only exists once you have found it. */
   G.tools = [];
   G.hasBag = !!save.bag;
+  checkGoals();
   refreshActions();
   if (G.bagOpen) renderBag();
 }
@@ -1808,11 +1930,11 @@ function doHug() {
   ACH('hug1');
   if (save.stats.hugs >= 10) ACH('hug10');
   const lines = [
-    "Oh. This is happening. I am being hugged. I am also crying sap.",
-    "You are warm and small and I will think about this for eleven years.",
-    "Careful, there is a beetle on that side. ...He does not mind. He says hello.",
+    "Oh. This is happening. I'm being hugged. I'm also crying sap.",
+    "You're warm and small and I'll think about this for eleven years.",
+    "Careful, there's a beetle on that side. ...He doesn't mind. He says hello.",
     "Nobody has done that since 1974. Her name was Margaret. You would have liked her.",
-    "I cannot hug back. I am trying. My body is a prison."
+    "I can't hug back. I'm trying. My body is a prison."
   ];
   say('THE WISE OAK TREE', lines[save.stats.hugs % lines.length], 'happy');
   checkFriendEnding();
@@ -1827,10 +1949,10 @@ function doWater() {
   ACH('water1');
   if (save.stats.waters >= 10) ACH('water10');
   const lines = [
-    "Oh, that is the good stuff. Straight up the inside of me.",
+    "Oh, that's the good stuff. Straight up the inside of me.",
     "Nobody has watered me on purpose in years. Everyone assumes the sky does it. The sky is unreliable.",
     "*slurp* Sorry. That was undignified. Worth it.",
-    "Two billion people have no water this clean at home. I know. I am drinking it anyway. Thank you.",
+    "Two billion people have no water this clean at home. I know. I'm drinking it anyway. Thank you.",
     "I can feel it in the top branches already. That usually takes an hour."
   ];
   say('THE WISE OAK TREE', lines[save.stats.waters % lines.length], 'happy');
@@ -1857,11 +1979,11 @@ function doPlant(atX) {
   }
   if (save.stats.plants >= 5) ACH('plant5');
   const lines = [
-    "You planted one. You will never see it grown. That is the whole point.",
-    "Another one. I am going to be a father again. For about the four thousandth time.",
-    "That is three. Three is a copse. Five is a wood. Keep going.",
-    "Four. There will be shade here after you are gone, and whoever sits in it will not know your name.",
-    "Five. That is a wood. I have been trying for nine hundred years and you did it in an afternoon."
+    "You planted one. You'll never see it grown. That's the whole point.",
+    "Another one. I'm going to be a father again. For about the four thousandth time.",
+    "That's three. Three is a copse. Five is a wood. Keep going.",
+    "Four. There will be shade here after you're gone, and whoever sits in it won't know your name.",
+    "Five. That's a wood. I've been trying for nine hundred years and you did it in an afternoon."
   ];
   say('THE WISE OAK TREE', lines[Math.min(4, save.stats.plants - 1)], 'happy');
   refreshHUD();
@@ -1891,8 +2013,8 @@ function doNews() {
 function doDiary() {
   ACH('diary'); SFX.page();
   const pages = [
-    "day 812. buried acorn behind the bench. IMPORTANT. do not forget. (i will forget)",
-    "day 1104. the big tree told me about the war today. i pretended i had somewhere to be. i did not have somewhere to be. i just did not know what to say.",
+    "day 812. buried acorn behind the bench. IMPORTANT. don't forget. (i will forget)",
+    "day 1104. the big tree told me about the war today. i pretended i had somewhere to be. i didn't have somewhere to be. i just didn't know what to say.",
     "day 1290. a human gave me a chip. unprompted. i think about her every day.",
     "day 1455. i am afraid of the winter. i am not going to write that anywhere else.",
     "day 1502. sold a lighter today. bad feeling in my stomach. probably the chip."
@@ -1910,16 +2032,16 @@ function doFlick() {
   ACH('flick');
   if (save.stats.flicks >= 10) ACH('flick10');
   const lines = [
-    "...What is that. What is that in your hand. Put that away.",
-    "That is fire. I am made of the opposite of that.",
+    "...What's that. What's that in your hand. Put that away.",
+    "That's fire. I'm made of the opposite of that.",
     "Very funny. Put it away now. Please.",
-    "I have watched fire take a whole hillside in one night. Put it away.",
+    "I've watched fire take a whole hillside in one night. Put it away.",
     "Why do you keep doing that.",
     "Stop.",
     "Please stop.",
     "...",
-    "I am not going to beg. Nine hundred years, and not to a person with a lighter.",
-    "...Fine. I am begging. Please. There are mice in my roots."
+    "I'm not going to beg. Nine hundred years, and not to a person with a lighter.",
+    "...Fine. I'm begging. Please. There are mice in my roots."
   ];
   say('THE WISE OAK TREE', lines[Math.min(lines.length - 1, save.stats.flicks - 1)], save.stats.flicks > 4 ? 'sad' : 'shock');
 }
@@ -1927,10 +2049,10 @@ function doFlick() {
 function askBurn() {
   G.flags.confirming = true;
   openModal('ARE YOU SURE?',
-    "<p>He is nine hundred years old.</p>" +
+    "<p>He's nine hundred years old.</p>" +
     "<p>He has a woodpecker in his elbow and mice in his roots and he has been talking to you all afternoon.</p>" +
-    "<p class='small'>There is an achievement for it. There is an achievement for everything. That is not the same as a reason.</p>",
-    [['Put it away', () => { closeModal(); say('THE WISE OAK TREE', "Thank you. Let us never speak of it. ...We will definitely speak of it.", 'happy'); }],
+    "<p class='small'>There's an achievement for it. There's an achievement for everything. That isn't the same as a reason.</p>",
+    [['Put it away', () => { closeModal(); say('THE WISE OAK TREE', "Thank you. Let's never speak of it. ...We will definitely speak of it.", 'happy'); }],
      ['Do it', () => { closeModal(); startBurning(); }, 'bad']]);
 }
 
@@ -1946,10 +2068,10 @@ const BURN_LINES = [
   { at: 0.05, text: "Oh.", mood: 'shock' },
   { at: 0.16, text: "Oh. You actually did it. The mice. Get the mice out.", mood: 'shock' },
   { at: 0.34, text: "The birds are up. Good. Good. The birds are up.", mood: 'sad' },
-  { at: 0.52, text: "It does not hurt the way you think. It is more like being wide awake.", mood: 'sad' },
+  { at: 0.52, text: "It doesn't hurt the way you think. It's more like being wide awake.", mood: 'sad' },
   { at: 0.68, text: "Four hundred and eleven years. I was going to reach five hundred. I wanted to be taller than the church.", mood: 'sad' },
-  { at: 0.82, text: "Listen. I am not angry. I want you to hear that part.", mood: 'sad' },
-  { at: 0.92, text: "Plant one. That is all. Plant one and we are square.", mood: 'sad' }
+  { at: 0.82, text: "Listen. I'm not angry. I want you to hear that part.", mood: 'sad' },
+  { at: 0.92, text: "Plant one. That's all. Plant one and we're square.", mood: 'sad' }
 ];
 
 function startBurning() {
@@ -1984,7 +2106,7 @@ function maybeSpawnSquirrel() {
 function clickSquirrel() {
   const s = G.squirrel;
   s.clicks++; s.clickT = 0;
-  if (s.clicks >= 4) { ACH('poke'); SFX.squeak(); s.face = 0; say('SQUIRREL', "OW. HEY. i am a WILD ANIMAL. i have RIGHTS. (i do not have rights)", null); s.clicks = 0; return; }
+  if (s.clicks >= 4) { ACH('poke'); SFX.squeak(); s.face = 0; say('SQUIRREL', "OW. HEY. i am a WILD ANIMAL. i have RIGHTS. (i don't have rights)", null); s.clicks = 0; return; }
   SFX.squeak();
   save.stats.sqChats++; persist();
   if (save.stats.sqChats >= 15) ACH('sqchat');
@@ -2088,6 +2210,7 @@ function areaOpen(i) {
 /* what it still wants from you, in one line */
 /* the gates you have got open, checked whenever anything could have moved */
 function checkAreas() {
+  checkGoals();
   const open = AREAS.filter((a, i) => areaOpen(i)).length;
   if (open >= 4) ACH('area4');
   if (open >= 6) ACH('area6');
@@ -2151,7 +2274,7 @@ function arriveArea() {
       laterSay(800, () => {
         nocSay(DATA.nocBirdGift);
         ACH('birdbook');
-        pushNote('goal', 'BIRD DIARY', "Noc's book of what comes through the park.", 'bird', 'birdbook');
+        pushNote('goal', 'BIRD DIARY', "Pukkirk's book of what comes through the park.", 'bird', 'birdbook');
         ring(G.noc.x, GROUND_Y - 10, '#ffcf6a', 1.2);
         pop('A BOOK', G.noc.x, GROUND_Y - 48, '#ffcf6a');
       });
@@ -2167,6 +2290,14 @@ function arriveArea() {
   if (areaId() === 'church') { ACH('church'); G.starTimer = 2.5; }
   else G.star = null;
   if (areaId() === 'arches') ACH('arches');
+  if (areaId() === 'lot') {
+    ACH('lot');
+    const seen = save.lotHeard || 0;
+    if (seen < DATA.lotLines.length) {
+      save.lotHeard = seen + 1; persist();
+      tellHimLater(DATA.lotLines[seen], 'think');
+    }
+  }
   if (areaId() === 'stone') {
     ACH('stone');
     // he tells you about the stone himself, next time you are back under him
@@ -2256,12 +2387,12 @@ function pickupAt(x, y) {
 }
 
 /* =========================================================================
-   NOC
+   PUKKIRK
    He used to sell things. He stopped. Now you talk to him, in your own
    words, and the two of you make plans.
    ========================================================================= */
 function nocSay(text) {
-  say('NOC', text, null, 'noc');
+  say('PUKKIRK', text, null, 'noc');
   G.noc.talking = Math.min(6, 1.2 + text.length * 0.03);
 }
 
@@ -2289,7 +2420,7 @@ function agreePlan(id) {
     save.plans[id] = 1; persist();
     ACH('plan1');
     nocSay("Agreed, then. " + p.ask);
-    pushNote('goal', 'PLAN: ' + p.name, 'Agreed with Noc. Come back when it can be done.', 'reach', 'plan:' + p.id);
+    pushNote('goal', 'PLAN: ' + p.name, 'Agreed with Pukkirk. Come back when it can be done.', 'reach', 'plan:' + p.id);
     return;
   }
   const blocker = planBlocker(p);
@@ -2326,7 +2457,7 @@ function completePlan(p) {
 }
 
 /* ---------------------------------------------------------------------
-   THE TALK BOX — your words go in, Noc's come out
+   THE TALK BOX — your words go in, Pukkirk's come out
    --------------------------------------------------------------------- */
 
 /* =========================================================================
@@ -2349,7 +2480,7 @@ function typedText() { return elTyping ? elTyping.value : ''; }
 
 function chatPartner() { return areaId() === 'lane' ? 'noc' : atOak() ? 'oak' : null; }
 
-function speakerName(who) { return who === 'oak' ? 'THE WISE OAK TREE' : 'NOC'; }
+function speakerName(who) { return who === 'oak' ? 'THE WISE OAK TREE' : 'PUKKIRK'; }
 
 /* the line is there whenever there is somebody in front of you */
 function typeBarShown() {
@@ -2408,7 +2539,7 @@ function drawTypeBar(c) {
     if (Math.sin(G.t * 6) > 0) SPR.px(c, b.x + 5, b.y + 4, 3, 7, '#35210e');
     F.drawText(c, b.x + 11, b.y + 4, 'type, then enter', '#8f7853', 1);
   } else {
-    F.drawText(c, b.x + 5, b.y + 4, who === 'noc' ? 'say something to Noc' : 'say something to him', '#7a6a4e', 1);
+    F.drawText(c, b.x + 5, b.y + 4, who === 'noc' ? 'say something to Pukkirk' : 'say something to him', '#7a6a4e', 1);
   }
 }
 
@@ -2511,7 +2642,7 @@ function fitText(str, maxW) {
 function holdFromBag(id) {
   closeBag();
   if (!atOak() && id !== 'diary') {
-    say('YOU', "Not much to use it on out here. He is back at the top of the lane.", null, 'serious');
+    say('YOU', "Not much to use it on out here. He's back at the top of the lane.", null, 'serious');
     return;
   }
   G.holding = { id, x: CX(), y: GROUND_Y - 20, fromBag: true };
@@ -2795,7 +2926,7 @@ function startLighterCine() {
   playCine('lighter', [
     { id: 'found', dur: 3.2, cam: [0, 34, 1.8], caption: 'It was lying in the grass, cold, doing nothing.',
       enter: () => { SFX.trade(); } },
-    { id: 'noc', dur: 3.4, cam: [0, 16, 1.5], caption: 'Noc watched you put it in your bag and said nothing at all.' }
+    { id: 'noc', dur: 3.4, cam: [0, 16, 1.5], caption: 'Pukkirk watched you put it in your bag and said nothing at all.' }
   ], () => {
     G.scene = 'game'; refreshHUD(); refreshActions();
     nocSay("You can leave that where you found it. I'm not going to stop you either way. That's rather the trouble with me.");
@@ -2848,7 +2979,7 @@ function startRebirthCine() {
   ], () => {
     G.scene = 'game';
     refreshHUD(); refreshActions();
-    say('THE WISE OAK TREE', "...Oh. It is you. I remember nothing, and yet I like you. Anyway. I am a tree.", 'happy');
+    say('THE WISE OAK TREE', "...Oh. It's you. I remember nothing, and yet I like you. Anyway. I'm a tree.", 'happy');
   });
 }
 
@@ -2910,10 +3041,10 @@ function update(dt) {
       if (SEASON_NAMES.every(s => save.stats.seasons[s])) ACH('seasons');
     if (G.scene === 'game' && !G.dead && Math.random() < 0.8) {
       const msg = {
-        spring: "Spring. Forty thousand new leaves, and I will complain about every one.",
-        summer: "Summer. My best season, and I will not be modest about it.",
-        autumn: "Autumn. I am about to lose my whole personality in public. Look away.",
-        winter: "Winter. I am not dead. I am off duty."
+        spring: "Spring. Forty thousand new leaves, and I'll complain about every one.",
+        summer: "Summer. My best season, and I won't be modest about it.",
+        autumn: "Autumn. I'm about to lose my whole personality in public. Look away.",
+        winter: "Winter. I'm not dead. I'm off duty."
       }[G.season];
       say('THE WISE OAK TREE', msg, G.season === 'winter' ? 'sleepy' : 'happy');
     }
@@ -3219,7 +3350,7 @@ function updateVisitors(dt) {
 }
 
 /* Leaves are still a currency, but the only thing they buy is a promise:
-   Noc's plans cost leaves. Nothing in the park has a price any more. */
+   Pukkirk's plans cost leaves. Nothing in the park has a price any more. */
 function canAfford(n) { return G.inv.leaves >= n; }
 
 /* He is a tree. He is rooted in one place and he cannot see the rest of the
@@ -3697,7 +3828,7 @@ function drawSideArea() {
   const id = areaId();
   const lane = id === 'lane';
   const wild = lane || id === 'hollow' || id === 'seneca';
-  const city = id === 'church' || id === 'arches';
+  const city = id === 'church' || id === 'arches' || id === 'lot';
 
   SPR.drawBackdrop(dc, G);
   SPR.drawGround(dc, G);
@@ -3710,6 +3841,7 @@ function drawSideArea() {
   else if (id === 'rink') SPR.drawRinkScene(dc, G);
   else if (id === 'church') SPR.drawChurchScene(dc, G);
   else if (id === 'arches') SPR.drawArchesScene(dc, G);
+  else if (id === 'lot') SPR.drawLotScene(dc, G);
   else if (id === 'stone') SPR.drawStoneScene(dc, G);
 
   if (wild) SPR.drawHedgerow(dc, G, lane ? W() * 0.22 : undefined);
@@ -3842,8 +3974,8 @@ function takeClipboard() {
   SFX.pickup();
   pop('LEVEL 1', s.x, s.y - 48, '#ffd24a');
   ring(s.x, s.y - 20, '#ffd24a', 1.1);
-  say('THE STAR', "Wonderful. You are level one. Do not lose that. There is no way to lose that.", null, 'serious');
-  tellHimLater("You took the clipboard. I did say. It is only paper. It is never only paper.", 'sad');
+  say('THE STAR', "Wonderful. You're level one. Don't lose that. There's no way to lose that.", null, 'serious');
+  tellHimLater("You took the clipboard. I did say. It's only paper. It's never only paper.", 'sad');
 }
 
 function starAt(x, y) {
@@ -3925,7 +4057,7 @@ function talkSignBox() {
 
 function talkLabel() {
   if (G.asleep) return 'POKE HIM';
-  if (areaId() === 'lane') return 'TALK TO NOC';
+  if (areaId() === 'lane') return 'TALK TO PUKKIRK';
   if (!atOak()) return 'BACK TO THE OAK';
   if (DLG.choices && dialogueDone()) return 'TELL ME ANOTHER';
   return DLG.on ? 'GO ON' : 'TALK TO HIM';
@@ -4081,7 +4213,7 @@ function render() {
 
   if (G.flash > 0) { ctx.globalAlpha = Math.min(1, G.flash); SPR.px(ctx, 0, 0, W(), H, '#ffffff'); ctx.globalAlpha = 1; }
   if (G.veil > 0) { ctx.globalAlpha = Math.min(1, G.veil); SPR.px(ctx, 0, 0, W(), H, '#05080c'); ctx.globalAlpha = 1; }
-  if (!G.cine && G.scene === 'game') { drawArrows(ctx); drawTypeBar(ctx); drawTalkSign(ctx); SPR.drawHud(ctx, G); }
+  if (!G.cine && G.scene === 'game') { drawArrows(ctx); drawTypeBar(ctx); drawTalkSign(ctx); drawGoalTag(ctx); SPR.drawHud(ctx, G); }
   if (G.areaTitle > 0 && !G.cine) SPR.drawAreaTitle(ctx, G, AREAS[G.area].name, AREAS[G.area].sub, Math.min(1, G.areaTitle));
   if (!G.cine && G.scene === 'game') drawPost(ctx);
   drawHint(ctx);
@@ -4271,7 +4403,8 @@ function onMove(ev) {
   for (const a of G.arrows) a.hover = a === ar;
   G.bagHover = overBagButton(fr.x, fr.y);
   G.talkHover = overTalkSign(fr.x, fr.y);
-  if (onSign || ar || G.bagHover || G.talkHover || overTypeBar(fr.x, fr.y)) { cv.style.cursor = 'pointer'; return; }
+  G.goalHover = overGoalTag(fr.x, fr.y);
+  if (onSign || ar || G.bagHover || G.talkHover || G.goalHover || overTypeBar(fr.x, fr.y)) { cv.style.cursor = 'pointer'; return; }
   DLG.hover = DLG.choices && dialogueDone() ? choiceAt(fr.x, fr.y) : -1;
   cv.style.cursor = DLG.hover >= 0 ? 'pointer' : (G.holding ? 'none' : cv.style.cursor);
 
@@ -4423,6 +4556,7 @@ function onPress(ev) {
     const ar = arrowAt(fr.x, fr.y);
     if (ar) { travel(ar.dir); return; }
     if (overBagButton(fr.x, fr.y)) { SFX.click(); toggleBag(); return; }
+    if (overGoalTag(fr.x, fr.y)) { SFX.click(); openGoals(); return; }
   }
 
   // a reply, if one is on offer
@@ -4434,7 +4568,12 @@ function onPress(ev) {
   const sn = snailAt(fr.x, fr.y);
   if (sn) {
     if (sn.opened) { sn.speed = 150; SFX.squeak(); }
-    else { sn.opened = true; sn.speed = 8; openPost(sn.note); }
+    else {
+      sn.opened = true; sn.speed = 8;
+      save.openedParcels = (save.openedParcels || 0) + 1;
+      persist(); checkGoals();
+      openPost(sn.note);
+    }
     return;
   }
 
@@ -4584,13 +4723,13 @@ function toggleMute() {
   G.muted = save.muted;
   if (save.muted) {
     ACH('mute');
-    say('THE WISE OAK TREE', "You muted me. I am still talking. I will ALWAYS still be talking.", 'smug');
+    say('THE WISE OAK TREE', "You muted me. I'm still talking. I'll ALWAYS still be talking.", 'smug');
   } else SFX.click();
 }
 
 function eraseEverything() {
   openModal('ERASE EVERYTHING?',
-    "<p>Every trophy. Every ending. Every line you ever heard him say.</p><p class='small'>He will not remember you.</p>",
+    "<p>Every trophy. Every ending. Every line you ever heard him say.</p><p class='small'>He won't remember you.</p>",
     [['Cancel', closeModal], ['Erase it all', () => {
       erased = true;
       try { localStorage.removeItem(SAVE_KEY); } catch (e) {}
@@ -4716,6 +4855,7 @@ if (/[?&]debug/.test(location.search)) {
                  parkMargin, parkIncome, parkFill, talkSignBox, pressTalkSign, heardTotal, openSets, nextSet, openTopics,
                  unlockedTags, setHeard, setTotal, checkSets, talkToTree, openMap, areaOpen, areaWants, updateSuit, checkAreas,
                  updateStar, sayStar, takeClipboard, leaveTribute, starAt, stoneAt, stoneX, camRect, toLogical,
+                 goalList, nextGoal, openGoals, goalTagBox, overGoalTag, checkGoals,
                  openBirdDiary, openJobs, openPlans, sayYou, tellHimLater, birdsHere,
                  startTyping, stopTyping, typeBarBox, typeBarShown, sendChat, chatPartner,
                  seedCritters, touchCritter, refreshPanel, boardHere, cottageHere, puff, ring, pop, squash, PANEL, openPanel, closePanel, panelIs, panelOpen, openQuestBoard, openJournal, acceptQuest, checkQuests, questStatus, plotPos, hitTest,
