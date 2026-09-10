@@ -65,6 +65,30 @@ more; the only permanent things on screen are the sound switch and, once you
 have found it, your bag. The two exceptions are the talk box you type into and
 the backpack panel, because both of them need real text you can select.
 
+## He cannot follow you
+
+**He is a tree.** He is rooted in one place, so he only ever speaks where he is
+standing. Walk to any other part of the park and the voice you get is your own:
+short observations, in your own balloon. Anything worth telling him — the man
+crossing the rink, say — is **saved up and brought out next time you are back
+under him**, which is how a tree would actually learn anything.
+
+There are two signs under him. **TALK TO HIM** runs the conversation the way it
+always did. **SAY SOMETHING** opens the same typed scroll you get with Noc, so
+you can put a question to the oak in your own words exactly the way you put one
+to the lamp-keeper.
+
+## The birds
+
+Twelve species come through the park, each with its own colours, crest, size and
+beak, and each turning up only where and when it should — the mallards and
+egrets at the water, pigeons on the Mall, hawks over the north woods, and a
+screech owl that only appears after dark. Greet one and it goes in the book.
+
+**Noc gives you the book.** Come back to the Ramble a second time and he hands
+over the bird diary he has kept for forty years, and after that every new
+species arrives as post. Filling it is its own ending; Noc never got past nine.
+
 ## Talking is the game
 
 **Everything else in the park is a side effect of keeping him talking.** There
@@ -93,9 +117,10 @@ ever come up. **Every new thing he tells you shakes a leaf loose** — listening
 is how you earn, so the currency comes out of the conversation rather than out
 of the park.
 
-You can look up the running order any time — what he has opened, how far
-through each set you are, and how many more things until the next one — from
-the backpack or the squirrel's settings.
+The backpack is one line per thing with a count beside it — leaves, what you
+are carrying, and a way into the map, the topics, the bird diary, your jobs and
+your plans. The long lists live in their own scrolls instead of sprawling down
+the bag.
 
 ## Power, and who has it
 
@@ -352,7 +377,7 @@ promise.
 
 **You cannot get in until you die.** Death is not the end of the collection. In heaven there is a marble gallery
 under vaulted arches, with a red carpet running away into the light and a
-plinth for every one of the **119 achievements** — each with its own carved
+plinth for every one of the **125 achievements** — each with its own carved
 trophy on a gold mount: a stone tissue for the sneeze, a leaf vault for the
 hoarder, a lighter sinking into water for the one who threw it away, a film
 reel for the whole canon. Chandeliers burn overhead, a skylight throws shafts
@@ -366,7 +391,7 @@ Achievements arrive in Minecraft-style corner popups in three tiers — plain
 achievements, gold goals, and purple challenges. They are **delivered by a
 snail**, who crawls in from the left carrying an unrolled scroll with your news
 on it, leaves a slime trail across the grass, and eventually reaches the other
-side. Poke him and he hurries. There are **13 endings**, each with its own
+side. Poke him and he hurries. There are **14 endings**, each with its own
 card and a hint for the ones you haven't found.
 
 Endings include burning him down, throwing the lighter in the pond, hearing

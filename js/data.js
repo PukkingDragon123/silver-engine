@@ -263,6 +263,13 @@ DATA.shop = [
    Unlocked by the engine via ACH('id').
    ------------------------------------------------------------------------- */
 DATA.achievements = [
+  // the birds
+  { id: 'bird1',       kind: 'task', icon: 'bird',    name: 'First Bird',            desc: "Say hello to something with wings." },
+  { id: 'birdbook',    kind: 'task', icon: 'bird',    name: "Noc's Book",            desc: "Be handed the bird diary." },
+  { id: 'diaryopen',   kind: 'task', icon: 'bird',    name: 'Keeping Records',       desc: "Open the bird diary." },
+  { id: 'bird5',       kind: 'goal', icon: 'bird',    name: 'Five Species',          desc: "Greet five different birds." },
+  { id: 'bird10',      kind: 'goal', icon: 'bird',    name: 'Ten Species',           desc: "Greet ten different birds." },
+  { id: 'birdall',     kind: 'chal', icon: 'bird',    name: 'The Whole List',        desc: "Greet every bird that comes through the park." },
   // the park itself
   { id: 'map',         kind: 'task', icon: 'globe',   name: 'Eight Hundred Acres',   desc: "Look at the map of the park." },
   { id: 'area2',       kind: 'task', icon: 'reach',   name: 'Off The Lawn',          desc: "Walk to a second place in the park." },
@@ -418,6 +425,15 @@ DATA.achievements = [
    ENDINGS
    ------------------------------------------------------------------------- */
 DATA.endings = [
+  {
+    id: 'birder', name: 'THE BIRDER', icon: 'bird',
+    title: "You filled Noc's book.",
+    body: "Cardinal, jay, robin, sparrow, starling, woodpecker, warbler, hawk, pigeon, mallard, egret " +
+          "and one screech owl that was watching you the entire time. Twelve species, all of them greeted " +
+          "personally, in a park where two hundred and thirty come through in a year. Noc kept that book " +
+          "for forty years and never got past nine. He was not remotely upset about it.",
+    hint: "Get the diary from Noc, then go and say hello to everything with wings, in every part of the park, day and night."
+  },
   {
     id: 'walker', name: 'THE WALKER', icon: 'globe',
     title: "You stood in every part of this park.",
@@ -1228,3 +1244,61 @@ DATA.areaLines = {
     "Things get left behind up here. That is why you should look."
   ]
 };
+
+
+/* =========================================================================
+   THE BIRDS
+   Two hundred and thirty species come through this park in a year. He knows
+   about twelve of them by name and is wrong about several.
+   ========================================================================= */
+DATA.birds = [
+  { id: 'cardinal', name: 'CARDINAL',      body: '#c9282a', wing: '#9a1c20', head: '#c9282a', beak: '#e8a33a', crest: true,
+    short: "red all year, never shuts up",
+    note: "Red all year. Does not migrate, does not apologise, does not stop singing." },
+  { id: 'jay',      name: 'BLUE JAY',      body: '#3f7fd0', wing: '#2a5f9a', head: '#5f9fe0', beak: '#2a2a2a', crest: true,
+    short: "does a hawk impression on purpose",
+    note: "Can imitate a hawk to clear a feeder. Absolutely knows what it is doing." },
+  { id: 'robin',    name: 'ROBIN',         body: '#6b5540', wing: '#4a3a2a', head: '#3a3028', beak: '#e8c33a', belly: '#c9622a',
+    short: "first one back in February",
+    note: "The first one back in February. Everyone acts surprised. Every year." },
+  { id: 'sparrow',  name: 'HOUSE SPARROW', body: '#8a7250', wing: '#6b5940', head: '#a89070', beak: '#4a4038',
+    short: "sixteen let go in 1851",
+    note: "Sixteen released in Brooklyn in 1851. There are now rather a lot." },
+  { id: 'starling', name: 'STARLING',      body: '#2a2f3a', wing: '#1c2028', head: '#343a48', beak: '#e8c33a', speck: true,
+    short: "somebody's Shakespeare idea, 1890",
+    note: "A man let sixty of them go in this park in 1890 because of Shakespeare. All of them since are his fault." },
+  { id: 'wood',     name: 'WOODPECKER',    body: '#e8e0d0', wing: '#2a2a2a', head: '#c9282a', beak: '#3a3a44',
+    short: "lives in his elbow, pays no rent",
+    note: "Lives in my elbow. Pays no rent. We are, legally speaking, roommates." },
+  { id: 'warbler',  name: 'WARBLER',       body: '#d9c93a', wing: '#8a9a2a', head: '#e8dc5a', beak: '#4a4038',
+    short: "thirty kinds through here in May",
+    note: "Thirty-odd kinds come through in May and the birdwatchers lose their minds. Correctly." },
+  { id: 'hawk',     name: 'RED-TAILED HAWK', body: '#6b4a2a', wing: '#4a3220', head: '#8a6a44', beak: '#e8c33a', big: true,
+    short: "nested on Fifth Avenue for years",
+    note: "One of them nested on a building on Fifth Avenue for years. The whole city had opinions." },
+  { id: 'pigeon',   name: 'PIGEON',        body: '#6a7280', wing: '#4a5260', head: '#5a7a8a', beak: '#c98f88',
+    short: "a rock dove; the city is its cliff",
+    note: "Rock dove. Cliff bird. This whole city is a cliff to it, which is the most sensible thing I have heard." },
+  { id: 'duck',     name: 'MALLARD',       body: '#8a7a5a', wing: '#5a4a34', head: '#2f7a52', beak: '#e8c33a',
+    short: "goes about four blocks in winter",
+    note: "Somebody wrote a famous book asking where these go in winter. They go about four blocks." },
+  { id: 'egret',    name: 'EGRET',         body: '#f2f2ea', wing: '#dcdcd2', head: '#f6f6ee', beak: '#e8c33a', big: true,
+    short: "nearly wiped out for hat feathers",
+    note: "They were nearly wiped out for hat feathers. Women started a society about it and stopped it." },
+  { id: 'owl',      name: 'SCREECH OWL',   body: '#8a7250', wing: '#6b5940', head: '#9a8260', beak: '#c9a33a', night: true,
+    short: "out at dusk, watching you already",
+    note: "Out at dusk, gone by dawn, and it has been watching you the entire time you have been reading this." }
+];
+
+DATA.birdDiaryEmpty = "Nothing in it yet. Say hello to something with wings.";
+
+/* Noc, improved */
+DATA.nocMoods = ['still', 'kettle', 'lamp', 'look'];
+DATA.nocIdle = [
+  "Kettle's on. It is always on. That is the job.",
+  "Two hundred and thirty species through here in a year. I have seen about ninety.",
+  "The oak cannot come down here. He gets everything second-hand, from me.",
+  "You look like somebody who has been walking.",
+  "Sit if you like. The stone is warm."
+];
+DATA.nocBirdGift = "Here. I kept a book of what comes through. You will fill it faster than I did — you actually go and look.";

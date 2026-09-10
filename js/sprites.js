@@ -993,29 +993,62 @@ function drawStump(c, g) {
 /* -------------------------------------------------------------------------
    CRITTERS — the other residents
    ------------------------------------------------------------------------- */
+/* Every bird in the park is the same drawing with a different set of colours,
+   a crest or not, a size, and a beak. Twelve species read as twelve birds. */
+function drawBird(c, g, k, shade) {
+  const sp = k.sp || {};
+  const s = sp.big ? 1.5 : 1;
+  const hop = Math.sin(g.t * 3 + k.ph) * 0.8;
+  const bx = k.x, by = k.y + hop;
+  const body = shade(sp.body || k.col || '#8a7250');
+  const wing = shade(sp.wing || mix(sp.body || '#8a7250', '#000000', 0.3));
+  const head = shade(sp.head || sp.body || '#8a7250');
+  const beak = shade(sp.beak || '#e8a33a');
+
+  if (k.flying) {
+    const flap = Math.sin(g.t * 18) * 4 * s;
+    pellipse(c, bx, by, 3.4 * s, 2.6 * s, body);
+    px(c, bx - 5 * s, by - 1 + flap, 5 * s, 2 * s, wing);
+    px(c, bx + 2 * s, by - 1 - flap, 5 * s, 2 * s, wing);
+    px(c, bx + 3 * s, by - 1, 2 * s, 1 * s, beak);
+    if (sp.big) { px(c, bx - 8 * s, by, 4 * s, 2, wing); }
+    return;
+  }
+  // tail, body, wing, head, beak, eye, legs
+  px(c, bx - 6 * s, by, 4 * s, 2 * s, wing);
+  pellipse(c, bx, by, 4 * s, 3 * s, body);
+  if (sp.belly) pellipse(c, bx - 1, by + 1, 3 * s, 1.6 * s, shade(sp.belly));
+  pellipse(c, bx - 1, by - 1, 3 * s, 2 * s, wing);
+  if (sp.speck) for (let i = 0; i < 5; i++) dot(c, bx - 3 + i * 1.6, by - 1 + (i % 2), shade('#c9c2a8'));
+  pcircle(c, bx + 3 * s, by - 3 * s, 2.5 * s, head);
+  if (sp.crest) {
+    px(c, bx + 2 * s, by - 6 * s, 2, 2 * s, head);
+    px(c, bx + 3 * s, by - 7 * s, 2, 2 * s, head);
+  }
+  px(c, bx + 5 * s, by - 3 * s, 2 * s, 1 * s, beak);
+  dot(c, bx + 4 * s, by - 4 * s, '#120a04');
+  if (sp.night) { dot(c, bx + 4 * s, by - 4 * s, '#ffd24a'); dot(c, bx + 2 * s, by - 4 * s, '#ffd24a'); }
+  px(c, bx - 1, by + 3 * s, 1, 2 * s, shade('#c8892a'));
+  px(c, bx + 1, by + 3 * s, 1, 2 * s, shade('#c8892a'));
+}
+
+/* a bird portrait, for the diary */
+function drawBirdPortrait(c, g, sp, x, y, scale) {
+  const k = { x, y, ph: 0, flying: false, sp, col: sp.body };
+  c.save();
+  c.translate(x, y);
+  c.scale(scale || 1, scale || 1);
+  c.translate(-x, -y);
+  drawBird(c, g, k, col => col);
+  c.restore();
+}
+
 function drawCritters(c, g) {
   const dk = darkness(g.timeOfDay);
   const shade = col => mix(col, '#0a1226', dk * 0.7);
   for (const k of g.critters) {
     if (k.kind === 'bird') {
-      const hop = Math.sin(g.t * 3 + k.ph) * 0.8;
-      const bx = k.x, by = k.y + hop;
-      if (k.flying) {
-        const flap = Math.sin(g.t * 18) * 4;
-        pcircle(c, bx, by, 3, shade(k.col));
-        px(c, bx - 5, by - 1 + flap, 5, 2, shade(k.col));
-        px(c, bx + 2, by - 1 - flap, 5, 2, shade(k.col));
-        px(c, bx + 3, by - 1, 2, 1, shade('#e8a33a'));
-      } else {
-        pellipse(c, bx, by, 4, 3, shade(k.col));
-        pellipse(c, bx - 1, by - 1, 3, 2, shade(mix(k.col, '#ffffff', 0.3)));
-        pcircle(c, bx + 3, by - 3, 2.5, shade(k.col));
-        px(c, bx + 5, by - 3, 2, 1, shade('#e8a33a'));
-        dot(c, bx + 4, by - 4, '#120a04');
-        px(c, bx - 6, by, 4, 2, shade(mix(k.col, '#000000', 0.3)));   // tail
-        px(c, bx - 1, by + 3, 1, 2, shade('#c8892a'));
-        px(c, bx + 1, by + 3, 1, 2, shade('#c8892a'));
-      }
+      drawBird(c, g, k, shade);
     } else if (k.kind === 'butterfly') {
       const w = (1 + Math.abs(Math.sin(g.t * 10 + k.ph)) * 2.4) * (k.credit ? 1.25 : 1);
       // the bright one carries its own light, so it can be found at night
@@ -1037,6 +1070,16 @@ function drawCritters(c, g) {
         dot(c, k.x + d * (w - 0.5), k.y - 2, k.credit ? '#ffffff' : shade('#ffffff'));
         if (k.credit) dot(c, k.x + d * (w - 1.5), k.y, '#fff6d8');
       }
+    } else if (k.kind === 'dragonfly') {
+      const w = 4 + Math.abs(Math.sin(g.t * 22 + k.ph)) * 2;
+      px(c, k.x - 5, k.y, 11, 1, shade(k.col));
+      pcircle(c, k.x + 6, k.y, 1.6, shade(mix(k.col, '#ffffff', 0.4)));
+      dot(c, k.x + 7, k.y - 1, '#120a04');
+      c.globalAlpha = 0.6;
+      px(c, k.x - 1, k.y - w, 2, w, shade('#cfe8f8'));
+      px(c, k.x + 1, k.y - w + 1, 2, w - 1, shade('#cfe8f8'));
+      px(c, k.x - 1, k.y + 1, 2, w - 1, shade('#cfe8f8'));
+      c.globalAlpha = 1;
     } else if (k.kind === 'beetle') {
       pellipse(c, k.x, k.y, 3, 2, shade('#2a2a3a'));
       pellipse(c, k.x - 1, k.y - 1, 2, 1, shade('#5a5a7a'));
@@ -3598,7 +3641,7 @@ window.SPR = {
   drawBalloon, drawPanel, drawSnail, drawCursorTool, drawMoreArrow, roundRect, INK, drawAshScene, drawStump, drawItemIcon, drawLeafSprite,
   drawHall, drawTrophy, drawTrophyReflection, trophySprite, drawPlinth, drawHeaven, drawHeavenBackdrop, drawGhostTree, drawSoul,
   drawGarden, gardenSlotPos, gardenWidth, GARDEN, drawCloudTunnel, drawLetterbox, drawRays, drawGrowingTree, flame,
-  drawZzz, drawGear, drawSnailParcel, drawWordPop, drawImpactLines, squashTransform, drawScrollFrame, drawSheet, drawRod, drawSeal, PAPER, snailSkin, drawShell, SNAIL_SHELLS, SNAIL_PATTERNS, drawNoc, drawNocCamp, drawTravelArrow, travelArrowBox, drawAreaTitle, drawPickup,
+  drawZzz, drawGear, drawSnailParcel, drawBird, drawBirdPortrait, drawWordPop, drawImpactLines, squashTransform, drawScrollFrame, drawSheet, drawRod, drawSeal, PAPER, snailSkin, drawShell, SNAIL_SHELLS, SNAIL_PATTERNS, drawNoc, drawNocCamp, drawTravelArrow, travelArrowBox, drawAreaTitle, drawPickup,
   drawSenecaScene, drawBridgeScene, drawMallScene, drawTerraceScene, drawRinkScene, drawSuit, drawStillWater,
   drawCosyFoliage, drawFallenLog, drawStandingStone, drawVines, drawHedgerow, drawLaneRoad,
   drawBackpackSprite, drawBagButton

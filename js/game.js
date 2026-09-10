@@ -17,7 +17,8 @@ const defaultSave = () => ({
   ach: {}, endings: {}, heard: {}, muted: false, sessions: 0,
   park: { props: [], upgrades: {}, expansions: 0, earned: 0 },
   bag: false, items: {}, taken: {}, plans: {}, planDone: {},
-  quests: {}, questDone: {}, unread: [], snails: {}, setSeen: {}, areasSeen: { oak: 1 }, metNoc: false,
+  quests: {}, questDone: {}, unread: [], snails: {}, setSeen: {}, areasSeen: { oak: 1 },
+  birds: {}, birdBook: false, metNoc: false,
   stats: { leavesTotal: 0, sneezes: 0, hugs: 0, waters: 0, plants: 0, trades: 0,
            sqChats: 0, rebirths: 0, flicks: 0, seasons: {}, boughtAll: false }
 });
@@ -37,6 +38,7 @@ try {
     save.snails = p.snails || {};
     save.setSeen = p.setSeen || {};
     save.areasSeen = Object.assign({ oak: 1 }, p.areasSeen || {});
+    save.birds = p.birds || {}; save.birdBook = !!p.birdBook;
   }
 } catch (e) { /* corrupt save: start fresh, no drama */ }
 
@@ -72,8 +74,8 @@ const G = {
   noc: { x: 0, y: GROUND_Y + 8, look: 0, talking: 0, thinking: 0 },
   asleep: false, wakeT: 0, squash: 0, squashV: 0,
   boardPop: 0, cottagePop: 0,
-  hasBag: false, bagOpen: false, bagHover: false, bagBadge: 0, talkHover: false,
-  activePlan: null, chatWho: null, veil: 0,
+  hasBag: false, bagOpen: false, bagHover: false, bagBadge: 0, talkHover: false, sayHover: false,
+  activePlan: null, chatWho: null, veil: 0, toTell: [],
   hintText: '', hintShown: false, hintCine: false,
   sessionTime: 0, sinceTreeClick: 0, spamCount: 0, spamTimer: 0,
   sneezeTimer: 14 + Math.random() * 18,
@@ -713,6 +715,7 @@ function measureItem(it, w) {
     }
     case 'input': return 18;
     case 'snail': return 30;
+    case 'bird': return 22;
     default: return 10;
   }
 }
@@ -898,6 +901,24 @@ function drawPanelItem(c, it, x, y, w, i) {
       break;
     }
 
+    case 'bird': {
+      const sp = it.sp;
+      if (it.got) {
+        SPR.drawBirdPortrait(c, G, sp, x + pad + 8, y + 12, 1);
+        F.drawText(c, x + pad + 24, y + 3, sp.name, PAP.ink, 1);
+        F.drawText(c, x + pad + 24, y + 12, fitText(sp.short || sp.note, w - pad * 2 - 30), PAP.ink3, 1);
+        if (it.count > 1) {
+          const cs = 'x' + it.count;
+          F.drawText(c, x + w - pad - F.textWidth(cs, 1), y + 3, cs, PAP.leaf, 1);
+        }
+      } else {
+        SPR.px(c, x + pad + 4, y + 6, 9, 8, PAP.dim);
+        F.drawText(c, x + pad + 24, y + 6, '???', PAP.ink3, 1);
+      }
+      for (let dx = 0; dx < w - pad * 2; dx += 3) SPR.px(c, x + pad + dx, y + it._h - 1, 1, 1, PAP.dim);
+      break;
+    }
+
     case 'snail': {
       const skin = SPR.snailSkin(it.id, it.kind);
       SPR.drawSnail(c, G, { x: x + w / 2, y: y + 22, dir: 1, skin,
@@ -1030,9 +1051,8 @@ function openPost(note, fromBag) {
       { t: 'gap', h: 4 },
       { t: 'text', s: note.desc || '', col: SPR.PAPER.ink2, align: 'center' },
       { t: 'rule' },
-      { t: 'text', s: 'carried by ' + snailName(note.id || note.name), col: SPR.PAPER.ink, align: 'center' },
       { t: 'snail', id: note.id || note.name, kind: note.kind },
-      { t: 'text', s: snailNote(note.id || note.name), col: SPR.PAPER.ink3, align: 'center' },
+      { t: 'text', s: snailName(note.id || note.name), col: SPR.PAPER.ink3, align: 'center' },
       { t: 'gap', h: 6 }
     ],
     onClose: () => { if (panelWas === 'bag') openBag(); }
@@ -1057,56 +1077,88 @@ function toggleBag() { panelIs('bag') ? closeBag() : openBag(); }
 function renderBag() { if (panelIs('bag')) refreshPanel(); }
 
 function bagItems() {
-  const out = [{ t: 'title', s: 'YOUR BACKPACK' }];
-  out.push({ t: 'row', label: G.inv.leaves + ' leaves', sub: 'the only currency, and only Noc takes it',
-             icon: 'leaf', right: '', dim: false });
+  const out = [{ t: 'title', s: 'BACKPACK' }];
   const jobsDone = DATA.quests.filter(q => save.questDone[q.id]).length;
-  out.push({ t: 'text', s: Object.keys(G.inv.items).length + ' things  ·  ' + jobsDone + '/' + DATA.quests.length +
-                          ' jobs  ·  ' + plansDone() + '/' + DATA.plans.length + ' plans', col: SPR.PAPER.ink3, align: 'center' });
-  out.push({ t: 'rule' });
+  out.push({ t: 'row', icon: 'leaf', label: G.inv.leaves + ' leaves',
+             right: heardTotal() + ' heard' });
 
   const owned = DATA.shop.filter(it => has(it.id));
-  if (!owned.length) {
-    out.push({ t: 'text', s: 'Empty, apart from crumbs and one very old bus ticket. Look around the lane and the hollow, and make plans with Noc.' });
-  }
+  if (!owned.length) out.push({ t: 'text', s: 'Nothing in it yet.', align: 'center', col: SPR.PAPER.ink3 });
   for (const it of owned) {
-    out.push({ t: 'row', label: it.name, sub: TOOL_HINTS[it.id] || it.desc, icon: it.icon,
-               right: 'TAKE OUT', act: () => holdFromBag(it.id) });
+    out.push({ t: 'row', label: it.name, icon: it.icon, right: 'TAKE', act: () => holdFromBag(it.id) });
   }
-
-  const nx = nextSet();
-  out.push({ t: 'title', s: 'THE PARK, AND HIM' });
-  out.push({ t: 'row', icon: 'globe', label: 'The map',
-             sub: AREAS.filter((a, i) => areaOpen(i)).length + ' of ' + AREAS.length + ' places open',
-             right: 'READ', act: openMap });
-  out.push({ t: 'row', icon: 'mouth', label: 'What he will talk about',
-             sub: nx ? (nx.at - heardTotal()) + ' more things and a new set opens'
-                     : 'every set open \u00b7 ' + heardTotal() + '/' + DATA.lines.length + ' heard',
-             right: 'READ', act: openTopics });
 
   const unread = save.unread || [];
-  if (unread.length) {
-    out.push({ t: 'title', s: 'UNOPENED POST (' + unread.length + ')' });
-    for (const n of unread) {
-      out.push({ t: 'row', label: 'A sealed parcel', sub: 'the snail got past you', icon: 'paper',
-                 right: 'OPEN IT', act: () => openPost(n, true) });
-    }
+  for (const n of unread) {
+    out.push({ t: 'row', label: 'Sealed parcel', icon: 'paper', right: 'OPEN', act: () => openPost(n, true) });
   }
-  const jobs = DATA.quests.filter(q => save.quests[q.id]);
-  if (jobs.length) {
-    out.push({ t: 'title', s: 'JOBS IN HAND' });
-    for (const q of jobs) out.push({ t: 'row', label: q.name, sub: questProgress(q) });
-  }
-  const openPlans = DATA.plans.filter(p => save.plans[p.id]);
-  const donePlans = DATA.plans.filter(p => save.planDone[p.id]);
-  if (openPlans.length || donePlans.length) {
-    out.push({ t: 'title', s: 'PLANS WITH NOC' });
-    for (const p of openPlans) out.push({ t: 'row', label: p.name, sub: planBlocker(p) || 'ready — go and tell him' });
-    for (const p of donePlans) out.push({ t: 'row', label: p.name, sub: p.done, right: 'KEPT', dim: true });
-  }
+
   out.push({ t: 'rule' });
-  out.push({ t: 'text', s: 'found, not bought', col: SPR.PAPER.ink3, align: 'center' });
+  out.push({ t: 'row', icon: 'globe', label: 'Map',
+             right: AREAS.filter((a2, i) => areaOpen(i)).length + '/' + AREAS.length, act: openMap });
+  out.push({ t: 'row', icon: 'mouth', label: 'Topics',
+             right: openSets().length + '/' + DATA.sets.length, act: openTopics });
+  if (save.birdBook) {
+    out.push({ t: 'row', icon: 'bird', label: 'Bird diary',
+               right: Object.keys(save.birds).length + '/' + DATA.birds.length, act: openBirdDiary });
+  }
+  out.push({ t: 'row', icon: 'ledger', label: 'Jobs', right: jobsDone + '/' + DATA.quests.length, act: openJobs });
+  out.push({ t: 'row', icon: 'chat', label: 'Plans', right: plansDone() + '/' + DATA.plans.length, act: openPlans });
   return out;
+}
+
+/* the two lists that used to sprawl down the backpack */
+function openJobs() {
+  openPanel({
+    id: 'jobs', anchor: 'mid', wide: true, maxH: H - 30,
+    build: () => {
+      const out = [{ t: 'title', s: 'JOBS' }];
+      const inHand = DATA.quests.filter(q => save.quests[q.id]);
+      const done = DATA.quests.filter(q => save.questDone[q.id]);
+      if (!inHand.length && !done.length) out.push({ t: 'text', s: 'None yet. Try the board.', align: 'center', col: SPR.PAPER.ink3 });
+      for (const q of inHand) out.push({ t: 'row', label: q.name, sub: questProgress(q) });
+      for (const q of done) out.push({ t: 'row', label: q.name, right: 'DONE', dim: true });
+      out.push({ t: 'gap', h: 4 });
+      return out;
+    }
+  });
+}
+
+function openPlans() {
+  openPanel({
+    id: 'plans', anchor: 'mid', wide: true, maxH: H - 30,
+    build: () => {
+      const out = [{ t: 'title', s: 'PLANS WITH NOC' }];
+      const open = DATA.plans.filter(p => save.plans[p.id]);
+      const done = DATA.plans.filter(p => save.planDone[p.id]);
+      if (!open.length && !done.length) out.push({ t: 'text', s: 'None yet. Go and talk to him.', align: 'center', col: SPR.PAPER.ink3 });
+      for (const p of open) out.push({ t: 'row', label: p.name, sub: planBlocker(p) || 'ready' });
+      for (const p of done) out.push({ t: 'row', label: p.name, right: 'KEPT', dim: true });
+      out.push({ t: 'gap', h: 4 });
+      return out;
+    }
+  });
+}
+
+/* ---- the bird diary ---- */
+function openBirdDiary() {
+  ACH('diaryopen');
+  openPanel({
+    id: 'birds', anchor: 'mid', wide: true, maxH: H - 30,
+    build: () => {
+      const seen = Object.keys(save.birds).length;
+      const out = [{ t: 'title', s: 'BIRD DIARY' }];
+      out.push({ t: 'text', s: seen + ' of ' + DATA.birds.length, col: SPR.PAPER.ink3, align: 'center' });
+      out.push({ t: 'rule' });
+      if (!seen) out.push({ t: 'text', s: DATA.birdDiaryEmpty, align: 'center', col: SPR.PAPER.ink2 });
+      for (const b of DATA.birds) {
+        const got = save.birds[b.id];
+        out.push({ t: 'bird', sp: b, got: !!got, count: got || 0 });
+      }
+      out.push({ t: 'gap', h: 4 });
+      return out;
+    }
+  });
 }
 
 /* ---- the map of the park ---- */
@@ -1127,14 +1179,11 @@ function openMap() {
         out.push({
           t: 'row', dim: here,
           label: (here ? '> ' : '') + (isOpen ? a.name : '???'),
-          sub: isOpen ? a.sub : (a.locked || 'shut'),
-          right: here ? 'YOU ARE HERE' : isOpen ? 'OPEN' : areaWants(i),
+          sub: isOpen ? a.sub : '',
+          right: here ? 'HERE' : isOpen ? 'OPEN' : areaWants(i),
           rightCol: here ? SPR.PAPER.leaf : isOpen ? SPR.PAPER.leaf : SPR.PAPER.ink3
         });
       }
-      out.push({ t: 'rule' });
-      out.push({ t: 'text', align: 'center', col: SPR.PAPER.ink2,
-                 s: 'Eight hundred and forty-three acres. He has stood in the middle of it longer than any of it has been a park.' });
       out.push({ t: 'gap', h: 4 });
       return out;
     }
@@ -1149,7 +1198,7 @@ function openTopics() {
     build: () => {
       const out = [{ t: 'title', s: 'WHAT HE WILL TALK ABOUT' }];
       const total = DATA.lines.length;
-      out.push({ t: 'text', s: heardTotal() + ' of ' + total + ' things heard', col: SPR.PAPER.ink3, align: 'center' });
+      out.push({ t: 'text', s: heardTotal() + ' of ' + total, col: SPR.PAPER.ink3, align: 'center' });
       out.push({ t: 'rule' });
       for (const st of DATA.sets) {
         const open = heardTotal() >= st.at;
@@ -1157,16 +1206,16 @@ function openTopics() {
         out.push({
           t: 'row', dim: open && got >= all,
           label: open ? st.name : '???',
-          sub: open ? (got >= all ? 'you have heard all of it' : got + ' of ' + all + ' heard')
-                    : 'opens once he has told you ' + st.at + ' things',
+          sub: open ? '' : 'at ' + st.at + ' heard',
           right: open ? (got >= all ? 'DONE' : got + '/' + all) : 'SHUT'
         });
       }
       const nx = nextSet();
-      out.push({ t: 'rule' });
-      out.push({ t: 'text', align: 'center', col: SPR.PAPER.ink2,
-                 s: nx ? 'Keep him talking. ' + (nx.at - heardTotal()) + ' more and he opens something new.'
-                       : DATA.setAllDone });
+      if (nx) {
+        out.push({ t: 'rule' });
+        out.push({ t: 'text', align: 'center', col: SPR.PAPER.ink2,
+                   s: (nx.at - heardTotal()) + ' more and he opens another.' });
+      }
       out.push({ t: 'gap', h: 4 });
       return out;
     }
@@ -1183,24 +1232,15 @@ function closeSettings() { if (panelIs('set')) closePanel(); }
 function settingsItems() {
   const live = NOC_AI.live;
   return [
-    { t: 'title', s: "THE SQUIRREL'S SETTINGS" },
-    { t: 'row', label: 'Sound', sub: save.muted ? 'muted' : 'on', icon: 'feather',
-      right: save.muted ? 'TURN ON' : 'MUTE', act: () => { toggleMute(); refreshPanel(); } },
-    { t: 'row', label: 'A real mind',
-      sub: live ? 'on \u00b7 ' + NOC_AI.model : 'off \u2014 local brains only',
-      icon: 'book', right: live ? 'TURN OFF' : 'ADD KEY', act: askForKey },
-    { t: 'row', label: 'The map', sub: 'everywhere in the park, open or shut', icon: 'globe',
-      right: 'READ', act: openMap },
-    { t: 'row', label: 'What he will talk about', sub: 'the sets he has opened so far', icon: 'mouth',
-      right: 'READ', act: openTopics },
-    { t: 'row', label: 'The Trophy Room', sub: 'everything you have earned', icon: 'crown',
-      right: 'OPEN', act: openTrophies },
-    { t: 'row', label: 'Credits', sub: 'or follow the bright butterfly', icon: 'star',
-      right: 'READ', act: openCredits },
-    { t: 'row', label: 'Erase everything', sub: 'he will not remember you', icon: 'fire',
-      right: 'ERASE', rightCol: '#8a1f14', act: eraseEverything },
-    { t: 'rule' },
-    { t: 'text', s: 'he kept the gear off a lawnmower in 1998', col: SPR.PAPER.ink3, align: 'center' }
+    { t: 'title', s: 'SETTINGS' },
+    { t: 'row', label: 'Sound', icon: 'feather', right: save.muted ? 'OFF' : 'ON',
+      act: () => { toggleMute(); refreshPanel(); } },
+    { t: 'row', label: 'Real mind', icon: 'book', right: live ? 'ON' : 'OFF', act: askForKey },
+    { t: 'row', label: 'Map', icon: 'globe', right: 'OPEN', act: openMap },
+    { t: 'row', label: 'Topics', icon: 'mouth', right: 'OPEN', act: openTopics },
+    { t: 'row', label: 'Trophies', icon: 'crown', right: 'OPEN', act: openTrophies },
+    { t: 'row', label: 'Credits', icon: 'star', right: 'OPEN', act: openCredits },
+    { t: 'row', label: 'Erase everything', icon: 'fire', right: 'ERASE', rightCol: '#8a1f14', act: eraseEverything }
   ];
 }
 
@@ -1697,6 +1737,12 @@ function talkToTree() {
   }
 
   ACH('hello');
+  // anything you saw elsewhere, he wants to hear about first
+  if (G.toTell.length) {
+    const t = G.toTell.shift();
+    say('THE WISE OAK TREE', t.text, t.mood, 'serious');
+    return;
+  }
   // a set opening takes priority over the next line
   if (checkSets()) return;
 
@@ -2079,7 +2125,7 @@ function travel(dir) {
     SFX.deny();
     G.shake = 1.5;
     pop('SHUT', dir < 0 ? 34 : W() - 34, GROUND_Y - 34, '#d9707c');
-    sayTree((AREAS[i].locked || 'Not yet.') + ' (' + areaWants(i) + ')', 'smug');
+    sayYou((AREAS[i].locked || 'Shut.') + ' \u2014 ' + areaWants(i));
     return;
   }
   if (!save.areasSeen[AREAS[i].id]) {
@@ -2109,17 +2155,30 @@ function arriveArea() {
     if (!save.metNoc) {
       save.metNoc = true; persist();
       setTimeout(() => nocSay(DATA.nocIntro.join(' ')), 700);
+    } else if (!save.birdBook) {
+      // the second time you come down, he gives you his book
+      save.birdBook = true; persist();
+      setTimeout(() => {
+        nocSay(DATA.nocBirdGift);
+        ACH('birdbook');
+        pushNote('goal', 'BIRD DIARY', "Noc's book of what comes through the park.", 'bird', 'birdbook');
+        ring(G.noc.x, GROUND_Y - 10, '#ffcf6a', 1.2);
+        pop('A BOOK', G.noc.x, GROUND_Y - 48, '#ffcf6a');
+      }, 800);
+    } else if (Math.random() < 0.5) {
+      setTimeout(() => nocSay(DATA.nocIdle[Math.floor(Math.random() * DATA.nocIdle.length)]), 900);
     }
   }
   if (areaId() === 'hollow') ACH('hollow');
   if (areaId() === 'seneca') ACH('seneca');
+  seedCritters();
   if (areaId() === 'rink') { ACH('rink'); G.suitTimer = 3; }
   else G.suit = null;
   // he says something about wherever you have just walked into
   const lines = DATA.areaLines[areaId() === 'lane' ? 'ramble' : areaId()];
   if (lines && Math.random() < 0.9) {
     setTimeout(() => {
-      if (G.scene === 'game' && !G.cine) sayTree(lines[Math.floor(Math.random() * lines.length)], 'think');
+      if (G.scene === 'game' && !G.cine) sayYou(lines[Math.floor(Math.random() * lines.length)]);
     }, 900);
   }
   refreshHUD();
@@ -2266,7 +2325,7 @@ const elTyping = $('typing');
 
 function typedText() { return elTyping ? elTyping.value : ''; }
 
-function chatPartner() { return areaId() === 'lane' ? 'noc' : 'oak'; }
+function chatPartner() { return areaId() === 'lane' ? 'noc' : atOak() ? 'oak' : null; }
 
 function openChat(who) {
   if (G.cine) return;
@@ -2847,6 +2906,14 @@ function update(dt) {
     n.y = GROUND_Y + 8;
     n.look = Math.max(-1, Math.min(1, ((G.look.x || 0) * 0.6))) | 0;
     n.talking = Math.max(0, n.talking - dt);
+    // he is not a statue: he shifts, lifts the lantern, sees to the kettle
+    n.moodT = (n.moodT || 0) - dt;
+    if (n.moodT <= 0) {
+      n.moodT = 4 + Math.random() * 7;
+      n.mood = DATA.nocMoods[Math.floor(Math.random() * DATA.nocMoods.length)];
+    }
+    n.lift = n.mood === 'lamp' ? Math.min(1, (n.lift || 0) + dt * 2) : Math.max(0, (n.lift || 0) - dt * 2);
+    if (n.mood === 'kettle' && Math.random() < dt * 1.2) puff(G.noc.x - 30, GROUND_Y + 2, 1);
   }
 
   if (G.scene === 'game' && !G.dead) {
@@ -3122,7 +3189,24 @@ function updateVisitors(dt) {
    Noc's plans cost leaves. Nothing in the park has a price any more. */
 function canAfford(n) { return G.inv.leaves >= n; }
 
-function sayTree(text, mood) { say('THE WISE OAK TREE', text, mood || 'idle', ''); }
+/* He is a tree. He is rooted in one place and he cannot see the rest of the
+   park, so he only ever speaks where he is standing. Anywhere else, what you
+   get is your own eyes, and he hears about it when you come back. */
+function sayTree(text, mood) {
+  if (!atOak()) return false;
+  say('THE WISE OAK TREE', text, mood || 'idle', '');
+  return true;
+}
+
+/* your own voice, for everywhere he is not */
+function sayYou(text) { say('YOU', text, null, 'serious'); }
+
+/* something to tell him about next time you are back under him */
+function tellHimLater(text, mood) {
+  if (atOak()) { sayTree(text, mood); return; }
+  G.toTell.push({ text, mood: mood || 'think' });
+  if (G.toTell.length > 6) G.toTell.shift();
+}
 
 /* ---------------------------------------------------------------------
    MENUS — wooden panels nailed up in the park, not interface
@@ -3250,16 +3334,46 @@ function inset() { return Math.ceil((W() - W() / REST_ZOOM) / 2) + 6; }
 function insetX(x) { return Math.max(inset(), Math.min(W() - inset(), x)); }
 const BIRD_COLS = ['#8a4a3a', '#4a6a8a', '#6a5a3a', '#3a5a4a'];
 
+/* which species are about, and where */
+const BIRD_BY_ID = {};
+DATA.birds.forEach(b => BIRD_BY_ID[b.id] = b);
+
+const AREA_BIRDS = {
+  oak:     ['cardinal', 'jay', 'robin', 'wood', 'sparrow', 'starling'],
+  lane:    ['warbler', 'jay', 'wood', 'owl', 'cardinal'],
+  hollow:  ['owl', 'warbler', 'hawk', 'wood', 'robin'],
+  seneca:  ['sparrow', 'robin', 'starling', 'cardinal'],
+  bridge:  ['duck', 'egret', 'pigeon', 'starling'],
+  mall:    ['pigeon', 'sparrow', 'starling', 'jay'],
+  terrace: ['pigeon', 'sparrow', 'duck', 'egret'],
+  rink:    ['pigeon', 'starling', 'hawk']
+};
+
+function birdsHere() {
+  const list = AREA_BIRDS[areaId()] || AREA_BIRDS.oak;
+  const night = SPR.isNight(G.timeOfDay);
+  const out = list.filter(id => BIRD_BY_ID[id] && (!BIRD_BY_ID[id].night || night));
+  return out.length ? out : ['sparrow'];
+}
+
 function seedCritters() {
   G.critters = [];
   const branchPerch = () => {
     const b = SPR.CANOPY[Math.floor(Math.random() * SPR.CANOPY.length)];
     return { x: b.x + (Math.random() - 0.5) * 20, y: b.y + 14 };
   };
-  for (let i = 0; i < 2; i++) {
-    const p = branchPerch();
-    G.critters.push({ kind: 'bird', x: p.x, y: p.y, hx: p.x, hy: p.y, col: BIRD_COLS[i % BIRD_COLS.length],
-                      ph: Math.random() * 6.28, flying: false, t: 3 + Math.random() * 8, vx: 0, vy: 0 });
+  const here = birdsHere();
+  for (let i = 0; i < 5; i++) {
+    const sp = BIRD_BY_ID[here[i % here.length]];
+    const p = atOak() ? branchPerch()
+                      : { x: inset() + Math.random() * (W() - inset() * 2), y: 70 + Math.random() * 60 };
+    G.critters.push({ kind: 'bird', sp, x: p.x, y: p.y, hx: p.x, hy: p.y, col: sp.body,
+                      ph: Math.random() * 6.28, flying: false, t: 2 + Math.random() * 9, vx: 0, vy: 0 });
+  }
+  for (let i = 0; i < 3; i++) {
+    G.critters.push({ kind: 'dragonfly', x: inset() + Math.random() * (W() - inset() * 2),
+                      y: 100 + Math.random() * 50, col: ['#5fc7d0', '#c05fd0', '#d0a75f'][i % 3],
+                      ph: Math.random() * 6.28, t: 0, sp2: 0.7 + Math.random() * 0.8 });
   }
   const wingCols = ['#ffd24a', '#e88ac0', '#8ac8f0', '#b8e86a', '#e8a05a', '#c8a0f0', '#f0e0a0'];
   for (let i = 0; i < 10; i++) {
@@ -3270,8 +3384,13 @@ function seedCritters() {
   // the bright one. It is the credits, and it knows it.
   G.critters.push({ kind: 'butterfly', credit: true, x: CX() + 40, y: 96,
                     col: '#ffd24a', ph: 1.4, t: 0, sp: 0.7 });
-  G.critters.push({ kind: 'beetle', x: CX() - 20, y: 130, ph: 0, dir: 1, t: 0 });
-  G.critters.push({ kind: 'rabbit', x: insetX(46), y: GROUND_Y + 22, dir: 1, moving: false, t: 2, ph: 0 });
+  for (let i = 0; i < 3; i++) {
+    G.critters.push({ kind: 'beetle', x: CX() - 40 + i * 40, y: 122 + i * 9, ph: i, dir: i % 2 ? 1 : -1, t: 0, home: CX() - 40 + i * 40 });
+  }
+  for (let i = 0; i < 2; i++) {
+    G.critters.push({ kind: 'rabbit', x: insetX(40 + i * 90), y: GROUND_Y + 20 + i * 8,
+                      dir: 1, moving: false, t: 2 + i * 3, ph: i });
+  }
 }
 
 function updateCritters(dt) {
@@ -3308,10 +3427,16 @@ function updateCritters(dt) {
       k.y += Math.sin(G.t * 1.9 * sp + k.ph) * 12 * dt;
       if (k.x > W() - inset()) k.x = inset();
       k.y = Math.max(66, Math.min(GROUND_Y + 22, k.y));
+    } else if (k.kind === 'dragonfly') {
+      const dsp = k.sp2 || 1;
+      k.x += Math.cos(G.t * 0.9 * dsp + k.ph) * 34 * dt;
+      k.y += Math.sin(G.t * 1.7 * dsp + k.ph) * 20 * dt;
+      k.x = Math.max(inset(), Math.min(W() - inset(), k.x));
+      k.y = Math.max(88, Math.min(GROUND_Y + 16, k.y));
     } else if (k.kind === 'beetle') {
       k.x += k.dir * 5 * dt;
       k.y += Math.sin(G.t * 0.6) * 3 * dt;
-      if (Math.abs(k.x - CX()) > 20) k.dir *= -1;
+      if (Math.abs(k.x - (k.home === undefined ? CX() : k.home)) > 22) k.dir *= -1;
       k.y = Math.max(96, Math.min(146, k.y));
     } else if (k.kind === 'rabbit') {
       if (k.moving) {
@@ -3336,6 +3461,22 @@ function critterAt(x, y) {
 }
 
 function touchCritter(k) {
+  if (k.kind === 'bird' && k.sp) {
+    const first = !save.birds[k.sp.id];
+    save.birds[k.sp.id] = (save.birds[k.sp.id] || 0) + 1;
+    persist();
+    const n = Object.keys(save.birds).length;
+    ACH('bird1');
+    if (n >= 5) ACH('bird5');
+    if (n >= 10) ACH('bird10');
+    if (n >= DATA.birds.length) { ACH('birdall'); reachEnding('birder'); }
+    if (first) {
+      SFX.ach();
+      pop(k.sp.name, k.x, k.y - 14, '#d8f0a0');
+      spawnParticles('star', k.x, k.y, 6);
+      if (save.birdBook) pushNote('goal', k.sp.name, k.sp.note, 'bird', 'bird:' + k.sp.id);
+    }
+  }
   if (k.credit) {
     SFX.ach();
     spawnParticles('star', k.x, k.y, 10);
@@ -3578,10 +3719,11 @@ function updateSuit(dt) {
     save.stats.suitSeen = (save.stats.suitSeen || 0) + 1;
     if (save.stats.suitSeen >= 5) ACH('suit5');
     persist();
+    sayYou('Somebody is crossing the ice with two people beside him.');
     const pool = save.stats.suitSeen <= DATA.suitLines.length
       ? [DATA.suitLines[save.stats.suitSeen - 1]]
       : DATA.suitOakAsides;
-    sayTree(pool[Math.floor(Math.random() * pool.length)], 'think');
+    tellHimLater(pool[Math.floor(Math.random() * pool.length)], 'think');
   }
   if (s.x < -40 || s.x > W() + 40) G.suit = null;
 }
@@ -3628,7 +3770,40 @@ function talkSignShown() {
 function talkSignBox() {
   const label = talkLabel();
   const w = Math.max(74, F.textWidth(label, 1) + 24);
-  return { x: Math.round(W() / 2 - w / 2), y: H - 25, w, h: 19 };
+  const shift = saySignShown() ? -Math.round(saySignWidth() / 2) - 4 : 0;
+  return { x: Math.round(W() / 2 - w / 2 + shift), y: H - 25, w, h: 19 };
+}
+
+/* You can type at him exactly the way you type at Noc. */
+function saySignShown() {
+  return G.scene === 'game' && !G.cine && !G.dead && !panelOpen() && !G.holding &&
+         atOak() && !G.asleep;
+}
+function saySignWidth() { return F.textWidth('SAY SOMETHING', 1) + 20; }
+function saySignBox() {
+  const w = saySignWidth();
+  const tb = talkSignBox();
+  return { x: tb.x + tb.w + 8, y: H - 25, w, h: 19 };
+}
+
+function drawSaySign(c) {
+  if (!saySignShown()) return;
+  const b = saySignBox();
+  const hot = G.sayHover;
+  const bob = Math.sin(G.t * 2.4 + 1.1) * (hot ? 1.4 : 0.7);
+  const y = Math.round(b.y + bob);
+  SPR.px(c, b.x + 8, y + b.h, 2, 6, '#5a3a1e');
+  SPR.px(c, b.x + b.w - 10, y + b.h, 2, 6, '#5a3a1e');
+  SPR.roundRect(c, b.x - 2, y - 2, b.w + 4, b.h + 4, 3, SPR.INK);
+  SPR.roundRect(c, b.x, y, b.w, b.h, 2, hot ? '#8a9ac0' : '#6a7a9c');
+  SPR.px(c, b.x + 2, y + 2, b.w - 4, 1, '#9aaad0');
+  F.drawTextCentered(c, b.x + b.w / 2, y + 6, 'SAY SOMETHING', hot ? '#151d2b' : '#e8f0ff', 1);
+}
+
+function overSaySign(x, y) {
+  if (!saySignShown()) return false;
+  const b = saySignBox();
+  return x >= b.x - 6 && x <= b.x + b.w + 6 && y >= b.y - 8 && y <= b.y + b.h + 8;
 }
 
 function talkLabel() {
@@ -3793,7 +3968,7 @@ function render() {
 
   if (G.flash > 0) { ctx.globalAlpha = Math.min(1, G.flash); SPR.px(ctx, 0, 0, W(), H, '#ffffff'); ctx.globalAlpha = 1; }
   if (G.veil > 0) { ctx.globalAlpha = Math.min(1, G.veil); SPR.px(ctx, 0, 0, W(), H, '#05080c'); ctx.globalAlpha = 1; }
-  if (!G.cine && G.scene === 'game') { drawArrows(ctx); drawTalkSign(ctx); SPR.drawHud(ctx, G); }
+  if (!G.cine && G.scene === 'game') { drawArrows(ctx); drawTalkSign(ctx); drawSaySign(ctx); SPR.drawHud(ctx, G); }
   if (G.areaTitle > 0 && !G.cine) SPR.drawAreaTitle(ctx, G, AREAS[G.area].name, AREAS[G.area].sub, Math.min(1, G.areaTitle));
   if (!G.cine && G.scene === 'game') drawPost(ctx);
   drawHint(ctx);
@@ -3981,7 +4156,8 @@ function onMove(ev) {
   for (const a of G.arrows) a.hover = a === ar;
   G.bagHover = overBagButton(fr.x, fr.y);
   G.talkHover = overTalkSign(fr.x, fr.y);
-  if (onSign || ar || G.bagHover || G.talkHover) { cv.style.cursor = 'pointer'; return; }
+  G.sayHover = overSaySign(fr.x, fr.y);
+  if (onSign || ar || G.bagHover || G.talkHover || G.sayHover) { cv.style.cursor = 'pointer'; return; }
   DLG.hover = DLG.choices && dialogueDone() ? choiceAt(fr.x, fr.y) : -1;
   cv.style.cursor = DLG.hover >= 0 ? 'pointer' : (G.holding ? 'none' : cv.style.cursor);
 
@@ -4128,6 +4304,7 @@ function onPress(ev) {
 
   // the signposts at the edges, and the bag in the corner
   if (!G.cine && G.scene === 'game') {
+    if (overSaySign(fr.x, fr.y)) { SFX.click(); openChat('oak'); return; }
     if (overTalkSign(fr.x, fr.y)) { pressTalkSign(); return; }
     const ar = arrowAt(fr.x, fr.y);
     if (ar) { travel(ar.dir); return; }
@@ -4226,7 +4403,7 @@ function onPress(ev) {
   if (h.kind === 'leaf') { collectLeaf(h.i); return; }
   if (h.kind === 'pickup') { takePickup(h.p); return; }
   if (h.kind === 'noc') { SFX.click(); openChat('noc'); return; }
-  if (h.kind === 'suit') { SFX.click(); sayTree(DATA.suitOakAsides[Math.floor(Math.random() * DATA.suitOakAsides.length)], 'smug'); return; }
+  if (h.kind === 'suit') { SFX.click(); sayYou('A dark coat, a long red tie, two people keeping pace with him.'); return; }
   if (h.kind === 'squirrel') { clickSquirrel(); return; }
   if (h.kind === 'part') {
     grab = { x: p.x, lastX: p.x, moved: 0, t: 0 };
@@ -4324,7 +4501,7 @@ document.addEventListener('keydown', e => {
   if (e.key === 'ArrowLeft') travel(-1);
   if (e.key === 'ArrowRight') travel(1);
   if (e.key.toLowerCase() === 'b') toggleBag();
-  if (e.key.toLowerCase() === 't' && !G.asleep) openChat(chatPartner());
+  if (e.key.toLowerCase() === 't' && !G.asleep) { const w = chatPartner(); if (w) openChat(w); else sayYou('Nobody out here to talk to.'); }
   if (e.key.toLowerCase() === 'm') toggleMute();
   if (e.key.toLowerCase() === 'r' && e.shiftKey) eraseEverything();
   if (e.key.toLowerCase() === 'e' && G.scene === 'heaven') openEndings();
@@ -4405,7 +4582,9 @@ if (/[?&]debug/.test(location.search)) {
                  refreshHUD, dropLeaf, triggerSneeze, maybeSpawnSquirrel, persist,
                  skipAll: () => { if (G.cine) { G.cine.i = G.cine.stages.length - 1; skipStage(); } },
                  parkMargin, parkIncome, parkFill, talkSignBox, pressTalkSign, heardTotal, openSets, nextSet, openTopics,
-                 unlockedTags, setHeard, setTotal, checkSets, talkToTree, openMap, areaOpen, areaWants, updateSuit, checkAreas, boardHere, cottageHere, puff, ring, pop, squash, PANEL, openPanel, closePanel, panelIs, panelOpen, openQuestBoard, openJournal, acceptQuest, checkQuests, questStatus, plotPos, hitTest,
+                 unlockedTags, setHeard, setTotal, checkSets, talkToTree, openMap, areaOpen, areaWants, updateSuit, checkAreas,
+                 openBirdDiary, openJobs, openPlans, sayYou, tellHimLater, birdsHere, saySignBox,
+                 seedCritters, touchCritter, refreshPanel, boardHere, cottageHere, puff, ring, pop, squash, PANEL, openPanel, closePanel, panelIs, panelOpen, openQuestBoard, openJournal, acceptQuest, checkQuests, questStatus, plotPos, hitTest,
                  travel, takePickup, seedPickups, openChat, closeChat, sendChat, openBag, closeBag,
                  agreePlan, completePlan, planById, areaId, wakeHim, AREAS,
                  openPost, closePost, openSettings, openCredits, openTrophies, openEndings, openGarden, closeGarden, buildGarden, snailName, finishQuest, questById, questProgress,
