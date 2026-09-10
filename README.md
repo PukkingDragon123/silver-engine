@@ -107,9 +107,22 @@ computed from your save every frame, so it is never stale and it never asks you
 for something you have already done.
 
 Snails carry every trophy in this game, and it used to be possible to miss
-that. Now the one in front wears a **TAP TO OPEN** tag joined to him by a
-dotted line and an arrowhead, and it stays up for as long as he is carrying
-something you have not opened.
+that. The first snail to bring you one wears a **TAP TO OPEN** tag joined to
+him by a dotted line and an arrowhead, and it stays up until you tap him.
+Once you have opened one parcel the tag never appears again — you know what
+snails are now, and a permanent instruction is just clutter.
+
+**The rules open themselves, once.** The first time anybody plays, a HOW TO
+PLAY scroll unrolls a few seconds after he wakes up: eight short rows saying
+tap the tree, leaves are the money, you can type at him, the tag top-left is
+what to do next, snails bring trophies, the signposts walk you west and east,
+the backpack is east in the north woods, and say hello to things. It never
+opens itself again, and it stays in the backpack and the settings under HOW
+TO PLAY.
+
+**Every signpost says where it goes**, open or shut. A locked one shows the
+place name with a padlock hanging off it rather than the word LOCKED, and
+tapping it tells you what it is still waiting for.
 
 ## Talking is the game
 
@@ -459,7 +472,7 @@ promise.
 
 **You cannot get in until you die.** Death is not the end of the collection. In heaven there is a marble gallery
 under vaulted arches, with a red carpet running away into the light and a
-plinth for every one of the **137 achievements** — each with its own carved
+plinth for every one of the **138 achievements** — each with its own carved
 trophy on a gold mount: a stone tissue for the sneeze, a leaf vault for the
 hoarder, a lighter sinking into water for the one who threw it away, a film
 reel for the whole canon. Chandeliers burn overhead, a skylight throws shafts

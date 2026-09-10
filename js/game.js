@@ -20,7 +20,7 @@ const defaultSave = () => ({
   quests: {}, questDone: {}, unread: [], snails: {}, setSeen: {}, areasSeen: { oak: 1 },
   birds: {}, birdBook: false, metNoc: false,
   tributes: 0, readStone: false, stoneHeard: 0, churchHeard: 0, archesHeard: 0, starHeard: 0, lotHeard: 0,
-  openedParcels: 0,
+  openedParcels: 0, learned: {},
   stats: { leavesTotal: 0, sneezes: 0, hugs: 0, waters: 0, plants: 0, trades: 0,
            sqChats: 0, rebirths: 0, flicks: 0, seasons: {}, boughtAll: false }
 });
@@ -39,6 +39,7 @@ try {
     save.unread = Array.isArray(p.unread) ? p.unread : [];
     save.snails = p.snails || {};
     save.setSeen = p.setSeen || {};
+    save.learned = p.learned || {};
     save.areasSeen = Object.assign({ oak: 1 }, p.areasSeen || {});
     save.birds = p.birds || {}; save.birdBook = !!p.birdBook;
   }
@@ -78,6 +79,7 @@ const G = {
   asleep: false, wakeT: 0, squash: 0, squashV: 0,
   boardPop: 0, cottagePop: 0,
   hasBag: false, bagOpen: false, bagHover: false, bagBadge: 0, talkHover: false, goalHover: false, typing: false,
+  goalSeen: null, goalHintT: 0,
   activePlan: null, chatWho: null, veil: 0, toTell: [],
   hintText: '', hintShown: false, hintCine: false,
   sessionTime: 0, sinceTreeClick: 0, spamCount: 0, spamTimer: 0,
@@ -1065,6 +1067,7 @@ function bagItems() {
   }
 
   out.push({ t: 'rule' });
+  out.push({ t: 'row', icon: 'ask', label: 'How to play', right: 'READ', act: openHowTo });
   const gl = goalList();
   out.push({ t: 'row', icon: 'flag', label: 'What to do next',
              right: gl.filter(x => x.done).length + '/' + gl.length, act: openGoals });
@@ -1207,6 +1210,7 @@ function settingsItems() {
   const live = NOC_AI.live;
   return [
     { t: 'title', s: 'SETTINGS' },
+    { t: 'row', label: 'How to play', icon: 'ask', right: 'READ', act: openHowTo },
     { t: 'row', label: 'Sound', icon: 'feather', right: save.muted ? 'OFF' : 'ON',
       act: () => { toggleMute(); refreshPanel(); } },
     { t: 'row', label: 'Real mind', icon: 'book', right: live ? 'ON' : 'OFF', act: askForKey },
@@ -1216,6 +1220,35 @@ function settingsItems() {
     { t: 'row', label: 'Credits', icon: 'star', right: 'OPEN', act: openCredits },
     { t: 'row', label: 'Erase everything', icon: 'fire', right: 'ERASE', rightCol: '#8a1f14', act: eraseEverything }
   ];
+}
+
+/* =========================================================================
+   HOW TO PLAY
+   Eight short lines. It opens itself once, the first time you ever play, and
+   after that it lives in the bag and in the settings.
+   ========================================================================= */
+function openHowTo() {
+  ACH('howto');
+  save.learned.howto = 1; persist();
+  openPanel({
+    id: 'howto', anchor: 'mid', wide: true, maxH: H - 30,
+    build: () => [
+      { t: 'title', s: 'HOW TO PLAY' },
+      { t: 'text', s: "It's a game about talking to a tree. That's the whole thing.", align: 'center', col: SPR.PAPER.ink3 },
+      { t: 'rule' },
+      { t: 'row', icon: 'mouth', label: 'Tap the tree', sub: "Or the sign under him. He says something new every time." },
+      { t: 'row', icon: 'leaf',  label: 'Leaves fall when he talks', sub: "Tap them to pick them up. That's the money." },
+      { t: 'row', icon: 'chat',  label: 'Type at him', sub: "Tap the bar above the sign and say anything you like." },
+      { t: 'row', icon: 'flag',  label: 'The tag, top left', sub: "It always says the one thing to do next. Tap it for the list." },
+      { t: 'row', icon: 'reach', label: 'Snails bring trophies', sub: "Tap a snail to open what he's carrying." },
+      { t: 'row', icon: 'globe', label: 'Signposts at the edges', sub: "They walk you west and east. Locked ones say what they want." },
+      { t: 'row', icon: 'reach', label: 'Find the backpack', sub: "It's east, in the north woods. Everything lives in it after that." },
+      { t: 'row', icon: 'bird',  label: 'Say hello to things', sub: "Birds, bugs, the squirrel. He notices that you did." },
+      { t: 'rule' },
+      { t: 'text', s: "Nothing in this game is bought and nothing is timed. You can also just sit here.", col: SPR.PAPER.ink3 },
+      { t: 'gap', h: 4 }
+    ]
+  });
 }
 
 function askForKey() {
@@ -1470,7 +1503,19 @@ function goalTagBox() {
 function drawGoalTag(c) {
   const b = goalTagBox();
   if (!b) return;
+  const it = nextGoal();
+  // when the goal changes, say where to go for a few seconds, and any time
+  // the pointer is on the tag
+  if (it && it.id !== G.goalSeen) { G.goalSeen = it.id; G.goalHintT = 7; }
   const hot = G.goalHover;
+  if (it && (hot || G.goalHintT > 0)) {
+    const lines = F.wrapText(it.hint, Math.min(W() - 20, 190), 1);
+    for (let i = 0; i < lines.length; i++) {
+      const lw = F.textWidth(lines[i], 1);
+      px(c, b.x + 1, b.y + b.h + 2 + i * 9, lw + 6, 9, '#1a0f08');
+      F.drawText(c, b.x + 4, b.y + b.h + 3 + i * 9, lines[i], '#e8d8b0', 1, '#000000');
+    }
+  }
   px(c, b.x, b.y, b.w, b.h, '#1a0f08');
   px(c, b.x + 1, b.y + 1, b.w - 2, b.h - 2, hot ? '#6a4a26' : '#4a3620');
   px(c, b.x + 1, b.y + 1, b.w - 2, 1, hot ? '#8a6a3c' : '#6a4a26');
@@ -1494,7 +1539,8 @@ function snailAt(x, y) {
 function drawPost(c) {
   // only the one in front gets labelled, or two snails at once turns into
   // wallpaper
-  const label1 = snails.find(sn => !sn.opened);
+  const teach = (save.openedParcels || 0) < 1;
+  const label1 = teach ? snails.find(sn => !sn.opened) : null;
   for (const sn of snails) {
     SPR.drawSnail(c, G, sn);
     if (sn.hint > 0 && !sn.opened && sn === label1) {
@@ -3013,6 +3059,7 @@ function update(dt) {
   updateTravel(dt);
   refreshArrows();
   if (G.areaTitle > 0) G.areaTitle -= dt;
+  if (G.goalHintT > 0) G.goalHintT -= dt;
   if (G.wakeT > 0) { G.wakeT -= dt; if (G.wakeT <= 0) G.asleep = false; }
 
   if (G.cine) {
@@ -4028,7 +4075,9 @@ function refreshArrows() {
     const i = G.area + dir;
     if (i < 0 || i >= AREAS.length) continue;
     const open = areaOpen(i);
-    const label = open ? AREAS[i].name.replace(/^THE /, '') : 'LOCKED';
+    // a locked signpost still says where it goes, with a padlock on it. A
+    // sign that only says LOCKED tells you nothing you can act on.
+    const label = AREAS[i].name.replace(/^THE /, '');
     const box = SPR.travelArrowBox(dir, label);
     G.arrows.push({ dir, label, open, hover: false, x: box.x, y: box.y, w: box.w, h: box.h });
   }
@@ -4840,7 +4889,12 @@ function wakeHim() {
       ? "Mm. You again. I had only just got to sleep. Sit down. Give me a minute."
       : "Nnh. Someone is standing under me. Give me a moment. That was a long nap.",
       'sleepy');
-    if (!save.ach.lane && !save.ach.hollow) setTimeout(() => nudge('the signposts at the edges walk you west and east', 12), 8000);
+    if (!save.learned.howto) {
+      // first time anybody has played: show the rules once, unprompted, and
+      // never again
+      setTimeout(() => { if (!G.dead && !G.cine && !panelOpen()) openHowTo(); }, 4200);
+    }
+    else if (!save.ach.lane && !save.ach.hollow) setTimeout(() => nudge('the signposts at the edges walk you west and east', 12), 8000);
     else if (!save.bag) setTimeout(() => nudge('there is a bag somewhere east of here', 10), 8000);
   }, 700);
 }
@@ -4855,7 +4909,7 @@ if (/[?&]debug/.test(location.search)) {
                  parkMargin, parkIncome, parkFill, talkSignBox, pressTalkSign, heardTotal, openSets, nextSet, openTopics,
                  unlockedTags, setHeard, setTotal, checkSets, talkToTree, openMap, areaOpen, areaWants, updateSuit, checkAreas,
                  updateStar, sayStar, takeClipboard, leaveTribute, starAt, stoneAt, stoneX, camRect, toLogical,
-                 goalList, nextGoal, openGoals, goalTagBox, overGoalTag, checkGoals,
+                 goalList, nextGoal, openGoals, goalTagBox, overGoalTag, checkGoals, openHowTo,
                  openBirdDiary, openJobs, openPlans, sayYou, tellHimLater, birdsHere,
                  startTyping, stopTyping, typeBarBox, typeBarShown, sendChat, chatPartner,
                  seedCritters, touchCritter, refreshPanel, boardHere, cottageHere, puff, ring, pop, squash, PANEL, openPanel, closePanel, panelIs, panelOpen, openQuestBoard, openJournal, acceptQuest, checkQuests, questStatus, plotPos, hitTest,
