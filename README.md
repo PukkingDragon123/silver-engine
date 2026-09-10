@@ -73,10 +73,13 @@ short observations, in your own balloon. Anything worth telling him — the man
 crossing the rink, say — is **saved up and brought out next time you are back
 under him**, which is how a tree would actually learn anything.
 
-There are two signs under him. **TALK TO HIM** runs the conversation the way it
-always did. **SAY SOMETHING** opens the same typed scroll you get with Noc, so
-you can put a question to the oak in your own words exactly the way you put one
-to the lamp-keeper.
+**Typing is just the other way of talking to him.** There is no chat window and
+no log: a strip of paper sits at the bottom of the world whenever there is
+somebody in front of you, and you type on it. Your words go up in your own
+balloon, his answer comes back in his, and the screen never changes. Tapping
+**TALK TO HIM** and typing a question are the same act, equally available. When
+Noc turns something you said into a plan, agreeing to it is just one of the
+replies under the balloon.
 
 ## The birds
 

@@ -1071,14 +1071,19 @@ function drawCritters(c, g) {
         if (k.credit) dot(c, k.x + d * (w - 1.5), k.y, '#fff6d8');
       }
     } else if (k.kind === 'dragonfly') {
-      const w = 4 + Math.abs(Math.sin(g.t * 22 + k.ph)) * 2;
-      px(c, k.x - 5, k.y, 11, 1, shade(k.col));
-      pcircle(c, k.x + 6, k.y, 1.6, shade(mix(k.col, '#ffffff', 0.4)));
-      dot(c, k.x + 7, k.y - 1, '#120a04');
-      c.globalAlpha = 0.6;
-      px(c, k.x - 1, k.y - w, 2, w, shade('#cfe8f8'));
-      px(c, k.x + 1, k.y - w + 1, 2, w - 1, shade('#cfe8f8'));
-      px(c, k.x - 1, k.y + 1, 2, w - 1, shade('#cfe8f8'));
+      // long thin body, four narrow wings held out sideways, one bright eye
+      const beat = Math.abs(Math.sin(g.t * 26 + k.ph));
+      const wy = k.y - Math.round(beat);
+      const body = shade(k.col);
+      px(c, k.x - 5, k.y, 8, 1, body);
+      px(c, k.x - 5, k.y, 3, 1, shade(mix(k.col, '#ffffff', 0.35)));
+      pcircle(c, k.x + 4, k.y, 1.4, shade(mix(k.col, '#ffffff', 0.5)));
+      dot(c, k.x + 5, k.y - 1, '#120a04');
+      c.globalAlpha = 0.5;
+      for (const d of [-1, 1]) {
+        px(c, k.x + d, wy - 1, d * 5, 1, shade('#dff0ff'));
+        px(c, k.x - 1 + (d < 0 ? d : 0), wy + 1, d * 4, 1, shade('#cfe8f8'));
+      }
       c.globalAlpha = 1;
     } else if (k.kind === 'beetle') {
       pellipse(c, k.x, k.y, 3, 2, shade('#2a2a3a'));

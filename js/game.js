@@ -74,7 +74,7 @@ const G = {
   noc: { x: 0, y: GROUND_Y + 8, look: 0, talking: 0, thinking: 0 },
   asleep: false, wakeT: 0, squash: 0, squashV: 0,
   boardPop: 0, cottagePop: 0,
-  hasBag: false, bagOpen: false, bagHover: false, bagBadge: 0, talkHover: false, sayHover: false,
+  hasBag: false, bagOpen: false, bagHover: false, bagBadge: 0, talkHover: false, typing: false,
   activePlan: null, chatWho: null, veil: 0, toTell: [],
   hintText: '', hintShown: false, hintCine: false,
   sessionTime: 0, sinceTreeClick: 0, spamCount: 0, spamTimer: 0,
@@ -516,7 +516,7 @@ function drawChoices(c) {
   const list = DLG.choices;
   const w = Math.min(212, W() - 20);
   const lh = 14;
-  let y = H - 30 - list.length * (lh + 4);
+  let y = H - 48 - list.length * (lh + 4);
   for (let i = 0; i < list.length; i++) {
     const x = Math.round(W() / 2 - w / 2);
     const hovered = DLG.hover === i;
@@ -538,7 +538,8 @@ function choiceAt(x, y) {
 
 function pickReply(ch) {
   DLG.choices = null; DLG.rects = [];
-  if (ch.type) { hideBubble(); openChat('oak'); return; }
+  if (ch.type) { hideBubble(); startTyping(); return; }
+  if (ch.act) { SFX.click(); ch.act(); return; }
   save.stats.replies = (save.stats.replies || 0) + 1;
   save.stats.tones = save.stats.tones || {};
   save.stats.tones[ch.tone] = (save.stats.tones[ch.tone] || 0) + 1;
@@ -709,11 +710,7 @@ function measureItem(it, w) {
     }
     case 'btns':  return 16;
     case 'trophy': return 46;
-    case 'chat': {
-      it._lines = F.wrapText(it.s, inner - 8, 1);
-      return (it.who === 'sys' ? 0 : LINE_H) + it._lines.length * LINE_H + 4;
-    }
-    case 'input': return 18;
+
     case 'snail': return 30;
     case 'bird': return 22;
     default: return 10;
@@ -926,41 +923,6 @@ function drawPanelItem(c, it, x, y, w, i) {
       break;
     }
 
-    case 'chat': {
-      const you = it.who === 'you';
-      const sys = it.who === 'sys';
-      let ly = y + 1;
-      if (!sys) {
-        const tag = you ? 'YOU' : (G.chatWho === 'oak' ? 'THE OAK' : 'NOC');
-        if (you) F.drawText(c, x + w - pad - F.textWidth(tag, 1), ly, tag, '#2a5a7a', 1);
-        else F.drawText(c, x + pad, ly, tag, PAP.gold, 1);
-        ly += LINE_H;
-      }
-      for (const line of it._lines) {
-        const col = sys ? PAP.ink3 : you ? PAP.ink2 : PAP.ink;
-        if (you) F.drawText(c, x + w - pad - F.textWidth(line, 1), ly, line, col, 1);
-        else F.drawText(c, x + pad + (sys ? 0 : 4), ly, line, col, 1);
-        ly += LINE_H;
-      }
-      break;
-    }
-
-    case 'input': {
-      SPR.px(c, x + pad, y + 13, inner, 1, PAP.deep);
-      PANEL.rects.push({ i, x: x + 2, y: y - 1, w: w - 4, h: 18 });
-      const maxW = inner - 8;
-      let vis = typedText();
-      while (F.textWidth(vis, 1) > maxW) vis = vis.slice(1);      // the view follows the caret
-      if (chatBusy) {
-        F.drawText(c, x + pad + 1, y + 2, 'he is thinking about it', PAP.ink3, 1);
-        break;
-      }
-      const caretX = x + pad + 1 + (vis ? F.textWidth(vis, 1) + 1 : 0);
-      if (vis) F.drawText(c, x + pad + 1, y + 2, vis, PAP.ink, 1);
-      else F.drawText(c, caretX + 5, y + 2, 'say something', PAP.ink3, 1);
-      if (Math.sin(G.t * 6) > 0) SPR.px(c, caretX, y + 2, 3, 7, PAP.ink);
-      break;
-    }
   }
 }
 
@@ -1625,7 +1587,7 @@ function drawHint(c) {
   if (G.hintCine) {
     F.drawText(c, W() - w - 8, 8, G.hintText, '#c8b89a', 1, '#000000');
   } else {
-    const y = signs.length ? H - 34 : (talkSignShown() ? H - 32 : H - 14);
+    const y = signs.length ? H - 34 : (typeBarShown() ? H - 54 : talkSignShown() ? H - 32 : H - 14);
     const pulse = 0.72 + 0.28 * Math.sin(G.t * 2.4);
     c.globalAlpha = pulse;
     F.drawTextCentered(c, W() / 2, y, G.hintText, '#f4ead6', 1, '#000000');
@@ -2154,19 +2116,19 @@ function arriveArea() {
     ACH('lane');
     if (!save.metNoc) {
       save.metNoc = true; persist();
-      setTimeout(() => nocSay(DATA.nocIntro.join(' ')), 700);
+      laterSay(700, () => nocSay(DATA.nocIntro.join(' ')));
     } else if (!save.birdBook) {
       // the second time you come down, he gives you his book
       save.birdBook = true; persist();
-      setTimeout(() => {
+      laterSay(800, () => {
         nocSay(DATA.nocBirdGift);
         ACH('birdbook');
         pushNote('goal', 'BIRD DIARY', "Noc's book of what comes through the park.", 'bird', 'birdbook');
         ring(G.noc.x, GROUND_Y - 10, '#ffcf6a', 1.2);
         pop('A BOOK', G.noc.x, GROUND_Y - 48, '#ffcf6a');
-      }, 800);
+      });
     } else if (Math.random() < 0.5) {
-      setTimeout(() => nocSay(DATA.nocIdle[Math.floor(Math.random() * DATA.nocIdle.length)]), 900);
+      laterSay(900, () => nocSay(DATA.nocIdle[Math.floor(Math.random() * DATA.nocIdle.length)]));
     }
   }
   if (areaId() === 'hollow') ACH('hollow');
@@ -2174,12 +2136,11 @@ function arriveArea() {
   seedCritters();
   if (areaId() === 'rink') { ACH('rink'); G.suitTimer = 3; }
   else G.suit = null;
-  // he says something about wherever you have just walked into
+  // a note to yourself about wherever you have just walked into, but only if
+  // nothing has happened in the meantime
   const lines = DATA.areaLines[areaId() === 'lane' ? 'ramble' : areaId()];
   if (lines && Math.random() < 0.9) {
-    setTimeout(() => {
-      if (G.scene === 'game' && !G.cine) sayYou(lines[Math.floor(Math.random() * lines.length)]);
-    }, 900);
+    laterSay(900, () => sayYou(lines[Math.floor(Math.random() * lines.length)]));
   }
   refreshHUD();
   persist();
@@ -2272,12 +2233,12 @@ function agreePlan(id) {
   if (!save.plans[id]) {
     save.plans[id] = 1; persist();
     ACH('plan1');
-    chatLine('noc', "Agreed, then. " + p.ask);
+    nocSay("Agreed, then. " + p.ask);
     pushNote('goal', 'PLAN: ' + p.name, 'Agreed with Noc. Come back when it can be done.', 'reach', 'plan:' + p.id);
     return;
   }
   const blocker = planBlocker(p);
-  if (blocker) { SFX.deny(); chatLine('noc', "Not yet. We need " + blocker); return; }
+  if (blocker) { SFX.deny(); nocSay("Not yet. We need " + blocker); return; }
   completePlan(p);
 }
 
@@ -2290,7 +2251,7 @@ function completePlan(p) {
   delete save.plans[p.id];
   SFX.ach(); G.flash = 0.4;
   spawnParticles('star', G.noc.x, GROUND_Y, 14);
-  chatLine('noc', p.done);
+  nocSay(p.done);
   let gift = '';
   if (p.give.item) {
     G.inv.items[p.give.item] = true; save.items[p.give.item] = 1; G.bagBadge = 1;
@@ -2300,7 +2261,7 @@ function completePlan(p) {
   }
   if (p.give.leaves) { G.inv.leaves += p.give.leaves; save.stats.leavesTotal += p.give.leaves; gift = p.give.leaves + ' leaves, for your trouble.'; }
   if (p.give.upgrade) { save.park.upgrades[p.give.upgrade] = 1; gift = 'The lane keeps the lights.'; }
-  if (gift) chatLine('noc', gift);
+  if (gift) setTimeout(() => nocSay(gift), 1400);
   pushNote('chal', 'PLAN DONE: ' + p.name, p.done, 'reach', 'plandone:' + p.id);
   ACH('plandone');
   checkQuests();
@@ -2319,98 +2280,114 @@ function completePlan(p) {
    input element sits underneath purely to raise a keyboard and collect
    keystrokes, and every character it catches is redrawn in 5x7 pixels.
    ========================================================================= */
+/* =========================================================================
+   TYPING TO HIM
+   No panel, no log, no separate screen. There is a line at the bottom of the
+   world; you type on it and he answers in the same balloon he uses for
+   everything else. Typing is simply the other way of talking to him, exactly
+   as available as poking him is.
+   ========================================================================= */
 let chatBusy = false;
-const CHAT_LOG = { noc: [], oak: [] };
 const elTyping = $('typing');
 
 function typedText() { return elTyping ? elTyping.value : ''; }
 
 function chatPartner() { return areaId() === 'lane' ? 'noc' : atOak() ? 'oak' : null; }
 
+function speakerName(who) { return who === 'oak' ? 'THE WISE OAK TREE' : 'NOC'; }
+
+/* the line is there whenever there is somebody in front of you */
+function typeBarShown() {
+  return G.scene === 'game' && !G.cine && !G.dead && !panelOpen() && !G.holding &&
+         !G.asleep && !!chatPartner();
+}
+
+function typeBarBox() {
+  const w = Math.min(200, W() - 24);
+  return { x: Math.round(W() / 2 - w / 2), y: H - 44, w, h: 15 };
+}
+
+function startTyping() {
+  if (!typeBarShown()) return;
+  G.typing = true;
+  G.chatWho = chatPartner();
+  if (elTyping) { try { elTyping.focus(); } catch (e) {} }
+  ACH(G.chatWho === 'oak' ? 'oakchat' : 'talknoc');
+}
+
+function stopTyping() {
+  G.typing = false;
+  if (elTyping) { elTyping.value = ''; try { elTyping.blur(); } catch (e) {} }
+}
+
+/* kept as a name the rest of the game already calls */
 function openChat(who) {
-  if (G.cine) return;
-  who = who === 'oak' ? 'oak' : 'noc';
-  G.chatWho = who;
-  const log = CHAT_LOG[who];
-  if (!log.length) {
-    log.push({ who: 'sys', s: NOC_AI.live
-      ? 'Answering with a real mind. (' + NOC_AI.model + ')'
-      : 'Type anything. He answers in his own words. /help for the odd commands.' });
-    log.push({ who: 'them', s: who === 'oak'
-      ? "Oh. You are going to TALK to me. Nobody talks to me. They click me and take what they are given. Go on, then."
-      : (save.metNoc ? DATA.nocLines[Math.floor(Math.random() * DATA.nocLines.length)] : DATA.nocIntro[0]) });
+  if (!typeBarShown()) return;
+  G.chatWho = who === 'oak' ? 'oak' : who === 'noc' ? 'noc' : chatPartner();
+  startTyping();
+}
+function closeChat() { stopTyping(); }
+
+function drawTypeBar(c) {
+  if (!typeBarShown()) return;
+  const b = typeBarBox();
+  const on = G.typing;
+  const who = chatPartner();
+  // a strip of paper pinned to the bottom of the world
+  SPR.roundRect(c, b.x - 2, b.y - 2, b.w + 4, b.h + 4, 3, SPR.INK);
+  SPR.roundRect(c, b.x, b.y, b.w, b.h, 2, on ? '#f4e4bf' : '#cbbb9a');
+  SPR.px(c, b.x + 2, b.y + 2, b.w - 4, 1, '#fbf1d8');
+  SPR.px(c, b.x + 4, b.y + b.h - 3, b.w - 8, 1, on ? '#c9ad78' : '#b0a084');
+
+  if (chatBusy) {
+    F.drawText(c, b.x + 5, b.y + 4, 'thinking about it' + '.'.repeat(1 + (Math.floor(G.t * 3) % 3)), '#8f7853', 1);
+    return;
   }
-  openPanel({
-    id: 'chat', anchor: 'bottom', build: chatItems,
-    onClose: () => { if (elTyping) elTyping.blur(); }
-  });
-  PANEL.target = panelMaxScroll();          // start at the newest line
-  if (elTyping) { elTyping.value = ''; try { elTyping.focus(); } catch (e) {} }
-  ACH(who === 'oak' ? 'oakchat' : 'talknoc');
-}
-
-function closeChat() { if (panelIs('chat')) closePanel(); }
-
-function chatItems() {
-  const who = G.chatWho || 'noc';
-  const out = [{ t: 'title', s: who === 'oak' ? 'TALKING TO THE OAK' : 'TALKING TO NOC' }];
-  for (const e of CHAT_LOG[who]) {
-    out.push({ t: 'chat', who: e.who, s: e.s });
-    if (e.acts) out.push({ t: 'btns', items: e.acts });
+  const maxW = b.w - 12;
+  let vis = typedText();
+  while (F.textWidth(vis, 1) > maxW) vis = vis.slice(1);
+  if (vis) {
+    F.drawText(c, b.x + 5, b.y + 4, vis, '#35210e', 1);
+    if (on && Math.sin(G.t * 6) > 0) SPR.px(c, b.x + 6 + F.textWidth(vis, 1), b.y + 4, 3, 7, '#35210e');
+  } else if (on) {
+    if (Math.sin(G.t * 6) > 0) SPR.px(c, b.x + 5, b.y + 4, 3, 7, '#35210e');
+    F.drawText(c, b.x + 11, b.y + 4, 'type, then enter', '#8f7853', 1);
+  } else {
+    F.drawText(c, b.x + 5, b.y + 4, who === 'noc' ? 'say something to Noc' : 'say something to him', '#7a6a4e', 1);
   }
-  out.push({ t: 'rule' });
-  out.push({ t: 'input' });
-  return out;
 }
 
-function chatLine(who, text, acts) {
-  const w = G.chatWho || 'noc';
-  const e = { who: who === 'noc' ? 'them' : who, s: text, acts };
-  CHAT_LOG[w].push(e);
-  if (CHAT_LOG[w].length > 40) CHAT_LOG[w].splice(0, CHAT_LOG[w].length - 40);
-  if (e.who === 'them') { G.noc.talking = 2; SFX.click(); }
-  if (panelIs('chat')) { refreshPanel(); PANEL.target = panelMaxScroll(); }
-  return e;
+function overTypeBar(x, y) {
+  if (!typeBarShown()) return false;
+  const b = typeBarBox();
+  return x >= b.x - 6 && x <= b.x + b.w + 6 && y >= b.y - 6 && y <= b.y + b.h + 6;
 }
+
+/* the odd commands, answered in the balloon like anything else */
+function sysSay(text) { say('A NOTE TO YOURSELF', text, null, 'serious'); }
 
 function chatCommand(text) {
   const [cmd, ...rest] = text.slice(1).split(/\s+/);
   const arg = rest.join(' ').trim();
   switch (cmd.toLowerCase()) {
     case 'help':
-      chatLine('sys', '/key <anthropic key> · /model <id> · /nokey · /jobs · /plans · /forget');
+      sysSay('/key <anthropic key> to give them a real mind · /model · /nokey · /forget');
       return true;
     case 'key':
-      if (!arg) { chatLine('sys', 'Paste the key after /key. It stays in this browser.'); return true; }
-      NOC_AI.setKey(arg);
-      chatLine('sys', 'Right. They think with a real mind now (' + NOC_AI.model + '). The local brains stay as backup.');
-      ACH('realai');
+      if (!arg) { sysSay('Paste the key after /key. It stays in this browser.'); return true; }
+      NOC_AI.setKey(arg); ACH('realai');
+      sysSay('Done. They think with a real mind now (' + NOC_AI.model + ').');
       return true;
     case 'nokey':
       NOC_AI.setKey('');
-      chatLine('sys', 'Key cleared. Back to the brains they were born with.');
+      sysSay('Key cleared. Back to the brains they were born with.');
       return true;
     case 'model':
-      chatLine('sys', 'Model: ' + NOC_AI.setModel(arg));
+      sysSay('Model: ' + NOC_AI.setModel(arg));
       return true;
     case 'forget':
       NOC_AI.forget(G.chatWho);
-      CHAT_LOG[G.chatWho || 'noc'].length = 0;
-      chatLine('sys', 'He has forgotten the conversation. He has not forgotten you.');
-      return true;
-    case 'jobs':
-      for (const q of DATA.quests) {
-        const st = questStatus(q);
-        chatLine('sys', (st === 'done' ? 'done: ' : st === 'open' ? 'in hand: ' : '') + q.name +
-                        ' — ' + (st === 'open' ? questProgress(q) : q.desc));
-      }
-      return true;
-    case 'plans':
-      for (const p of DATA.plans) {
-        const st = planStatus(p);
-        chatLine('sys', (st === 'done' ? 'kept: ' : st === 'open' ? 'agreed: ' : '') + p.name +
-                        (st === 'open' ? ' — ' + (planBlocker(p) || 'ready. Say so.') : ''));
-      }
+      sysSay('He has forgotten the conversation. He has not forgotten you.');
       return true;
   }
   return false;
@@ -2422,8 +2399,7 @@ async function sendChat() {
   if (elTyping) elTyping.value = '';
   if (text[0] === '/') { if (chatCommand(text)) return; }
 
-  const who = G.chatWho || 'noc';
-  chatLine('you', text);
+  const who = G.chatWho || chatPartner() || 'oak';
   if (who === 'oak') {
     save.stats.oakChats = (save.stats.oakChats || 0) + 1;
     if (save.stats.oakChats >= 20) ACH('oakchat20');
@@ -2433,36 +2409,36 @@ async function sendChat() {
   }
   persist();
 
+  // your own words, in your own balloon, first
+  say('YOU', text, null, 'serious');
   chatBusy = true;
   G.noc.thinking = 1;
-  if (who === 'oak') { G.talking = true; G.mood = 'think'; }
-  const dots = chatLine('them', '...');
+  if (who === 'oak') { G.talking = true; G.mood = 'think'; squash(0.12); }
+
   const ctx = {
     season: G.season, night: SPR.isNight(G.timeOfDay), leaves: G.inv.leaves,
-    plansDone: plansDone(), backpack: !!save.bag, heard: heardCount()
+    plansDone: plansDone(), backpack: !!save.bag, heard: heardTotal()
   };
   let res;
   try { res = await NOC_AI.ask(text, ctx, who); }
   catch (e) { res = { text: "Sorry. Lost my thread. Say it again?", plan: null }; }
-  G.noc.thinking = 0;
   chatBusy = false;
-  if (who === 'oak') { G.talking = false; G.mood = 'chill'; G.moodTimer = 4; G.sinceTreeClick = 0; }
+  G.noc.thinking = 0;
+  if (who === 'oak') { G.mood = 'chill'; G.moodTimer = 4; G.sinceTreeClick = 0; }
 
-  const log = CHAT_LOG[who];
-  const at = log.indexOf(dots);
-  if (at >= 0) log.splice(at, 1);
-
+  // a plan offer becomes two ordinary replies under the balloon
   const p = res.plan && who === 'noc' ? planById(res.plan) : null;
-  const acts = [];
+  let choices = null;
   if (p && !save.planDone[p.id]) {
-    acts.push({ label: save.plans[p.id] ? 'DO IT NOW' : 'AGREE', act: () => agreePlan(p.id) });
-    acts.push({ label: 'NOT YET', act: () => chatLine('them', "Fine. It'll keep. Everything out here keeps.") });
+    choices = [
+      { tone: 'kind', text: save.plans[p.id] ? "let's do it now" : 'agreed', act: () => agreePlan(p.id) },
+      { tone: 'joke', text: 'not yet', follow: "Fine. It'll keep. Everything out here keeps." }
+    ];
   }
-  chatLine('them', res.text, acts.length ? acts : null);
-
-  const short = res.text.length > 150 ? res.text.slice(0, 148) + '...' : res.text;
-  if (!panelIs('chat')) { if (who === 'oak') sayTree(short, 'chill'); else nocSay(short); }
-  else G.noc.talking = 2.5;
+  if (who === 'oak') sayTree(res.text, 'chill');
+  else nocSay(res.text);
+  if (choices) { DLG.choices = choices; DLG.rects = []; DLG.hover = -1; }
+  if (elTyping && G.typing) { try { elTyping.focus(); } catch (e) {} }
 }
 
 /* trim a string until it fits, with an ellipsis */
@@ -2841,6 +2817,7 @@ function update(dt) {
   updateDialogue(dt);
   updatePanel(dt);
   updateSquash(dt);
+  if (G.typing && !typeBarShown()) stopTyping();
   updateToasts(dt);
   updateParticles(dt);
 
@@ -3196,6 +3173,18 @@ function sayTree(text, mood) {
   if (!atOak()) return false;
   say('THE WISE OAK TREE', text, mood || 'idle', '');
   return true;
+}
+
+/* A line scheduled on a timer must not interrupt. If the balloon is busy, if
+   somebody is waiting on a reply, or if you have walked off, it is dropped. */
+function laterSay(ms, fn) {
+  const here = areaId();
+  setTimeout(() => {
+    if (G.scene !== 'game' || G.cine || G.dead) return;
+    if (DLG.on || chatBusy || panelOpen()) return;
+    if (areaId() !== here) return;
+    fn();
+  }, ms);
 }
 
 /* your own voice, for everywhere he is not */
@@ -3770,40 +3759,7 @@ function talkSignShown() {
 function talkSignBox() {
   const label = talkLabel();
   const w = Math.max(74, F.textWidth(label, 1) + 24);
-  const shift = saySignShown() ? -Math.round(saySignWidth() / 2) - 4 : 0;
-  return { x: Math.round(W() / 2 - w / 2 + shift), y: H - 25, w, h: 19 };
-}
-
-/* You can type at him exactly the way you type at Noc. */
-function saySignShown() {
-  return G.scene === 'game' && !G.cine && !G.dead && !panelOpen() && !G.holding &&
-         atOak() && !G.asleep;
-}
-function saySignWidth() { return F.textWidth('SAY SOMETHING', 1) + 20; }
-function saySignBox() {
-  const w = saySignWidth();
-  const tb = talkSignBox();
-  return { x: tb.x + tb.w + 8, y: H - 25, w, h: 19 };
-}
-
-function drawSaySign(c) {
-  if (!saySignShown()) return;
-  const b = saySignBox();
-  const hot = G.sayHover;
-  const bob = Math.sin(G.t * 2.4 + 1.1) * (hot ? 1.4 : 0.7);
-  const y = Math.round(b.y + bob);
-  SPR.px(c, b.x + 8, y + b.h, 2, 6, '#5a3a1e');
-  SPR.px(c, b.x + b.w - 10, y + b.h, 2, 6, '#5a3a1e');
-  SPR.roundRect(c, b.x - 2, y - 2, b.w + 4, b.h + 4, 3, SPR.INK);
-  SPR.roundRect(c, b.x, y, b.w, b.h, 2, hot ? '#8a9ac0' : '#6a7a9c');
-  SPR.px(c, b.x + 2, y + 2, b.w - 4, 1, '#9aaad0');
-  F.drawTextCentered(c, b.x + b.w / 2, y + 6, 'SAY SOMETHING', hot ? '#151d2b' : '#e8f0ff', 1);
-}
-
-function overSaySign(x, y) {
-  if (!saySignShown()) return false;
-  const b = saySignBox();
-  return x >= b.x - 6 && x <= b.x + b.w + 6 && y >= b.y - 8 && y <= b.y + b.h + 8;
+  return { x: Math.round(W() / 2 - w / 2), y: H - 25, w, h: 19 };
 }
 
 function talkLabel() {
@@ -3820,21 +3776,18 @@ function drawTalkSign(c) {
   const hot = G.talkHover;
   const bob = Math.sin(G.t * 2.4) * (hot ? 1.4 : 0.7);
   const y = Math.round(b.y + bob);
-  // two posts into the grass
   SPR.px(c, b.x + 8, y + b.h, 2, 6, '#5a3a1e');
   SPR.px(c, b.x + b.w - 10, y + b.h, 2, 6, '#5a3a1e');
   SPR.roundRect(c, b.x - 2, y - 2, b.w + 4, b.h + 4, 3, SPR.INK);
   SPR.roundRect(c, b.x, y, b.w, b.h, 2, hot ? '#c39a63' : '#a0703c');
   SPR.px(c, b.x + 2, y + 2, b.w - 4, 1, '#c9a06a');
   F.drawTextCentered(c, b.x + b.w / 2, y + 6, talkLabel(), hot ? '#2b1c10' : '#ffe9b0', 1);
-  // how much he still has to say, in leaves-green, under the sign
-  if (atOak() && !G.asleep) {
+  // how much further it is to the next subject
+  if (atOak() && !G.asleep && !typeBarShown()) {
     const nx = nextSet();
-    const left = DATA.lines.length - heardTotal();
-    if (left > 0) {
-      const s2 = nx ? (nx.at - heardTotal()) + ' to a new set' : left + ' things left';
+    if (nx) {
       c.globalAlpha = 0.75;
-      F.drawTextCentered(c, W() / 2, y - 9, s2, '#d8f0a0', 1, '#000000');
+      F.drawTextCentered(c, W() / 2, y - 9, (nx.at - heardTotal()) + ' to a new set', '#d8f0a0', 1, '#000000');
       c.globalAlpha = 1;
     }
   }
@@ -3843,14 +3796,13 @@ function drawTalkSign(c) {
 function overTalkSign(x, y) {
   if (!talkSignShown()) return false;
   const b = talkSignBox();
-  return x >= b.x - 6 && x <= b.x + b.w + 6 && y >= b.y - 12 && y <= b.y + b.h + 8;
+  return x >= b.x - 6 && x <= b.x + b.w + 6 && y >= b.y - 6 && y <= b.y + b.h + 8;
 }
 
 function pressTalkSign() {
   if (G.asleep) { wakeHim(); return; }
-  if (areaId() === 'lane') { SFX.click(); openChat('noc'); return; }
+  if (areaId() === 'lane') { SFX.click(); startTyping(); return; }
   if (!atOak()) {
-    // eight places is a long way to walk back one signpost at a time
     const oakAt = AREAS.findIndex(a => a.id === 'oak');
     travel(G.area < oakAt ? 1 : -1);
     return;
@@ -3858,7 +3810,7 @@ function pressTalkSign() {
   // while replies are on offer this is the "keep going" one, so the whole
   // conversation can be had with a single thumb
   if (DLG.choices && dialogueDone()) {
-    const more = DLG.choices.find(ch => !ch.follow && !ch.type) || DLG.choices[DLG.choices.length - 1];
+    const more = DLG.choices.find(ch => !ch.follow && !ch.type && !ch.act) || DLG.choices[DLG.choices.length - 1];
     SFX.click();
     pickReply(more);
     return;
@@ -3968,7 +3920,7 @@ function render() {
 
   if (G.flash > 0) { ctx.globalAlpha = Math.min(1, G.flash); SPR.px(ctx, 0, 0, W(), H, '#ffffff'); ctx.globalAlpha = 1; }
   if (G.veil > 0) { ctx.globalAlpha = Math.min(1, G.veil); SPR.px(ctx, 0, 0, W(), H, '#05080c'); ctx.globalAlpha = 1; }
-  if (!G.cine && G.scene === 'game') { drawArrows(ctx); drawTalkSign(ctx); drawSaySign(ctx); SPR.drawHud(ctx, G); }
+  if (!G.cine && G.scene === 'game') { drawArrows(ctx); drawTypeBar(ctx); drawTalkSign(ctx); SPR.drawHud(ctx, G); }
   if (G.areaTitle > 0 && !G.cine) SPR.drawAreaTitle(ctx, G, AREAS[G.area].name, AREAS[G.area].sub, Math.min(1, G.areaTitle));
   if (!G.cine && G.scene === 'game') drawPost(ctx);
   drawHint(ctx);
@@ -4156,8 +4108,7 @@ function onMove(ev) {
   for (const a of G.arrows) a.hover = a === ar;
   G.bagHover = overBagButton(fr.x, fr.y);
   G.talkHover = overTalkSign(fr.x, fr.y);
-  G.sayHover = overSaySign(fr.x, fr.y);
-  if (onSign || ar || G.bagHover || G.talkHover || G.sayHover) { cv.style.cursor = 'pointer'; return; }
+  if (onSign || ar || G.bagHover || G.talkHover || overTypeBar(fr.x, fr.y)) { cv.style.cursor = 'pointer'; return; }
   DLG.hover = DLG.choices && dialogueDone() ? choiceAt(fr.x, fr.y) : -1;
   cv.style.cursor = DLG.hover >= 0 ? 'pointer' : (G.holding ? 'none' : cv.style.cursor);
 
@@ -4304,7 +4255,7 @@ function onPress(ev) {
 
   // the signposts at the edges, and the bag in the corner
   if (!G.cine && G.scene === 'game') {
-    if (overSaySign(fr.x, fr.y)) { SFX.click(); openChat('oak'); return; }
+    if (overTypeBar(fr.x, fr.y)) { SFX.click(); startTyping(); return; }
     if (overTalkSign(fr.x, fr.y)) { pressTalkSign(); return; }
     const ar = arrowAt(fr.x, fr.y);
     if (ar) { travel(ar.dir); return; }
@@ -4473,10 +4424,10 @@ function eraseEverything() {
 if (elTyping) {
   elTyping.addEventListener('keydown', e => {
     if (e.key === 'Enter') { e.preventDefault(); sendChat(); }
-    else if (e.key === 'Escape') { e.preventDefault(); closeChat(); }
+    else if (e.key === 'Escape') { e.preventDefault(); stopTyping(); }
   });
   elTyping.addEventListener('blur', () => {
-    if (panelIs('chat') && !G.cine) setTimeout(() => { if (panelIs('chat')) elTyping.focus(); }, 60);
+    if (G.typing && !G.cine) setTimeout(() => { if (G.typing) elTyping.focus(); }, 60);
   });
 }
 
@@ -4501,7 +4452,7 @@ document.addEventListener('keydown', e => {
   if (e.key === 'ArrowLeft') travel(-1);
   if (e.key === 'ArrowRight') travel(1);
   if (e.key.toLowerCase() === 'b') toggleBag();
-  if (e.key.toLowerCase() === 't' && !G.asleep) { const w = chatPartner(); if (w) openChat(w); else sayYou('Nobody out here to talk to.'); }
+  if (e.key.toLowerCase() === 't' && !G.asleep) { if (chatPartner()) startTyping(); else sayYou('Nobody out here to talk to.'); }
   if (e.key.toLowerCase() === 'm') toggleMute();
   if (e.key.toLowerCase() === 'r' && e.shiftKey) eraseEverything();
   if (e.key.toLowerCase() === 'e' && G.scene === 'heaven') openEndings();
@@ -4583,7 +4534,8 @@ if (/[?&]debug/.test(location.search)) {
                  skipAll: () => { if (G.cine) { G.cine.i = G.cine.stages.length - 1; skipStage(); } },
                  parkMargin, parkIncome, parkFill, talkSignBox, pressTalkSign, heardTotal, openSets, nextSet, openTopics,
                  unlockedTags, setHeard, setTotal, checkSets, talkToTree, openMap, areaOpen, areaWants, updateSuit, checkAreas,
-                 openBirdDiary, openJobs, openPlans, sayYou, tellHimLater, birdsHere, saySignBox,
+                 openBirdDiary, openJobs, openPlans, sayYou, tellHimLater, birdsHere,
+                 startTyping, stopTyping, typeBarBox, typeBarShown, sendChat, chatPartner,
                  seedCritters, touchCritter, refreshPanel, boardHere, cottageHere, puff, ring, pop, squash, PANEL, openPanel, closePanel, panelIs, panelOpen, openQuestBoard, openJournal, acceptQuest, checkQuests, questStatus, plotPos, hitTest,
                  travel, takePickup, seedPickups, openChat, closeChat, sendChat, openBag, closeBag,
                  agreePlan, completePlan, planById, areaId, wakeHim, AREAS,
