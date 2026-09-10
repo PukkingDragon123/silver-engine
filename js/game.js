@@ -1780,11 +1780,11 @@ function doHug() {
   ACH('hug1');
   if (save.stats.hugs >= 10) ACH('hug10');
   const lines = [
-    "Oh. OH. Okay. This is happening. I am being hugged. I am a professional. I am ALSO CRYING SAP.",
-    "You are very warm and very small and I am going to think about this for eleven years.",
+    "Oh. This is happening. I am being hugged. I am also crying sap.",
+    "You are warm and small and I will think about this for eleven years.",
     "Careful, there is a beetle on that side. ...He does not mind. He says hello.",
     "Nobody has done that since 1974. Her name was Margaret. You would have liked her.",
-    "I cannot hug back. I want that on the record. I am TRYING. My physiology is a prison."
+    "I cannot hug back. I am trying. My body is a prison."
   ];
   say('THE WISE OAK TREE', lines[save.stats.hugs % lines.length], 'happy');
   checkFriendEnding();
@@ -1799,11 +1799,11 @@ function doWater() {
   ACH('water1');
   if (save.stats.waters >= 10) ACH('water10');
   const lines = [
-    "Ohhh that is the GOOD stuff. That is going straight to my xylem.",
-    "Do you know how long it has been since anyone gave me water on purpose? Everyone assumes the sky handles it. THE SKY IS UNRELIABLE.",
+    "Oh, that is the good stuff. Straight up the inside of me.",
+    "Nobody has watered me on purpose in years. Everyone assumes the sky does it. The sky is unreliable.",
     "*slurp* Sorry. That was undignified. Worth it.",
-    "Two billion people cannot get water this clean at home. I am aware of the irony. I am drinking it anyway. Thank you.",
-    "I can feel it reaching the top branches. That takes about an hour normally. You have made me FAST."
+    "Two billion people have no water this clean at home. I know. I am drinking it anyway. Thank you.",
+    "I can feel it in the top branches already. That usually takes an hour."
   ];
   say('THE WISE OAK TREE', lines[save.stats.waters % lines.length], 'happy');
   checkFriendEnding();
@@ -1829,11 +1829,11 @@ function doPlant(atX) {
   }
   if (save.stats.plants >= 5) ACH('plant5');
   const lines = [
-    "You planted one. You PLANTED one. Do you understand what you just did? You will never see it finished. That is the whole point.",
-    "Another one! I am going to be a FATHER. Again. Statistically for the four thousandth time.",
-    "That is three. Three is a copse. Four is a stand. Five is a WOOD. Keep going.",
-    "Four. There is going to be shade here after you are gone. Somebody will sit in it and never know your name.",
-    "Five. That is a wood. That is an actual wood. I have been trying to do that for nine hundred years and you did it in an afternoon."
+    "You planted one. You will never see it grown. That is the whole point.",
+    "Another one. I am going to be a father again. For about the four thousandth time.",
+    "That is three. Three is a copse. Five is a wood. Keep going.",
+    "Four. There will be shade here after you are gone, and whoever sits in it will not know your name.",
+    "Five. That is a wood. I have been trying for nine hundred years and you did it in an afternoon."
   ];
   say('THE WISE OAK TREE', lines[Math.min(4, save.stats.plants - 1)], 'happy');
   refreshHUD();
@@ -1883,15 +1883,15 @@ function doFlick() {
   if (save.stats.flicks >= 10) ACH('flick10');
   const lines = [
     "...What is that. What is that in your hand. Put that away.",
-    "That is FIRE. Do you know what I am made of? I am made of the OPPOSITE of that.",
-    "Okay. Ha ha. Very funny. Put it away now. Please.",
-    "I have watched fire take a whole ridge in one night. I am not being dramatic. Put it away.",
+    "That is fire. I am made of the opposite of that.",
+    "Very funny. Put it away now. Please.",
+    "I have watched fire take a whole hillside in one night. Put it away.",
     "Why do you keep doing that.",
     "Stop.",
     "Please stop.",
     "...",
-    "I am not going to beg. I have been here nine hundred years and I will not beg to a person with a lighter.",
-    "...Okay. I will beg. Please. There are mice in my roots."
+    "I am not going to beg. Nine hundred years, and not to a person with a lighter.",
+    "...Fine. I am begging. Please. There are mice in my roots."
   ];
   say('THE WISE OAK TREE', lines[Math.min(lines.length - 1, save.stats.flicks - 1)], save.stats.flicks > 4 ? 'sad' : 'shock');
 }
@@ -1902,7 +1902,7 @@ function askBurn() {
     "<p>He is nine hundred years old.</p>" +
     "<p>He has a woodpecker in his elbow and mice in his roots and he has been talking to you all afternoon.</p>" +
     "<p class='small'>There is an achievement for it. There is an achievement for everything. That is not the same as a reason.</p>",
-    [['Put it away', () => { closeModal(); say('THE WISE OAK TREE', "Thank you. Thank you. Okay. Okay. Let us never speak of it. ...We will absolutely speak of it.", 'happy'); }],
+    [['Put it away', () => { closeModal(); say('THE WISE OAK TREE', "Thank you. Let us never speak of it. ...We will definitely speak of it.", 'happy'); }],
      ['Do it', () => { closeModal(); startBurning(); }, 'bad']]);
 }
 
@@ -1916,11 +1916,11 @@ function doThrowAway() {
 
 const BURN_LINES = [
   { at: 0.05, text: "Oh.", mood: 'shock' },
-  { at: 0.16, text: "Oh, you actually- okay. Okay. The mice. Get the mice out. GET THE MICE OUT.", mood: 'shock' },
+  { at: 0.16, text: "Oh. You actually did it. The mice. Get the mice out.", mood: 'shock' },
   { at: 0.34, text: "The birds are up. Good. Good. The birds are up.", mood: 'sad' },
-  { at: 0.52, text: "It does not hurt the way you think. It is more like being very, very awake.", mood: 'sad' },
-  { at: 0.68, text: "Four hundred and eleven years. I was going to make it to five hundred. I had PLANS. I was going to get taller than the church.", mood: 'sad' },
-  { at: 0.82, text: "Listen. LISTEN. I am not angry. I want you to hear that part. I am not angry.", mood: 'sad' },
+  { at: 0.52, text: "It does not hurt the way you think. It is more like being wide awake.", mood: 'sad' },
+  { at: 0.68, text: "Four hundred and eleven years. I was going to reach five hundred. I wanted to be taller than the church.", mood: 'sad' },
+  { at: 0.82, text: "Listen. I am not angry. I want you to hear that part.", mood: 'sad' },
   { at: 0.92, text: "Plant one. That is all. Plant one and we are square.", mood: 'sad' }
 ];
 
@@ -2793,7 +2793,7 @@ function startRebirthCine() {
   ], () => {
     G.scene = 'game';
     refreshHUD(); refreshActions();
-    say('THE WISE OAK TREE', "...Oh. It is you. I do not remember anything and yet I am inexplicably fond of you. Weird. Anyway: I am a tree.", 'happy');
+    say('THE WISE OAK TREE', "...Oh. It is you. I remember nothing, and yet I like you. Anyway. I am a tree.", 'happy');
   });
 }
 
@@ -2855,10 +2855,10 @@ function update(dt) {
       if (SEASON_NAMES.every(s => save.stats.seasons[s])) ACH('seasons');
     if (G.scene === 'game' && !G.dead && Math.random() < 0.8) {
       const msg = {
-        spring: "Spring. I am going to grow forty thousand new leaves and complain about every one of them.",
-        summer: "Summer. Peak tree. This is my best season and I refuse to be humble about it.",
-        autumn: "Autumn. I am about to lose my entire personality in public. Please look away.",
-        winter: "Winter. I am not dead. I am simply extremely off duty."
+        spring: "Spring. Forty thousand new leaves, and I will complain about every one.",
+        summer: "Summer. My best season, and I will not be modest about it.",
+        autumn: "Autumn. I am about to lose my whole personality in public. Look away.",
+        winter: "Winter. I am not dead. I am off duty."
       }[G.season];
       say('THE WISE OAK TREE', msg, G.season === 'winter' ? 'sleepy' : 'happy');
     }
@@ -4517,8 +4517,8 @@ function wakeHim() {
     if (G.dead || G.cine) return;
     G.mood = 'sleepy';
     say('THE WISE OAK TREE', hadSave
-      ? "Mm. You again. I had got all the way to sleep, which for me takes about a decade. Sit down. I'll be awake in a minute."
-      : "Nnh. Someone is standing under me. Right. Give me a moment. Nine hundred years is a long nap to come out of.",
+      ? "Mm. You again. I had only just got to sleep. Sit down. Give me a minute."
+      : "Nnh. Someone is standing under me. Give me a moment. That was a long nap.",
       'sleepy');
     if (!save.ach.lane && !save.ach.hollow) setTimeout(() => nudge('the signposts at the edges walk you west and east', 12), 8000);
     else if (!save.bag) setTimeout(() => nudge('there is a bag somewhere east of here', 10), 8000);

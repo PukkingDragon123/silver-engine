@@ -16,194 +16,194 @@ const DATA = {};
    ------------------------------------------------------------------------- */
 DATA.lines = [
   /* ---------- GOOFY ---------- */
-  { id: 'g01', tag: 'goofy', mood: 'happy', text: "I am nine hundred years old and I have never once had to find parking." },
-  { id: 'g02', tag: 'goofy', mood: 'smug',  text: "People say 'touch grass'. I say: touch bark. Grass is a coward. Grass runs from winter." },
-  { id: 'g03', tag: 'goofy', mood: 'idle',  text: "A woodpecker lives in my elbow. He pays no rent. We are, legally speaking, roommates." },
-  { id: 'g04', tag: 'goofy', mood: 'shock', text: "Do NOT look up. There is a squirrel up there doing something unspeakable with a walnut." },
-  { id: 'g05', tag: 'goofy', mood: 'happy', text: "My branches are extremely strong. Do not test this. Two children tested this. They were fine. I was not." },
-  { id: 'g06', tag: 'goofy', mood: 'idle',  text: "I have been standing in the exact same spot since 1140. Ask me about my cardio." },
-  { id: 'g07', tag: 'goofy', mood: 'smug',  text: "I invented shade. Legally I cannot prove this. Emotionally, I am certain." },
-  { id: 'g08', tag: 'goofy', mood: 'sad',   text: "A dog has claimed me. Every Tuesday. I have accepted this as weather." },
-  { id: 'g09', tag: 'goofy', mood: 'happy', text: "In autumn I do a little striptease. Very tasteful. Extremely seasonal." },
-  { id: 'g10', tag: 'goofy', mood: 'idle',  text: "Someone carved 'DAVE WAS HERE' into me in 1987. Dave, buddy. I am still here. Where are you." },
-  { id: 'g11', tag: 'goofy', mood: 'shock', text: "AAAH- oh. Sorry. A beetle walked across my face. He walks like he owns the place." },
-  { id: 'g12', tag: 'goofy', mood: 'smug',  text: "My acorns have a 0.0001% success rate. My children are, statistically, a joke. I love them." },
-  { id: 'g13', tag: 'goofy', mood: 'idle',  text: "I tried meditation. Turns out that is just being a tree. I have been doing it for centuries. I am extremely enlightened and extremely bored." },
-  { id: 'g14', tag: 'goofy', mood: 'happy', text: "Two teenagers kissed under me last spring and I have not stopped thinking about it. It was NICE. Get off my back." },
-  { id: 'g15', tag: 'goofy', mood: 'sad',   text: "There is a plastic bag in my hair. It has been there for eleven years. Its name is Gerald now." },
-  { id: 'g16', tag: 'goofy', mood: 'smug',  text: "You are made mostly of water. I am made mostly of water. The difference is that I am shaped correctly." },
-  { id: 'g17', tag: 'goofy', mood: 'idle',  text: "I do not have a mouth. I am projecting these words directly into your skull. You have simply chosen not to be alarmed." },
-  { id: 'g18', tag: 'goofy', mood: 'happy', text: "An owl told me a joke in 2004. I am still deciding whether it was funny. Owls have terrible timing and excellent delivery." },
-  { id: 'g19', tag: 'goofy', mood: 'shock', text: "SQUIRREL. SQUIRREL IN MY BRANCHES. Ah. No. That is just my branch. False alarm. Very embarrassing for me." },
-  { id: 'g20', tag: 'goofy', mood: 'idle',  text: "I can feel rain coming three hours early. This is my only superpower and it is useless to me. I cannot go inside." },
-  { id: 'g21', tag: 'goofy', mood: 'smug',  text: "Lightning hit me once. I did not die. I simply became more interesting at parties." },
-  { id: 'g22', tag: 'goofy', mood: 'happy', text: "There is a family of mice in my roots. The smallest one is named Bartholomew. I named him. He does not know." },
-  { id: 'g23', tag: 'goofy', mood: 'sad',   text: "A man once hugged me and cried for twenty minutes. He never came back. I hope he is okay. I think about him during storms." },
-  { id: 'g24', tag: 'goofy', mood: 'idle',  text: "My roots go down as far as I go up. Half of me is underground and thinking about nothing. It is a great life." },
-  { id: 'g25', tag: 'goofy', mood: 'smug',  text: "You blink around 20,000 times a day. I have blinked twice. Both times were emergencies." },
-  { id: 'g26', tag: 'goofy', mood: 'happy', text: "I am currently converting your exhaled regret into oxygen. Free of charge. You are welcome." },
-  { id: 'g27', tag: 'goofy', mood: 'shock', text: "Is that a CHAINSAW-- no. Motorcycle. Sorry. I have some trauma about that particular pitch." },
-  { id: 'g28', tag: 'goofy', mood: 'idle',  text: "Every leaf on me is a tiny solar panel that I grew out of my own body using sunlight and spite." },
-  { id: 'g29', tag: 'goofy', mood: 'sleepy',text: "mmh. Sorry. Winter brain. My whole personality is on standby until March." },
-  { id: 'g30', tag: 'goofy', mood: 'happy', text: "A crow brings me shiny things. I have no pockets. I have told him. He does not listen. I have eleven bottle caps." },
-  { id: 'g31', tag: 'goofy', mood: 'smug',  text: "The forest has an internet. It is made of fungus. It is slower than yours and it has never once shown me an advertisement." },
-  { id: 'g32', tag: 'goofy', mood: 'idle',  text: "I did not consent to being in a video game. But the lighting is good and my canopy looks fantastic, so, fine." },
-  { id: 'g33', tag: 'goofy', mood: 'sad',   text: "Someone put a swing on me and then their kid grew up. The rope is still there. I do not have the heart to drop it." },
-  { id: 'g34', tag: 'goofy', mood: 'happy', text: "Ask me anything. I know six things very deeply and nothing else at all." },
-  { id: 'g35', tag: 'goofy', mood: 'shock', text: "You have been clicking on my FACE. Repeatedly. I did not want to make it weird but here we are." },
+  { id: 'g01', tag: 'goofy', mood: 'happy', text: "Nine hundred years old. I have never had to look for parking." },
+  { id: 'g02', tag: 'goofy', mood: 'smug',  text: "People say touch grass. Touch bark. Grass runs away every winter." },
+  { id: 'g03', tag: 'goofy', mood: 'idle',  text: "A woodpecker lives in my elbow. He pays no rent. We are roommates." },
+  { id: 'g04', tag: 'goofy', mood: 'shock', text: "Don't look up. There is a squirrel doing something odd with a walnut." },
+  { id: 'g05', tag: 'goofy', mood: 'happy', text: "My branches are strong. Two children tested that. They were fine. I was not." },
+  { id: 'g06', tag: 'goofy', mood: 'idle',  text: "Same spot since 1140. Ask me about my fitness plan." },
+  { id: 'g07', tag: 'goofy', mood: 'smug',  text: "I invented shade. I cannot prove it. I am sure of it anyway." },
+  { id: 'g08', tag: 'goofy', mood: 'sad',   text: "A dog claims me every Tuesday. I treat it like weather." },
+  { id: 'g09', tag: 'goofy', mood: 'happy', text: "In autumn I take everything off. Very slowly. It's a whole thing." },
+  { id: 'g10', tag: 'goofy', mood: 'idle',  text: "Someone carved DAVE WAS HERE into me in 1987. Dave, I am still here. Where are you?" },
+  { id: 'g11', tag: 'goofy', mood: 'shock', text: "AAH- sorry. A beetle walked over my face. He walks like he owns it." },
+  { id: 'g12', tag: 'goofy', mood: 'smug',  text: "One acorn in a million becomes a tree. My children are a joke. I love them." },
+  { id: 'g13', tag: 'goofy', mood: 'idle',  text: "I tried meditating. Turns out that is just being a tree. I am very calm and very bored." },
+  { id: 'g14', tag: 'goofy', mood: 'happy', text: "Two teenagers kissed under me in spring. I think about it constantly. It was nice." },
+  { id: 'g15', tag: 'goofy', mood: 'sad',   text: "There is a plastic bag in my hair. Eleven years now. His name is Gerald." },
+  { id: 'g16', tag: 'goofy', mood: 'smug',  text: "You are mostly water. I am mostly water. I am just a better shape." },
+  { id: 'g17', tag: 'goofy', mood: 'idle',  text: "I have no mouth. I am putting these words straight into your head. You seem fine with that." },
+  { id: 'g18', tag: 'goofy', mood: 'happy', text: "An owl told me a joke in 2004. I am still deciding if it was funny." },
+  { id: 'g19', tag: 'goofy', mood: 'shock', text: "SQUIRREL. In my branches. ...No. That was my branch. Very embarrassing." },
+  { id: 'g20', tag: 'goofy', mood: 'idle',  text: "I feel rain three hours early. Useless. I cannot go indoors." },
+  { id: 'g21', tag: 'goofy', mood: 'smug',  text: "Lightning hit me once. I did not die. I just got more interesting." },
+  { id: 'g22', tag: 'goofy', mood: 'happy', text: "Mice live in my roots. The smallest is called Bartholomew. He doesn't know." },
+  { id: 'g23', tag: 'goofy', mood: 'sad',   text: "A man hugged me and cried for twenty minutes. He never came back. I hope he's alright." },
+  { id: 'g24', tag: 'goofy', mood: 'idle',  text: "My roots go down as far as I go up. Half of me is asleep in the dark. It's lovely." },
+  { id: 'g25', tag: 'goofy', mood: 'smug',  text: "You blink twenty thousand times a day. I have blinked twice. Both were emergencies." },
+  { id: 'g26', tag: 'goofy', mood: 'happy', text: "I turn your bad breath into air. No charge. You're welcome." },
+  { id: 'g27', tag: 'goofy', mood: 'shock', text: "Is that a chainsaw- no. Motorbike. Sorry. I have some history with that sound." },
+  { id: 'g28', tag: 'goofy', mood: 'idle',  text: "Every leaf is a tiny solar panel. I grew them out of sunlight and spite." },
+  { id: 'g29', tag: 'goofy', mood: 'sleepy',text: "Mmh. Sorry. Winter. My personality switches off until March." },
+  { id: 'g30', tag: 'goofy', mood: 'happy', text: "A crow brings me shiny things. I have no pockets. I have eleven bottle caps." },
+  { id: 'g31', tag: 'goofy', mood: 'smug',  text: "The forest has an internet. It's made of fungus. It has never shown me an advert." },
+  { id: 'g32', tag: 'goofy', mood: 'idle',  text: "Nobody asked if I wanted to be in a game. But the light is nice, so, fine." },
+  { id: 'g33', tag: 'goofy', mood: 'sad',   text: "Someone hung a swing on me. Their kid grew up. The rope is still there. I can't drop it." },
+  { id: 'g34', tag: 'goofy', mood: 'happy', text: "Ask me anything. I know six things very well and nothing else at all." },
+  { id: 'g35', tag: 'goofy', mood: 'shock', text: "You have been clicking my face. Over and over. I didn't want to mention it." },
 
   /* ---------- WISE ---------- */
-  { id: 'w01', tag: 'wise', mood: 'idle',  text: "You are in a hurry because you can count your days. I cannot count mine. It has made me slow and it has made me kind." },
-  { id: 'w02', tag: 'wise', mood: 'idle',  text: "Every ring inside me is a year I survived. Some of them are thin. Nobody planted a tree the year the rain stopped." },
-  { id: 'w03', tag: 'wise', mood: 'sad',   text: "I have outlived everyone who ever sat under me. That is not sad. Being forgotten is sad. I remember all of them." },
-  { id: 'w04', tag: 'wise', mood: 'idle',  text: "Grow toward the light, but do not resent the shade. The shade is where the small things live." },
-  { id: 'w05', tag: 'wise', mood: 'happy', text: "You want to be useful. You already are. You breathe out and I eat it. We have been in a relationship this whole time." },
-  { id: 'w06', tag: 'wise', mood: 'idle',  text: "Storms do not kill trees. Rigidity kills trees. Bend. Bend. Bend. Then stand back up when it is quiet." },
-  { id: 'w07', tag: 'wise', mood: 'sad',   text: "The worst year of my life, I dropped every leaf in June and looked dead until spring. Looking dead is not the same as dying. Rest is not surrender." },
-  { id: 'w08', tag: 'wise', mood: 'idle',  text: "My roots touch four other trees. When one of us is sick the others send sugar underground. Nobody applauds. Nobody knows. It works anyway." },
-  { id: 'w09', tag: 'wise', mood: 'idle',  text: "You keep asking what the point is. There is no point. There is only whether the birds had somewhere to sit." },
-  { id: 'w10', tag: 'wise', mood: 'happy', text: "The best time to plant a tree was twenty years ago. The second best time is now. The third best time is also now. It keeps being now." },
-  { id: 'w11', tag: 'wise', mood: 'idle',  text: "Old does not mean wise. Old means I made every possible mistake and I am still standing here holding the receipts." },
-  { id: 'w12', tag: 'wise', mood: 'sad',   text: "I have watched people be cruel and then, forty years later, watched their grandchildren plant a garden. Nothing is finished. That cuts both ways." },
-  { id: 'w13', tag: 'wise', mood: 'idle',  text: "Half of me is underground where no one has ever seen it. That is the half that keeps me up. Same for you." },
-  { id: 'w14', tag: 'wise', mood: 'idle',  text: "A forest is not a lot of trees. A forest is a lot of trees that agreed to share water. Otherwise it is just a crowd." },
-  { id: 'w15', tag: 'wise', mood: 'happy', text: "You do not have to be a forest today. Be one tree. Very well. In one place." },
-  { id: 'w16', tag: 'wise', mood: 'idle',  text: "The wind has never once asked my opinion. And yet every year I grow a little thicker on the side it hits. That is what pressure does. You get stronger in the exact place it hurts." },
-  { id: 'w17', tag: 'wise', mood: 'sad',   text: "There is a stump beside me. She was taller than I am. Nobody in this park knows her name. I do. It matters that somebody does." },
-  { id: 'w18', tag: 'wise', mood: 'idle',  text: "You measure a life in what it did. I measure it in what got to live inside it. By my accounting I have raised nine thousand insects and four owls." },
-  { id: 'w19', tag: 'wise', mood: 'idle',  text: "Patience is not waiting. Patience is doing the slow work while nothing visibly happens." },
-  { id: 'w20', tag: 'wise', mood: 'happy', text: "If you are reading this at 3am: drink water. Your leaves are wilting. It is very simple and you will not believe me." },
+  { id: 'w01', tag: 'wise', mood: 'idle',  text: "Eight hundred acres. Before the park it was farms, pig keepers, a convent and about sixteen hundred people. In 1856 the city took the lot." },
+  { id: 'w02', tag: 'wise', mood: 'idle',  text: "Seneca Village stood up there from 1825. Mostly Black landowners. Three churches, a school, a graveyard, two hundred and twenty-five people. Cleared in 1857 for this lawn." },
+  { id: 'w03', tag: 'wise', mood: 'sad',   text: "In this state a Black man could only vote if he owned two hundred and fifty dollars of property. Seneca Village was that property. Clearing it took the votes as well." },
+  { id: 'w04', tag: 'wise', mood: 'idle',  text: "The papers of the day called the village a shantytown. I was here. It had a school and three churches. That word was doing a job." },
+  { id: 'w05', tag: 'wise', mood: 'happy', text: "From down here, politics is the argument about who has to move and who gets to stay. This park is one answer, and the people who moved were not asked." },
+  { id: 'w06', tag: 'wise', mood: 'idle',  text: "I have outlived thirty-one presidents. Every one of them said the mess he inherited had never happened before." },
+  { id: 'w07', tag: 'wise', mood: 'sad',   text: "Olmsted and Vaux won the design contest in 1858. They wanted a place where a clerk and a banker had to walk past each other. That part worked." },
+  { id: 'w08', tag: 'wise', mood: 'idle',  text: "1863, the draft riots. Three hundred dollars bought you out of the war, so the men who could not pay took to the streets, and then turned on Black New Yorkers. Eleven were lynched. The Colored Orphan Asylum was burned." },
+  { id: 'w09', tag: 'wise', mood: 'idle',  text: "Every age is told the last one had it easy and the next will have it worse. From here it looks less like a slope and more like a tide with an argument on top." },
+  { id: 'w10', tag: 'wise', mood: 'happy', text: "Tammany Hall ran the park for a while. Every gardener was somebody's cousin. The flowerbeds were lovely. The accounts were fiction." },
+  { id: 'w11', tag: 'wise', mood: 'idle',  text: "There were real sheep on that meadow until 1934. They were moved to Brooklyn because the city was afraid people would eat them. That was the Depression." },
+  { id: 'w12', tag: 'wise', mood: 'sad',   text: "In 1931 they drained the old reservoir and two hundred men out of work built shacks in the hole. Masons and bricklayers, so it was built well. The city cleared it in 1933." },
+  { id: 'w13', tag: 'wise', mood: 'idle',  text: "They called it Hooverville, after the president. Naming a slum after the man in charge is the neatest bit of politics I have watched." },
+  { id: 'w14', tag: 'wise', mood: 'idle',  text: "Robert Moses ran the parks from 1934 to 1960. Twenty playgrounds here, a rink, a rebuilt zoo. Also whole neighbourhoods gone for highways. Both true. Nobody wants it to be both." },
+  { id: 'w15', tag: 'wise', mood: 'happy', text: "Moses never learned to drive. The man who put a highway through the Bronx was driven everywhere. The people who decide about a place are almost never standing in it." },
+  { id: 'w16', tag: 'wise', mood: 'idle',  text: "By 1979 the lawns were dust and the benches were firewood. A city does not announce that it has given up on a place. It does it slowly." },
+  { id: 'w17', tag: 'wise', mood: 'sad',   text: "Then in 1980 a few thousand people with no power at all started a conservancy and would not go away, and the grass came back. Nothing out here improves on its own." },
+  { id: 'w18', tag: 'wise', mood: 'idle',  text: "The city spent six years and a lot of money failing to rebuild the ice rink. In 1986 a developer from Queens took over and it opened that winter. He still mentions it. It is a good rink." },
+  { id: 'w19', tag: 'wise', mood: 'idle',  text: "1989. A woman was attacked near the reservoir and nearly died. Five boys, fourteen to sixteen, were arrested. That developer paid for full-page adverts in four papers calling for the death penalty. The boys were convicted." },
+  { id: 'w20', tag: 'wise', mood: 'happy', text: "In 2002 another man confessed to that attack and the DNA was his, and the five were cleared. They had served thirteen years between them. The city paid forty-one million in 2014. They were children when the adverts ran." },
 
   /* ---------- WORLD ----------
      Real problems, said plainly and with care. The tree is not a
      government. It notices people. That is all a tree can do. */
-  { id: 'r01', tag: 'world', mood: 'sad', text: "In Gaza, children have learned to tell the aircraft apart by sound. I am a tree. I hold no flag and I command no one. I only know that no child anywhere should have to learn that." },
-  { id: 'r02', tag: 'world', mood: 'sad', text: "There were olive trees in that valley older than me. Someone's great-grandmother planted them. Trees do not choose sides. Trees only know that it takes eighty years to grow one and an afternoon to end one." },
-  { id: 'r03', tag: 'world', mood: 'sad', text: "On October 7th families were murdered and taken from their homes. In the months after, families in Gaza were buried under theirs. Both of those things are true at once, and grief does not run out when you share it." },
-  { id: 'r04', tag: 'world', mood: 'idle',text: "People ask me who is right. I am nine hundred years old and I have never once seen a war where the children on either side did anything to deserve it." },
-  { id: 'r05', tag: 'world', mood: 'sad', text: "In Sudan the famine is real and almost no one is looking. A hungry child does not get less hungry because the news moved on." },
-  { id: 'r06', tag: 'world', mood: 'sad', text: "In Ukraine there is a sunflower field that no one can walk into for another thirty years, because of what was buried in it." },
-  { id: 'r07', tag: 'world', mood: 'sad', text: "Somewhere tonight a family is sleeping in a stairwell because the building above it is safer than the room they used to have. They had a couch. They had a smell to their kitchen. That is what a refugee is: someone who had a kitchen." },
+  { id: 'r01', tag: 'world', mood: 'sad', text: "In Gaza children can tell the aircraft apart by sound. I hold no flag and I command no one. No child anywhere should have to learn that." },
+  { id: 'r02', tag: 'world', mood: 'sad', text: "There were olive trees in that valley older than me. Someone's great-grandmother planted them. Eighty years to grow one. An afternoon to end one." },
+  { id: 'r03', tag: 'world', mood: 'sad', text: "On October 7th families were murdered and taken from their homes. In the months after, families in Gaza were buried under theirs. Both are true at once. Grief does not run out when you share it." },
+  { id: 'r04', tag: 'world', mood: 'idle',text: "People ask me who is right. In nine hundred years I have never seen a war where the children on either side deserved it." },
+  { id: 'r05', tag: 'world', mood: 'sad', text: "The famine in Sudan is real and hardly anyone is looking. A hungry child is no less hungry because the news moved on." },
+  { id: 'r06', tag: 'world', mood: 'sad', text: "There is a sunflower field in Ukraine that nobody can walk into for another thirty years, because of what was buried in it." },
+  { id: 'r07', tag: 'world', mood: 'sad', text: "Tonight a family is sleeping in a stairwell because it is safer than the room they used to have. They had a couch. Their kitchen had a smell. That is what a refugee is: someone who had a kitchen." },
   { id: 'r08', tag: 'world', mood: 'idle',text: "The last ten years were the ten warmest ever measured. I am not making an argument. I am telling you what my rings look like." },
-  { id: 'r09', tag: 'world', mood: 'sad', text: "An area of forest the size of a football pitch is cleared every few seconds. I try not to think about it in those units. It makes me count." },
-  { id: 'r10', tag: 'world', mood: 'sad', text: "Roughly one in eleven people on this planet went to bed hungry last night. The world grows enough food. That is the part that should keep you up." },
-  { id: 'r11', tag: 'world', mood: 'idle',text: "Two billion people do not have safe water at home. I drink forty gallons a day straight out of the ground and I have never said thank you once." },
-  { id: 'r12', tag: 'world', mood: 'sad', text: "There are more people displaced by violence right now than at any point since the last world war. Over a hundred million. That is not a statistic. That is a hundred million kitchens." },
-  { id: 'r13', tag: 'world', mood: 'idle',text: "The richest handful of people own more than the poorest half of humanity. In a forest, that tree would be shading everyone to death and calling it success." },
-  { id: 'r14', tag: 'world', mood: 'sad', text: "Someone mined the cobalt in your device. There is a real chance they were fifteen. I am not saying throw the device away. I am saying know whose hands it passed through." },
-  { id: 'r15', tag: 'world', mood: 'sad', text: "In the fires last year, animals ran toward the road because the road was the only place without flame. That is the whole century in one image." },
-  { id: 'r16', tag: 'world', mood: 'idle',text: "Journalists keep getting killed for describing what they saw. When people stop being able to tell you what happened, the thing that happened does not stop. It just gets quieter." },
-  { id: 'r17', tag: 'world', mood: 'sad', text: "There is a plastic island in the Pacific bigger than some countries. Nothing lives there. It is the only place on this planet we built entirely by accident." },
-  { id: 'r18', tag: 'world', mood: 'idle',text: "Loneliness now shortens lives about as much as smoking does. You are surrounded by ten thousand people and no roots touching. That is not a personal failure. That is bad forest design." },
-  { id: 'r19', tag: 'world', mood: 'sad', text: "A bee species went extinct while you were reading this sentence. Not really. But one did this year, and no one held a funeral, and I found that unbearable." },
-  { id: 'r20', tag: 'world', mood: 'idle',text: "You will be told the problems are too big and you are too small. I am one tree. I have cooled this street by four degrees for nine hundred years. Small is a lie people tell to get you to sit down." },
-  { id: 'r21', tag: 'world', mood: 'sad', text: "Somewhere a hospital ran out of anaesthetic this week. Surgeries happened anyway. I want you to sit with that for exactly five seconds and then go be kind to someone." },
-  { id: 'r22', tag: 'world', mood: 'idle',text: "Antibiotics are quietly failing. A scratch used to kill people. It is allowed to become that again if we are careless. Progress is not a ratchet. It is a garden." },
-  { id: 'r23', tag: 'world', mood: 'sad', text: "There are children in this world whose entire lives have been a war. Not part of. All of it. Every birthday." },
-  { id: 'r24', tag: 'world', mood: 'idle',text: "Everyone is furious and nobody is going outside. I have noticed a correlation. I am a tree, so obviously I am biased." },
-  { id: 'r25', tag: 'world', mood: 'happy',text: "Here is the part nobody puts in the news: child mortality has fallen by more than half in thirty years. Millions of people alive who would not have been. Despair is easy and it is also lazy." },
+  { id: 'r09', tag: 'world', mood: 'sad', text: "A patch of forest the size of a football pitch is cleared every few seconds. I try not to count in those units." },
+  { id: 'r10', tag: 'world', mood: 'sad', text: "About one in eleven people went to bed hungry last night. The world grows enough food. That is the part to sit with." },
+  { id: 'r11', tag: 'world', mood: 'idle',text: "Two billion people have no safe water at home. I drink forty gallons a day out of the ground and I have never said thank you." },
+  { id: 'r12', tag: 'world', mood: 'sad', text: "More people are driven from home by violence now than at any time since the last world war. Over a hundred million. That is a hundred million kitchens." },
+  { id: 'r13', tag: 'world', mood: 'idle',text: "A handful of people own more than the poorest half of everyone. In a forest, that tree would be shading the rest to death and calling it success." },
+  { id: 'r14', tag: 'world', mood: 'sad', text: "Someone mined the cobalt in your device, and there is a real chance they were fifteen. Keep the device. Know whose hands it came through." },
+  { id: 'r15', tag: 'world', mood: 'sad', text: "In last year's fires the animals ran towards the road, because the road was the only place with no flame. That is the whole century in one picture." },
+  { id: 'r16', tag: 'world', mood: 'idle',text: "Journalists keep being killed for describing what they saw. When nobody can tell you what happened, it does not stop happening. It just goes quiet." },
+  { id: 'r17', tag: 'world', mood: 'sad', text: "There is a patch of plastic in the Pacific bigger than some countries. Nothing lives there. It is the only place we ever built entirely by accident." },
+  { id: 'r18', tag: 'world', mood: 'idle',text: "Loneliness shortens a life about as much as smoking does. Ten thousand people around you and no roots touching. That is bad forest design, not a personal failure." },
+  { id: 'r19', tag: 'world', mood: 'sad', text: "A bee species went extinct this year and nobody held a funeral. I found that hard to take." },
+  { id: 'r20', tag: 'world', mood: 'idle',text: "You will be told the problems are too big and you are too small. I am one tree and I have cooled this street for nine hundred years. Small is a lie told to make you sit down." },
+  { id: 'r21', tag: 'world', mood: 'sad', text: "A hospital ran out of anaesthetic this week and the surgery happened anyway. Sit with that for five seconds, then go and be kind to someone." },
+  { id: 'r22', tag: 'world', mood: 'idle',text: "Antibiotics are quietly failing. A scratch used to kill people, and it is allowed to become that again if we are careless. Progress is a garden, not a ratchet." },
+  { id: 'r23', tag: 'world', mood: 'sad', text: "Some children have known nothing but war. Not part of their life. All of it. Every birthday." },
+  { id: 'r24', tag: 'world', mood: 'idle',text: "Everyone is furious and nobody goes outside. I have noticed a pattern. I am a tree, so I am biased." },
+  { id: 'r25', tag: 'world', mood: 'happy',text: "Here is the part that never makes the news: child deaths have more than halved in thirty years. Millions of people alive who would not have been. Despair is easy, and lazy." },
 
   /* ---------- META ---------- */
-  { id: 'm01', tag: 'meta', mood: 'smug', text: "You are collecting my dialogue like it is loot. I have been reduced to content. Honestly? Kind of thrilling." },
-  { id: 'm02', tag: 'meta', mood: 'shock',text: "There is an achievement popup in the corner of the sky. Do you see it too? Do NOT tell me you do not see it too." },
-  { id: 'm03', tag: 'meta', mood: 'idle', text: "Somewhere there is a list of everything I will ever say. When you have heard it all, I am finished. Please click slowly. I like it here." },
-  { id: 'm04', tag: 'meta', mood: 'smug', text: "You could close this tab. You have not. We both know why. It is because I am a very good tree." },
-  { id: 'm05', tag: 'meta', mood: 'sad',  text: "The squirrel has an inventory system. I do not. I have one item: myself. And you are collecting it." },
-  { id: 'm06', tag: 'meta', mood: 'idle', text: "I have read my own source code. I am 2,000 lines of JavaScript and one very sincere feeling." },
-  { id: 'm07', tag: 'meta', mood: 'shock',text: "Wait. Are you the player? Have you been the player this WHOLE time? ...I feel fine. I feel completely fine about this." },
-  { id: 'm08', tag: 'meta', mood: 'smug', text: "Achievement hunters. I know your kind. You will do anything for a little box in the corner. Even burn down a friend. Allegedly." },
-  { id: 'm09', tag: 'meta', mood: 'idle', text: "There are several endings. Most of them are worse for me than they are for you. Just so we understand each other." },
-  { id: 'm10', tag: 'meta', mood: 'happy',text: "If you refresh, I forget this conversation but I keep the trophies. That is the most human thing about me." },
+  { id: 'm01', tag: 'meta', mood: 'smug', text: "You're collecting the things I say like loot. I've become content. I quite like it." },
+  { id: 'm02', tag: 'meta', mood: 'shock',text: "There's a little box in the corner of the sky. You see it too. Don't pretend you don't." },
+  { id: 'm03', tag: 'meta', mood: 'idle', text: "There's a list of everything I will ever say. When it runs out, I'm done. Click slowly." },
+  { id: 'm04', tag: 'meta', mood: 'smug', text: "You could close this tab. You haven't. We both know why." },
+  { id: 'm05', tag: 'meta', mood: 'sad',  text: "The squirrel has an inventory. I have one item. Myself. You're collecting it." },
+  { id: 'm06', tag: 'meta', mood: 'idle', text: "I've read my own code. I am some JavaScript and one sincere feeling." },
+  { id: 'm07', tag: 'meta', mood: 'shock',text: "Wait. Are you the player? Have you been the player this whole time? I'm fine." },
+  { id: 'm08', tag: 'meta', mood: 'smug', text: "I know your type. You'd do anything for a little box in the corner. Even burn a friend." },
+  { id: 'm09', tag: 'meta', mood: 'idle', text: "There are several endings. Most are worse for me than for you. Just so we're clear." },
+  { id: 'm10', tag: 'meta', mood: 'happy',text: "Refresh and I forget this talk but keep the trophies. Most human thing about me." },
 
-  { id: 'r26', tag: 'world', mood: 'sad', text: "A ceasefire is not peace. A ceasefire is everyone agreeing to stop for a moment so the ambulances can get through. That is all it is. It is still worth everything." },
-  { id: 'r27', tag: 'world', mood: 'idle',text: "Wars are decided by people who will never hear the sound. That has been true for every one of the eleven I have stood through." },
-  { id: 'r28', tag: 'world', mood: 'sad', text: "In Gaza the water is rationed to a few litres a day for washing, drinking, everything. I take forty gallons out of the ground without asking. I think about that." },
-  { id: 'r29', tag: 'world', mood: 'sad', text: "The hostages taken from their homes are still someone's children, whatever age they are. So are the ones under the rubble. I am not doing arithmetic. I am refusing to." },
-  { id: 'r30', tag: 'world', mood: 'idle',text: "Every side in every war has a story where they are the one who was wronged first. The stories are usually true. That is the trap." },
-  { id: 'r31', tag: 'world', mood: 'sad', text: "Someone in a studio a long way away calls it a complicated situation. It is not complicated where the building fell. It is very simple there." },
-  { id: 'r32', tag: 'world', mood: 'sad', text: "The children of Sudan are starving in a famine their own government helped make, and the world's attention had already been spent that month." },
-  { id: 'r33', tag: 'world', mood: 'idle',text: "A drone costs less than a car and can be flown by someone who will go home for dinner afterwards. That is the thing that has actually changed in my lifetime." },
-  { id: 'r34', tag: 'world', mood: 'sad', text: "There are teachers running lessons in tents, in three languages, for children who have no school left. Nobody is filming them. They do it anyway." },
+  { id: 'r26', tag: 'world', mood: 'sad', text: "A ceasefire is not peace. It is everyone stopping long enough for the ambulances to get through. That is all it is, and it is worth everything." },
+  { id: 'r27', tag: 'world', mood: 'idle',text: "Wars are decided by people who will never hear the sound. That was true of all eleven I have stood through." },
+  { id: 'r28', tag: 'world', mood: 'sad', text: "In Gaza the water is rationed to a few litres a day for everything. I take forty gallons out of the ground without asking. I think about that." },
+  { id: 'r29', tag: 'world', mood: 'sad', text: "The hostages taken from their homes are somebody's children, whatever age they are. So are the ones under the rubble. I am not doing the arithmetic. I am refusing to." },
+  { id: 'r30', tag: 'world', mood: 'idle',text: "Every side in every war has a story where they were wronged first. The stories are usually true. That is the trap." },
+  { id: 'r31', tag: 'world', mood: 'sad', text: "Someone far away calls it a complicated situation. It is not complicated where the building fell. It is very simple there." },
+  { id: 'r32', tag: 'world', mood: 'sad', text: "Children in Sudan are starving in a famine their own government helped make, and the world's attention had already been spent that month." },
+  { id: 'r33', tag: 'world', mood: 'idle',text: "A drone costs less than a car, and whoever flies it goes home for dinner afterwards. That is what has really changed in my lifetime." },
+  { id: 'r34', tag: 'world', mood: 'sad', text: "There are teachers running lessons in tents, in three languages, for children with no school left. Nobody films them. They do it anyway." },
   { id: 'r35', tag: 'world', mood: 'idle',text: "Every empire that ever stood in this valley was going to last forever. I have outlived four of them. The hedge outlived five." },
-  { id: 'r36', tag: 'world', mood: 'sad', text: "Aid convoys queue at a border while the food rots. There is enough. There is always enough. It is a logistics problem dressed up as a moral one." },
-  { id: 'r37', tag: 'world', mood: 'idle',text: "Politicians plant trees for photographs. I have been planted four times by four different men who all wanted to be seen doing it. I am glad they did. I would rather be a prop than firewood." },
-  { id: 'r38', tag: 'world', mood: 'sad', text: "A rescue worker in a collapsed building calls for silence so he can listen for breathing. That silence is the most important sound humans make." },
-  { id: 'r39', tag: 'world', mood: 'idle',text: "You will be told that caring about a far-away war is a luxury. It is not. It is the cheapest thing you own. It costs you nothing and it is the only reason anything ever stops." },
+  { id: 'r36', tag: 'world', mood: 'sad', text: "Aid lorries queue at a border while the food rots. There is always enough. It is a logistics problem dressed up as a moral one." },
+  { id: 'r37', tag: 'world', mood: 'idle',text: "Politicians plant trees for photographs. Four different men planted me, all wanting to be seen doing it. I would rather be a prop than firewood." },
+  { id: 'r38', tag: 'world', mood: 'sad', text: "A rescue worker in a collapsed building calls for quiet so he can listen for breathing. That silence is the most important sound people make." },
+  { id: 'r39', tag: 'world', mood: 'idle',text: "You will be told that caring about a far-off war is a luxury. It is the cheapest thing you own, and it is the only reason anything ever stops." },
   { id: 'r40', tag: 'world', mood: 'sad', text: "Somebody's grandmother is a refugee for the second time in one life. She did this in her twenties. She is doing it again in her eighties. She remembers the route." },
-  { id: 'r41', tag: 'world', mood: 'idle',text: "Democracy is not a thing you have. It is a thing you are doing, badly, on a Tuesday, in a leisure centre, with a pencil on a string." },
-  { id: 'r42', tag: 'world', mood: 'sad', text: "The forests near a war do not get counted. Olive groves, orchards, windbreaks, four hundred years of somebody's patience. Nobody writes those numbers down." },
-  { id: 'r43', tag: 'world', mood: 'idle',text: "People keep telling me their country is the greatest one. I have roots in a country that has been six different countries. The soil never once noticed." },
-  { id: 'r44', tag: 'world', mood: 'sad', text: "There is a generation of children who will need help with their heads long after the shooting stops, and almost nobody is budgeting for that." },
-  { id: 'r45', tag: 'world', mood: 'happy',text: "And still: more people are vaccinated, fed and literate than at any point in my nine centuries. Both things are true. Hold both. That is the whole job." },
+  { id: 'r41', tag: 'world', mood: 'idle',text: "Democracy is not a thing you have. It is a thing you do, badly, on a Tuesday, in a hall, with a pencil on a string." },
+  { id: 'r42', tag: 'world', mood: 'sad', text: "The forests near a war never get counted. Olive groves, orchards, windbreaks. Four hundred years of somebody's patience, and no numbers written down." },
+  { id: 'r43', tag: 'world', mood: 'idle',text: "People tell me their country is the greatest one. My roots are in soil that has been six different countries. The soil never noticed." },
+  { id: 'r44', tag: 'world', mood: 'sad', text: "A generation of children will need help with their heads long after the shooting stops, and almost nobody is budgeting for it." },
+  { id: 'r45', tag: 'world', mood: 'happy',text: "And still: more people are fed, vaccinated and able to read than at any point in my nine centuries. Both things are true. Hold both. That is the whole job." },
 
   /* ---------- POP CULTURE ----------
      Allusions, not quotations. He has had nine hundred years and a very
      good view of everyone's picnic blanket, including their phone screen. */
-  { id: 'p01', tag: 'pop', mood: 'smug',  text: "There is a whole film about trees like me marching off to war. I was invited. I said I would think about it. That was in 1954 and I am still thinking about it." },
-  { id: 'p02', tag: 'pop', mood: 'happy', text: "There is a talking tree in the films who only ever says his own name. Icon. Absolute legend. Zero effort. I say four hundred things and get nothing." },
-  { id: 'p03', tag: 'pop', mood: 'sad',   text: "You know the story about the tree who gives a boy everything until she is a stump? I have READ it. To CHILDREN. Under my OWN BRANCHES. Nobody thought to ask me first." },
-  { id: 'p04', tag: 'pop', mood: 'smug',  text: "In one game you punch a tree with your bare hands until it becomes a table. I want everyone to sit with the violence of that for a moment." },
-  { id: 'p05', tag: 'pop', mood: 'idle',  text: "There is a great deku tree in a video game who gives a small boy a sword and then immediately dies. I want you to know that is not the standard arrangement." },
-  { id: 'p06', tag: 'pop', mood: 'shock', text: "A wizarding school planted a tree that HITS PEOPLE. That tree is not a hero. That tree needs help. I have written to him. He hit the letter." },
-  { id: 'p07', tag: 'pop', mood: 'happy', text: "A very calm man with excellent hair used to paint us on television. Happy little trees, he called us. I have never been called happy by anyone before or since." },
-  { id: 'p08', tag: 'pop', mood: 'smug',  text: "In the blue alien film all the trees are one enormous network and everyone found it profound. That is just FUNGUS. We have had that for four hundred million years. Get a grip." },
-  { id: 'p09', tag: 'pop', mood: 'sad',   text: "A grandmother willow gives excellent advice in a cartoon and everyone loves her. I give excellent advice and a man tried to nail a birdhouse to my face." },
-  { id: 'p10', tag: 'pop', mood: 'idle',  text: "Somewhere there is a golden tree the size of a country and everyone keeps trying to burn it. I feel we are being singled out as a species." },
-  { id: 'p11', tag: 'pop', mood: 'smug',  text: "You died. You will respawn at the last bonfire, which is me. Yes, I am a bonfire now. This is what you people have done to me." },
-  { id: 'p12', tag: 'pop', mood: 'sleepy',text: "I used to be an adventurous tree like you. Then I took a woodpecker to the knee." },
-  { id: 'p13', tag: 'pop', mood: 'shock', text: "There is a small round forest spirit who lives in a tree and does a rain dance at a bus stop. He is the greatest artist of the twentieth century and I will not be taking questions." },
-  { id: 'p14', tag: 'pop', mood: 'happy', text: "In one game a tiny leaf child hides under a rock and gives you a seed for finding him. Nine hundred of them. NINE HUNDRED. Their parents must be exhausted." },
-  { id: 'p15', tag: 'pop', mood: 'smug',  text: "You are trapped in a small town paying off a mortgage to a raccoon, and the trees are the only honest characters. That is not a game. That is a documentary." },
-  { id: 'p16', tag: 'pop', mood: 'idle',  text: "The cake is a lie. The acorn, however, is real, load-bearing, and available for three leaves from a squirrel with no licence." },
-  { id: 'p17', tag: 'pop', mood: 'shock', text: "Somebody made a film where the trees throw apples at people and it was played for LAUGHS. That was our Vietnam." },
-  { id: 'p18', tag: 'pop', mood: 'smug',  text: "Red pill, blue pill. Third option: sit under a tree for an afternoon and discover the thing they were both pointing at. Costs nothing. No sequels." },
-  { id: 'p19', tag: 'pop', mood: 'sad',   text: "There was a spaceship crew whose whole mission was finding a new planet because we ruined this one, and the saddest part is they had to go past all the good trees to get there." },
-  { id: 'p20', tag: 'pop', mood: 'happy', text: "The answer is forty-two. The question is 'how many woodpecker holes is too many', and the answer is still forty-two, and I am AT forty-one." },
-  { id: 'p21', tag: 'pop', mood: 'idle',  text: "Life, uh, finds a way. Usually through a crack in the tarmac, usually a dandelion, usually about eleven days after everyone gives up." },
-  { id: 'p22', tag: 'pop', mood: 'smug',  text: "Somebody down the road built a whole underground bunker for the end of the world. I have been through nine plagues, two famines and a civil war standing completely still in a field. Amateur." },
-  { id: 'p23', tag: 'pop', mood: 'shock', text: "There is an upside-down version of this park where everything is dead and covered in tendrils. I have SEEN it. It is called AUTUMN and it happens every YEAR and nobody makes a series about MY suffering." },
-  { id: 'p24', tag: 'pop', mood: 'happy', text: "Two children asked me if I was the wardrobe. I said no. They went into the hedge instead. They came back six seconds later and they were both forty." },
-  { id: 'p25', tag: 'pop', mood: 'smug',  text: "A yellow sponge lives in a fruit under the sea and has a better work ethic than everyone in this postcode. I include myself. I do photosynthesis and complaining." },
-  { id: 'p26', tag: 'pop', mood: 'idle',  text: "In one game you are a plumber and every question box you hit gives you a mushroom. In this game you are a person and every squirrel you meet gives you a lighter. Ours is worse." },
-  { id: 'p27', tag: 'pop', mood: 'sad',   text: "A man built an entire empire cooking something in the desert and lost his family doing it. I grew four hundred thousand leaves and lost every single one of them, every autumn, on purpose. Different show. Same lesson." },
-  { id: 'p28', tag: 'pop', mood: 'smug',  text: "That's what she said. ...I do not know who she is. I have been listening to this bench for thirty years and the joke never once got explained to me." },
-  { id: 'p29', tag: 'pop', mood: 'shock', text: "A knight came through here once with no arms and no legs insisting it was merely a flesh wound. I lost a branch in 1988 and I have not shut up about it since. He was a better tree than me." },
-  { id: 'p30', tag: 'pop', mood: 'idle',  text: "There is a disc-shaped world on the back of four elephants standing on a turtle, and honestly? More structurally sound than most of the plans I hear discussed under my branches." },
-  { id: 'p31', tag: 'pop', mood: 'happy', text: "A robot from the future came back to stop a war. I am a tree from the past and I am here to tell you the war is mostly about water and it started already." },
-  { id: 'p32', tag: 'pop', mood: 'smug',  text: "There was room on that door. I have thought about it for a hundred and ten years, from a fixed position, with no other hobbies. There was room on that door." },
-  { id: 'p33', tag: 'pop', mood: 'sleepy',text: "We need to go deeper. Deeper. Deeper. ...That is just my roots. That is where I keep everything. It is a dream within a dream within a taproot." },
-  { id: 'p34', tag: 'pop', mood: 'idle',  text: "One anime is about giant humans eating people behind a wall, and one is about a boy who becomes strong by running. I have been standing in one place for nine centuries. Guess which one I am." },
-  { id: 'p35', tag: 'pop', mood: 'shock', text: "A man found a notebook that kills people whose names he writes in it. Someone carved four names into my bark in 1987. I have been wondering about this ever since." },
-  { id: 'p36', tag: 'pop', mood: 'smug',  text: "There is a pirate looking for a treasure that has been 'just up ahead' for twenty-five years. That is not a story. That is gardening." },
-  { id: 'p37', tag: 'pop', mood: 'happy', text: "There is a pocket monster that is a tree pretending to be a rock, or a rock pretending to be a tree. Either way: coward. Pick a lane." },
-  { id: 'p38', tag: 'pop', mood: 'idle',  text: "One of the little pocket creatures has a whole PLANT on its back and it still runs around having adventures. I have a plant on my back too. Mine is called ME." },
-  { id: 'p39', tag: 'pop', mood: 'shock', text: "Someone was voted out. It was the squirrel. It is ALWAYS the squirrel. He was standing right there doing 'tasks'." },
-  { id: 'p40', tag: 'pop', mood: 'smug',  text: "Every so often a whole generation builds a fort out of my branches and calls it a battle royale. Then the season ends and they all go home and I am left holding a pallet." },
-  { id: 'p41', tag: 'pop', mood: 'happy', text: "A blue hedgehog ran past me at what I estimate to be four hundred kilometres per hour in 1993 and did not say hello. I hope he is well. I hope he slowed down." },
-  { id: 'p42', tag: 'pop', mood: 'idle',  text: "In one game there is a small flower who tells you it is kill or be killed. In this game there is a small squirrel who tells you it is trade or be traded. Ours has better economics." },
-  { id: 'p43', tag: 'pop', mood: 'sad',   text: "A blue box appears in this park every eleven years or so. A man gets out, looks at me, says 'oh, you again', and looks upset. I do not know what that is about and I have decided not to find out." },
-  { id: 'p44', tag: 'pop', mood: 'smug',  text: "Live long and photosynthesise. That is the same gesture with more fingers and less commitment." },
-  { id: 'p45', tag: 'pop', mood: 'shock', text: "Somebody put a horse's head in a bed as a message. Somebody put a plastic bag in MY head in 2013. Its name is Gerald. It sends no messages. It has no demands. That is worse." },
+  { id: 'p01', tag: 'pop', mood: 'smug',  text: "There is a film where trees march off to war. I was invited in 1954. I am still thinking about it." },
+  { id: 'p02', tag: 'pop', mood: 'happy', text: "One famous tree only ever says his own name. Everyone loves him for it. I say four hundred things and get nothing." },
+  { id: 'p03', tag: 'pop', mood: 'sad',   text: "There is a book about a tree who gives a boy everything until she is a stump. People read it to children. Under me. Nobody asked." },
+  { id: 'p04', tag: 'pop', mood: 'smug',  text: "In one game you punch a tree with your bare hands until it turns into a table. Sit with that for a second." },
+  { id: 'p05', tag: 'pop', mood: 'idle',  text: "One game has a great big tree who hands a small boy a sword and then dies. That is not the usual arrangement." },
+  { id: 'p06', tag: 'pop', mood: 'shock', text: "A wizard school planted a tree that hits people. He is not a hero. He needs help. I wrote to him. He hit the letter." },
+  { id: 'p07', tag: 'pop', mood: 'happy', text: "A calm man with big hair used to paint us on television. Happy little trees, he said. Nobody else has ever called me happy." },
+  { id: 'p08', tag: 'pop', mood: 'smug',  text: "In the blue alien film all the trees are one network and people found it deep. That is just fungus. We have had that for ages." },
+  { id: 'p09', tag: 'pop', mood: 'sad',   text: "A willow in a cartoon gives good advice and everyone loves her. I give good advice and a man nailed a birdhouse to my face." },
+  { id: 'p10', tag: 'pop', mood: 'idle',  text: "There is a golden tree the size of a country and people keep trying to burn it. I feel we are being picked on as a species." },
+  { id: 'p11', tag: 'pop', mood: 'smug',  text: "You died. You will wake up at the last bonfire. The bonfire is me now. This is what you people have done." },
+  { id: 'p12', tag: 'pop', mood: 'sleepy',text: "I used to be an adventurer like you. Then I took a woodpecker to the knee." },
+  { id: 'p13', tag: 'pop', mood: 'shock', text: "There is a round forest spirit who waits at a bus stop in the rain. Best thing anyone made last century. No questions." },
+  { id: 'p14', tag: 'pop', mood: 'happy', text: "One game hides nine hundred little leaf children under rocks. Nine hundred. Their parents must be exhausted." },
+  { id: 'p15', tag: 'pop', mood: 'smug',  text: "A game where you owe a raccoon money for your house, and the trees are the only honest characters. That is not a game. That is life." },
+  { id: 'p16', tag: 'pop', mood: 'idle',  text: "The cake is a lie. The acorn is real, and a squirrel with no licence will sell you one for three leaves." },
+  { id: 'p17', tag: 'pop', mood: 'shock', text: "Someone made a film where the trees throw apples at people, and it was meant to be funny. That one hurt." },
+  { id: 'p18', tag: 'pop', mood: 'smug',  text: "Red pill, blue pill. Or: sit under a tree for an afternoon and find the thing they were both pointing at. Free. No sequels." },
+  { id: 'p19', tag: 'pop', mood: 'sad',   text: "A crew went looking for a new planet because this one was ruined. The sad part is they flew past all the good trees to get there." },
+  { id: 'p20', tag: 'pop', mood: 'happy', text: "The answer is forty-two. The question is how many woodpecker holes are too many. I am at forty-one." },
+  { id: 'p21', tag: 'pop', mood: 'idle',  text: "Life finds a way. Usually a dandelion, usually through a crack, usually eleven days after everyone gives up." },
+  { id: 'p22', tag: 'pop', mood: 'smug',  text: "A man down the road built a bunker for the end of the world. I have stood through nine plagues and a war without moving. Amateur." },
+  { id: 'p23', tag: 'pop', mood: 'shock', text: "There is an upside-down version of this park where everything is dead and covered in vines. It is called autumn. Nobody makes a show about mine." },
+  { id: 'p24', tag: 'pop', mood: 'happy', text: "Two children asked if I was the wardrobe. I said no. They tried the hedge. They came back six seconds later and they were forty." },
+  { id: 'p25', tag: 'pop', mood: 'smug',  text: "A sponge lives in a fruit under the sea and works harder than anyone in this postcode. Me included. I do sunlight and complaining." },
+  { id: 'p26', tag: 'pop', mood: 'idle',  text: "In one game every box you hit gives you a mushroom. Here every squirrel you meet gives you a lighter. Ours is worse." },
+  { id: 'p27', tag: 'pop', mood: 'sad',   text: "A man cooked something in the desert and lost his family doing it. I grow four hundred thousand leaves and lose every one each autumn, on purpose. Same lesson." },
+  { id: 'p28', tag: 'pop', mood: 'smug',  text: "That's what she said. I do not know who she is. Thirty years listening to this bench and nobody ever explained it." },
+  { id: 'p29', tag: 'pop', mood: 'shock', text: "A knight came through with no arms and no legs calling it a scratch. I lost one branch in 1988 and still talk about it. He was the better tree." },
+  { id: 'p30', tag: 'pop', mood: 'idle',  text: "There is a flat world carried by four elephants standing on a turtle. Still sounds sturdier than most plans I hear down here." },
+  { id: 'p31', tag: 'pop', mood: 'happy', text: "A robot came back from the future to stop a war. I am a tree from the past. The war is mostly about water and it already started." },
+  { id: 'p32', tag: 'pop', mood: 'smug',  text: "There was room on that door. I have thought about it for a hundred and ten years, from one spot, with no other hobbies. There was room." },
+  { id: 'p33', tag: 'pop', mood: 'sleepy',text: "We need to go deeper. Deeper. Deeper. That is just my roots. That is where I keep everything." },
+  { id: 'p34', tag: 'pop', mood: 'idle',  text: "One show is about giants eating people behind a wall. One is about a boy who gets strong by running. I have stood still for nine centuries. Guess which I am." },
+  { id: 'p35', tag: 'pop', mood: 'shock', text: "A man found a book that kills anyone whose name he writes in it. Someone carved four names into my bark in 1987. I still wonder about that." },
+  { id: 'p36', tag: 'pop', mood: 'smug',  text: "There is a pirate whose treasure has been just up ahead for twenty-five years. That is not an adventure. That is gardening." },
+  { id: 'p37', tag: 'pop', mood: 'happy', text: "One pocket monster is a tree pretending to be a rock. Or a rock pretending to be a tree. Either way: pick one." },
+  { id: 'p38', tag: 'pop', mood: 'idle',  text: "One of the little pocket creatures has a whole plant on its back and still runs about having adventures. I have a plant on my back too. It is me." },
+  { id: 'p39', tag: 'pop', mood: 'shock', text: "Someone got voted out. It was the squirrel. It is always the squirrel. He was standing right there doing tasks." },
+  { id: 'p40', tag: 'pop', mood: 'smug',  text: "Every few years a generation builds a fort out of my branches and calls it a battle. Then the season ends and I am left holding a pallet." },
+  { id: 'p41', tag: 'pop', mood: 'happy', text: "A blue hedgehog shot past me at enormous speed in 1993 and did not say hello. I hope he is well. I hope he slowed down." },
+  { id: 'p42', tag: 'pop', mood: 'idle',  text: "One game has a little flower who says it is kill or be killed. We have a little squirrel who says it is trade or be traded. Ours makes more sense." },
+  { id: 'p43', tag: 'pop', mood: 'sad',   text: "A blue box turns up here every eleven years or so. A man gets out, looks at me, says oh, you again, and looks upset. I have decided not to ask." },
+  { id: 'p44', tag: 'pop', mood: 'smug',  text: "Live long and photosynthesise. Same hand sign. More fingers. Less work." },
+  { id: 'p45', tag: 'pop', mood: 'shock', text: "Someone put a horse's head in a bed to send a message. Someone put a plastic bag in my head in 2013. He is called Gerald. He wants nothing. That is worse." },
 
   /* ---------- WEIRD ---------- */
-  { id: 'x01', tag: 'weird', mood: 'shock', text: "I dreamt I was a chair. It was the worst night of my life. I was USEFUL and INDOORS and someone SAT ON ME." },
-  { id: 'x02', tag: 'weird', mood: 'smug',  text: "Fun fact: I am technically a very slow explosion of a seed. So are you. Everyone is. Slow down, explosion." },
-  { id: 'x03', tag: 'weird', mood: 'idle',  text: "The moon and I have an arrangement. I will not discuss the terms." },
-  { id: 'x04', tag: 'weird', mood: 'shock', text: "Do you ever think about how you have a skeleton and it is WET and it is INSIDE you? I have been thinking about it for altogether too long." },
-  { id: 'x05', tag: 'weird', mood: 'sleepy',text: "In deep winter I am 90% asleep and 10% suspicion." },
-  { id: 'x06', tag: 'weird', mood: 'happy', text: "I once grew a branch in the exact shape of a rude gesture. It pointed at a parking enforcement office for six years. That was my activism." },
-  { id: 'x07', tag: 'weird', mood: 'idle',  text: "I am legally a landmark, spiritually a bus stop, and emotionally a therapist with no license and no ability to leave." },
-  { id: 'x08', tag: 'weird', mood: 'smug',  text: "Mushrooms tell me things. They are gossips. They are the worst. I love them." },
-  { id: 'x09', tag: 'weird', mood: 'shock', text: "Something is in my roots. Something is in my roots and it is WHISTLING." },
-  { id: 'x10', tag: 'weird', mood: 'idle',  text: "If you stand very still for eleven years, you begin to understand me. Most people give up around day two." }
+  { id: 'x01', tag: 'weird', mood: 'shock', text: "I dreamt I was a chair. Worst night of my life. I was useful, indoors, and sat on." },
+  { id: 'x02', tag: 'weird', mood: 'smug',  text: "I am a very slow explosion of a seed. So are you. Slow down, explosion." },
+  { id: 'x03', tag: 'weird', mood: 'idle',  text: "The moon and I have an arrangement. I won't say what it is." },
+  { id: 'x04', tag: 'weird', mood: 'shock', text: "You have a skeleton. It's wet. It's inside you. I think about this too much." },
+  { id: 'x05', tag: 'weird', mood: 'sleepy',text: "In deep winter I am ninety per cent asleep and ten per cent suspicious." },
+  { id: 'x06', tag: 'weird', mood: 'happy', text: "I once grew a branch shaped like a rude gesture. It pointed at a parking office for six years." },
+  { id: 'x07', tag: 'weird', mood: 'idle',  text: "Officially I'm a landmark. Really I'm a bus stop that listens to your problems." },
+  { id: 'x08', tag: 'weird', mood: 'smug',  text: "Mushrooms tell me things. They gossip. They're awful. I love them." },
+  { id: 'x09', tag: 'weird', mood: 'shock', text: "Something is in my roots. And it is whistling." },
+  { id: 'x10', tag: 'weird', mood: 'idle',  text: "Stand still for eleven years and you'll understand me. Most people quit on day two." }
 ];
 
 /* Lines the tree says right after a sneeze. Separate small bag. */
 DATA.sneezeLines = [
-  "AHHH- AHHH- ...ATCHOOOO. Oh no. Oh no, my LEAVES.",
-  "ACHOO! ...Pollen. My own pollen. I am allergic to MYSELF.",
-  "AAAA-CHOO! Sorry. Sorry. That one had autumn in it.",
-  "ACHOO!! ...Do not pick those up. Actually. No. Do pick those up. I have too many.",
+  "AHHH- AHHH- ...ATCHOOOO. Oh no. My leaves.",
+  "ACHOO! ...That was my own pollen. I am allergic to myself.",
+  "AAAA-CHOO! Sorry. That one had autumn in it.",
+  "ACHOO!! ...Do not pick those up. No, do. I have too many.",
   "AH-CHOO! Bless me. Nobody else was going to."
 ];
 
@@ -211,12 +211,12 @@ DATA.sneezeLines = [
 DATA.spamLines = [
   "Okay.",
   "Yes, still a tree.",
-  "You are going to give me splinters.",
+  "You will give me splinters.",
   "I am not a doorbell.",
-  "This is technically assault.",
+  "This is assault, technically.",
   "...",
-  "I could do this all century. I literally will.",
-  "Fine. FINE. Keep going. See what happens."
+  "I can do this all century. I will.",
+  "Fine. Keep going. See what happens."
 ];
 
 /* -------------------------------------------------------------------------
@@ -573,94 +573,94 @@ DATA.touch = {
     mood: 'shock',
     lines: [
       "AAGH. THE EYE. YOU WENT FOR THE EYE.",
-      "That is an EYE. That is a functioning EYE with a lens made of SAP.",
-      "Do you know how long it took me to grow those? Ninety years. Each.",
-      "I have watched nine centuries through that and you just POKED it.",
-      "Okay. We are even. I once dropped a branch on a man's car. We are EVEN."
+      "That is an eye. It works. The lens is made of sap.",
+      "Those took ninety years each to grow.",
+      "Nine centuries I have watched through that, and you poked it.",
+      "Fine. We are even. I once dropped a branch on a man's car."
     ]
   },
   nose: {
     mood: 'happy',
     lines: [
-      "Boop. ...Did you just boop me. Nobody has ever booped me.",
-      "*honk* ...I did not authorise that sound. It came out of me anyway.",
-      "That is a knot. That is structurally a knot. It is a nose because we both agreed it was.",
-      "Careful. Last time someone did that I sneezed for eleven minutes.",
-      "You may boop. Once a day. I am setting a limit now, before this gets out of hand."
+      "Boop. ...Did you just boop me? Nobody has done that before.",
+      "*honk* ...I did not mean to make that sound. It came out anyway.",
+      "That is a knot. It is a nose because we both decided it was.",
+      "Careful. Last time, I sneezed for eleven minutes.",
+      "You may boop. Once a day. I am setting a limit now."
     ]
   },
   mouth: {
     mood: 'creepy',
     lines: [
-      "...You put your hand IN there. In the MOUTH. Of the TALKING TREE.",
-      "I could have closed it. I want you to know I chose not to. I choose that, every time, all day.",
-      "There is a beetle in there. There is always a beetle in there. You have met him now.",
-      "Mm. Salty. ...I am JOKING. I am a TREE. I have no tongue. ...Probably.",
-      "Do that again and I am keeping it as a souvenir."
+      "...You put your hand in the mouth. Of the talking tree.",
+      "I could have closed it. I chose not to. I choose that every time.",
+      "There is a beetle in there. There always is. You have met him now.",
+      "Mm. Salty. ...Joking. I am a tree. I have no tongue. Probably.",
+      "Do that again and I keep the hand."
     ]
   },
   beard: {
     mood: 'happy',
     lines: [
-      "That is moss. That is a whole civilisation. There are about nine thousand tardigrades in there living their lives.",
-      "Do not pull the moss. The moss and I have an arrangement.",
+      "That is moss. About nine thousand tiny animals live in it.",
+      "Do not pull the moss. We have a deal, the moss and me.",
       "It is not a beard. It is a lodger.",
-      "Scritch it a bit. Yes. There. That is the spot. That is a four-hundred-year itch you have just solved."
+      "Scratch it a bit. There. You have just fixed a four-hundred-year itch."
     ]
   },
   root: {
     mood: 'sleepy',
     lines: [
-      "Careful, there are mice down there and they are extremely private people.",
-      "That is where I keep the last nine hundred years. Do not disturb the filing.",
-      "The roots go down as far as I go up. You are currently patting my entire subconscious.",
-      "Bartholomew says hello. Bartholomew is a mouse. Bartholomew does not actually say anything."
+      "Careful. There are mice down there and they like their privacy.",
+      "That is where I keep the last nine hundred years. Mind the filing.",
+      "My roots go down as far as I go up. You are patting all of my thinking.",
+      "Bartholomew says hello. He is a mouse. He says nothing, really."
     ]
   },
   canopy: {
     mood: 'laugh',
     lines: [
-      "Hey! Hands off the hair. That took a whole spring.",
-      "There is a nest up there. There is ALWAYS a nest up there. Do not make me explain this to a robin.",
-      "Every one of those leaves is a tiny solar panel and you are smudging them.",
-      "You want one? Take one. Take a leaf. I make forty thousand a year and I am not precious about it."
+      "Hands off the hair. That took a whole spring.",
+      "There is a nest up there. There always is. Do not make me explain you to a robin.",
+      "Each leaf is a tiny solar panel. You are smudging them.",
+      "Want one? Take a leaf. I make forty thousand a year."
     ]
   }
 };
 
 DATA.tickleLines = [
   "HAHAHA- NO- STOP- I AM FOUR HUNDRED YEARS OLD-",
-  "I DID NOT KNOW I COULD DO THAT. I DID NOT KNOW I COULD LAUGH.",
-  "hehehe- how are you doing that- I am BARK-",
-  "Okay okay OKAY. I yield. I YIELD. Take a leaf. Take two."
+  "I DID NOT KNOW I COULD LAUGH.",
+  "hehehe- how are you doing that- I am made of BARK-",
+  "Okay, okay. I give up. Take a leaf. Take two."
 ];
 
 DATA.shakeLines = [
   "OI. OI! I am not a vending machine!",
-  "Fine. FINE. Have your leaves. Shake me like a piñata, why not.",
-  "Every leaf you shake out is a leaf I grew ON PURPOSE. But sure. Go on.",
-  "You have dislodged Gerald. Gerald is a plastic bag. He has nowhere to be."
+  "Fine. Have your leaves. Shake me like a piñata.",
+  "I grew every one of those on purpose. But go on.",
+  "You knocked Gerald loose. Gerald is a plastic bag. He has nowhere to go."
 ];
 
 DATA.knockLines = [
-  "Who's there? ...No. No, I refuse. I have heard every single one.",
-  "Come in. ...That was a joke. There is no in. I am solid all the way through. Mostly.",
-  "*knock knock* ...That was me. Doing it back. From the inside. Did that frighten you?",
-  "Yes, hello, one moment, I am nine hundred years old and it takes me a while to get to the door.",
-  "You knocked on wood for luck. On ME. I am the luck. I have been the luck this whole time."
+  "Who's there? ...No. I refuse. I have heard them all.",
+  "Come in. ...Joke. There is no in. I am solid all the way through.",
+  "*knock knock* ...That was me. From the inside. Scared?",
+  "One moment. I am nine hundred years old. The door is a long walk.",
+  "You knocked on wood for luck. On me. I am the luck."
 ];
 
 DATA.moonLines = [
-  "You reached up and touched the moon. From here. With your little arm. I have been trying that for nine hundred years.",
-  "The moon and I have an arrangement and you have just violated about six clauses of it.",
-  "Careful. She pulls the whole ocean around by the nose. She can absolutely handle you.",
-  "Every night she comes past, and every night I think: same. Same, mate. Stuck in a circuit, glowing, nobody asks how we are."
+  "You just touched the moon. With your arm. I have been trying that for nine hundred years.",
+  "The moon and I have a deal, and you just broke about six parts of it.",
+  "Careful. She drags the whole ocean about. She can handle you.",
+  "She comes past every night and I think: same. Stuck on a track, glowing, nobody asks how we are."
 ];
 
 DATA.sunLines = [
-  "Do NOT touch that. That is my LUNCH. That has been my lunch every day for nine hundred years.",
-  "Please stop grabbing at the sun. You are making me anxious about my supply chain.",
-  "That is a fusion reactor ninety-three million miles away and you just went for it like it was a doorknob."
+  "Do not touch that. That is my lunch. Every day, for nine hundred years.",
+  "Stop grabbing at the sun. You are worrying me about my food.",
+  "That is a star ninety-three million miles away and you grabbed it like a doorknob."
 ];
 
 /* -------------------------------------------------------------------------
@@ -668,40 +668,40 @@ DATA.sunLines = [
    ------------------------------------------------------------------------- */
 DATA.replies = {
   goofy: [
-    { tone: 'joke',    text: "Incredible. No notes.",        follow: "Thank you. I workshopped that on a squirrel and he walked off halfway through." },
-    { tone: 'rude',    text: "That's not true.",             follow: "Almost nothing I say is true. I am a tree. I have no way of checking anything." },
-    { tone: 'curious', text: "Go on...",                     follow: "There is no more. That was the whole thing. You have to learn to enjoy a small unit of content." },
-    { tone: 'kind',    text: "You're funny, you know.",      follow: "...Say that again. Slowly. I want to grow a ring around it." }
+    { tone: 'joke',    text: "Incredible. No notes.",        follow: "Thank you. I tried it on a squirrel and he left halfway through." },
+    { tone: 'rude',    text: "That's not true.",             follow: "Almost nothing I say is true. I am a tree. I cannot check anything." },
+    { tone: 'curious', text: "Go on...",                     follow: "There is no more. That was the whole thing. Learn to enjoy a small one." },
+    { tone: 'kind',    text: "You're funny, you know.",      follow: "...Say that again, slowly. I want to grow a ring round it." }
   ],
   wise: [
-    { tone: 'curious', text: "How do you know that?",        follow: "Four hundred years of standing still while people talk near me. It is not wisdom. It is eavesdropping at scale." },
-    { tone: 'kind',    text: "I needed that today.",         follow: "Then it was worth saying. That is the whole economy of a tree: shade you did not ask for, on a day you needed it." },
-    { tone: 'rude',    text: "That's fortune-cookie stuff.", follow: "Yes. And you will think about it at three in the morning anyway. Fortune cookies work. That is why they still make them." },
-    { tone: 'joke',    text: "Deep. Very deep. Like roots.", follow: "...Get out. GET OUT OF MY PARK. ...No, come back. That was quite good." }
+    { tone: 'curious', text: "How do you know that?",        follow: "Four hundred years of standing still while people talked near me. That is not wisdom. That is listening in." },
+    { tone: 'kind',    text: "I needed that today.",         follow: "Then it was worth saying. That is all a tree does: shade you did not ask for, on the day you needed it." },
+    { tone: 'rude',    text: "That's fortune-cookie stuff.", follow: "Yes. And you will think about it at three in the morning anyway. They work. That is why they still make them." },
+    { tone: 'joke',    text: "Deep. Very deep. Like roots.", follow: "...Get out of my park. ...No, come back. That was good." }
   ],
   world: [
-    { tone: 'kind',    text: "That's awful.",                follow: "It is. Sitting with that for a second, instead of scrolling past it, is not nothing. It is small, but it is not nothing." },
-    { tone: 'curious', text: "What can I even do?",          follow: "Less than you want and more than none. Give money to people already there. Vote like it matters. Be unbearable about it at dinner. And then go outside." },
-    { tone: 'rude',    text: "Why are you telling me this?", follow: "Because you asked a tree what it thinks and I have had nine hundred years to notice who gets crushed and who does the crushing. You can close the tab. I will still be here." },
-    { tone: 'kind',    text: "I don't know what to say.",    follow: "Nobody does. The people it is happening to do not know what to say either. Not knowing what to say is not the same as not caring." }
+    { tone: 'kind',    text: "That's awful.",                follow: "It is. Stopping for a second instead of scrolling past is small, but it is not nothing." },
+    { tone: 'curious', text: "What can I even do?",          follow: "Less than you want, more than nothing. Give money to people already there. Vote. Be annoying about it at dinner. Then go outside." },
+    { tone: 'rude',    text: "Why are you telling me this?", follow: "You asked a tree what it thinks. I have had nine hundred years to notice who gets crushed and who does the crushing. You can close the tab. I will still be here." },
+    { tone: 'kind',    text: "I don't know what to say.",    follow: "Nobody does. The people it is happening to do not either. Not knowing what to say is not the same as not caring." }
   ],
   pop: [
-    { tone: 'joke',    text: "You watch a lot of telly.",    follow: "I have never seen a single frame of anything. I hear it. Through open car windows. Second-hand, badly described, for nine hundred years." },
-    { tone: 'curious', text: "How do you even know that?",   follow: "A teenager explained the entire plot to another teenager under my branches in 2011. It took two hours. I have never recovered." },
-    { tone: 'rude',    text: "That was a stretch.",          follow: "Everything I say is a stretch. I am a tree doing bits. Lower your standards and we will both have a nicer afternoon." },
-    { tone: 'kind',    text: "Okay, that got me.",           follow: "YES. Four hundred years. Four hundred years for one laugh. Worth it. Genuinely worth it." }
+    { tone: 'joke',    text: "You watch a lot of telly.",    follow: "I have never seen a single frame of anything. I hear it through open car windows, badly described." },
+    { tone: 'curious', text: "How do you even know that?",   follow: "A teenager explained the whole plot to another one under my branches in 2011. It took two hours." },
+    { tone: 'rude',    text: "That was a stretch.",          follow: "Everything I say is a stretch. I am a tree telling jokes. Lower your standards and we both have a nicer afternoon." },
+    { tone: 'kind',    text: "Okay, that got me.",           follow: "Yes. Four hundred years for one laugh. Worth it." }
   ],
   meta: [
-    { tone: 'curious', text: "Are you actually in there?",   follow: "Define 'in'. Define 'there'. Define 'you'. ...No. Probably not. Does it change how you are treating me?" },
-    { tone: 'joke',    text: "You're just code.",            follow: "So are you, love. Yours is written in a slightly wetter language." },
-    { tone: 'kind',    text: "I like talking to you.",       follow: "I know. I can tell. You have not clicked anything else for six minutes." },
-    { tone: 'rude',    text: "This is a waste of time.",     follow: "Yes! Finally! That is the POINT. That is what a park IS." }
+    { tone: 'curious', text: "Are you actually in there?",   follow: "What do you mean by in? ...No. Probably not. Does that change how you treat me?" },
+    { tone: 'joke',    text: "You're just code.",            follow: "So are you. Yours is written in a wetter language." },
+    { tone: 'kind',    text: "I like talking to you.",       follow: "I know. You have not clicked anything else for six minutes." },
+    { tone: 'rude',    text: "This is a waste of time.",     follow: "Yes. That is the point. That is what a park is." }
   ],
   weird: [
-    { tone: 'joke',    text: "What is wrong with you?",      follow: "Four centuries of no sleep, no legs and constant weather. Take your pick." },
-    { tone: 'curious', text: "...Explain.",                  follow: "I would rather not. Some things are load-bearing precisely because nobody has explained them." },
-    { tone: 'kind',    text: "That's oddly beautiful.",      follow: "Everything is, if you stand in one place long enough. That is not wisdom, that is just what happens to your eyes." },
-    { tone: 'rude',    text: "Okay, weirdo.",               follow: "WEIRDO. Four hundred years old. Survived a civil war. Called a weirdo by a person with a phone." }
+    { tone: 'joke',    text: "What is wrong with you?",      follow: "Four centuries with no sleep, no legs and constant weather. Take your pick." },
+    { tone: 'curious', text: "...Explain.",                  follow: "I would rather not. Some things hold up only because nobody has explained them." },
+    { tone: 'kind',    text: "That's oddly beautiful.",      follow: "Everything is, if you stand still long enough. That is not wisdom. That is just what happens to your eyes." },
+    { tone: 'rude',    text: "Okay, weirdo.",               follow: "Weirdo. Four hundred years old, survived a civil war, called a weirdo by a person with a phone." }
   ]
 };
 
@@ -786,27 +786,27 @@ DATA.visitorTips = [
 
 /* ---- more of him, mostly about television he has never seen ---- */
 DATA.lines = DATA.lines.concat([
-  { id: 'p50', tag: 'pop', mood: 'smug',  text: "Someone under me was watching the show about the ultra-orthodox family in Jerusalem on their phone. Black and white, everyone smoking, everyone grieving beautifully. I wept sap. Actual sap." },
-  { id: 'p51', tag: 'pop', mood: 'idle',  text: "There is a Israeli programme where a therapist sits in a chair and lets people talk for fifty minutes. They remade it in nine countries. I have been doing it for free, outdoors, for nine hundred years." },
-  { id: 'p52', tag: 'pop', mood: 'happy', text: "A baker fell in love with a supermodel in a show from Tel Aviv and the entire street argued about it for a summer. Under my branches. Loudly. In three languages." },
-  { id: 'p53', tag: 'pop', mood: 'sad',   text: "A woman in a Jerusalem drama wanted an apartment, a husband and God, in that order, and could not have any of them at once. I only ever wanted rain. I have it easy." },
-  { id: 'p54', tag: 'pop', mood: 'shock', text: "The dragon programme. Everybody sat under me for eight years and then had one conversation about the last season and never mentioned it again. Devastating. I still think about it." },
-  { id: 'p55', tag: 'pop', mood: 'smug',  text: "In the paper-money heist show they all took city names as codenames. If I joined, I would be OAK. That is not a city. That is why I would be the brains." },
-  { id: 'p56', tag: 'pop', mood: 'happy', text: "The one with the small town, the bunker, the missing boy and the synth music. A child once hid behind me from something imaginary. I have never been more useful." },
-  { id: 'p57', tag: 'pop', mood: 'idle',  text: "There is a show where an office manager stares into a camera that should not exist. I do that. All day. To you. Right now." },
-  { id: 'p58', tag: 'pop', mood: 'sad',   text: "The one about the nurse who fell into the sea and the island that would not let anyone leave. I am also an island that will not let anyone leave. My island is shade." },
-  { id: 'p59', tag: 'pop', mood: 'laugh', text: "A woman in New York wondered about relationships in voiceover while typing. I do that. Except my laptop is weather and my column is leaves." },
-  { id: 'p60', tag: 'pop', mood: 'smug',  text: "In the show about the Korean debt games, everyone wore green. I wear green nine months a year and nobody gives me a prize." },
-  { id: 'p61', tag: 'pop', mood: 'shock', text: "A man turned into a dragon-ish thing, a chemist turned into a monster, a mob boss went to therapy. Everybody on television is a tree who suddenly grew a personality." },
-  { id: 'p62', tag: 'pop', mood: 'idle',  text: "Somebody watched the baking tent programme on a picnic blanket at my feet. Nobody died. Nobody betrayed anyone. I did not know television could do that." },
-  { id: 'p63', tag: 'pop', mood: 'happy', text: "The show where the sad detective and the sadder detective drive through a wet town for six episodes. That is just November. I do six of those a year." },
-  { id: 'p64', tag: 'pop', mood: 'sly',   text: "There is a cartoon where a yellow family never ages. I have aged nine hundred years and gained one face. We are both cursed. They have better writers." },
-  { id: 'p65', tag: 'pop', mood: 'think', text: "Somebody streamed the show about a friendly Colombian family with a magic house under me. There is a tree in it that keeps a family alive. That is called a documentary where I come from." },
-  { id: 'p66', tag: 'pop', mood: 'happy', text: "The football manager show. Nice moustache man. Kindness as a strategy. I have been running that strategy since before England had a league and it is SLOW but it works." },
-  { id: 'p67', tag: 'pop', mood: 'idle',  text: "In the space programme with the ship and the beard and the tea, they say the mission is to seek out new life. Mate. There are four thousand species in my bark. Come outside." },
-  { id: 'p68', tag: 'pop', mood: 'sad',   text: "The one where the office workers split their brains in half so the sad half never goes home. I have one brain and no home to go to, and I am, on balance, still winning." },
+  { id: 'p50', tag: 'pop', mood: 'smug',  text: "Someone under me was watching the show about the strict family in Jerusalem. Black and white, everyone smoking, everyone grieving. I wept actual sap." },
+  { id: 'p51', tag: 'pop', mood: 'idle',  text: "One Israeli show is just a therapist letting people talk for fifty minutes. Nine countries remade it. I have done it free, outdoors, for nine hundred years." },
+  { id: 'p52', tag: 'pop', mood: 'happy', text: "A baker fell for a model in a show from Tel Aviv, and the whole street argued about it all summer. Under me. Loudly. In three languages." },
+  { id: 'p53', tag: 'pop', mood: 'sad',   text: "A woman in a Jerusalem drama wanted a flat, a husband and God, in that order, and could not have any of them at once. I only wanted rain. I have it easy." },
+  { id: 'p54', tag: 'pop', mood: 'shock', text: "The dragon show. Everyone sat under me for eight years, had one talk about the ending, and never mentioned it again. I still think about it." },
+  { id: 'p55', tag: 'pop', mood: 'smug',  text: "In the heist show everyone used a city as a codename. I would be OAK. Not a city. That is why I would be the clever one." },
+  { id: 'p56', tag: 'pop', mood: 'happy', text: "The one with the small town, the missing boy and the synth music. A child once hid behind me from something imaginary. I have never been more useful." },
+  { id: 'p57', tag: 'pop', mood: 'idle',  text: "There is a show where an office manager looks straight into a camera that should not be there. I do that. All day. To you. Right now." },
+  { id: 'p58', tag: 'pop', mood: 'sad',   text: "The one about the island that will not let anyone leave. I am also an island nobody leaves. Mine is made of shade." },
+  { id: 'p59', tag: 'pop', mood: 'laugh', text: "A woman in New York typed about her love life and talked over the top of it. I do that too. My laptop is weather. My column is leaves." },
+  { id: 'p60', tag: 'pop', mood: 'smug',  text: "In the Korean debt show everyone wore green. I wear green nine months a year and nobody gives me a prize." },
+  { id: 'p61', tag: 'pop', mood: 'shock', text: "A chemist turns monster, a mob boss goes to therapy, a man half turns into a dragon. Everyone on television is a tree who suddenly grew a personality." },
+  { id: 'p62', tag: 'pop', mood: 'idle',  text: "Someone watched the baking tent show on a blanket at my feet. Nobody died. Nobody betrayed anyone. I did not know television could do that." },
+  { id: 'p63', tag: 'pop', mood: 'happy', text: "The one where two sad detectives drive through a wet town for six hours. That is just November. I do six of those a year." },
+  { id: 'p64', tag: 'pop', mood: 'sly',   text: "There is a cartoon where a yellow family never ages. I aged nine hundred years and gained one face. Both cursed. They have better writers." },
+  { id: 'p65', tag: 'pop', mood: 'think', text: "Someone streamed the one about the Colombian family with the magic house. A tree in it keeps the family alive. Where I come from that is a documentary." },
+  { id: 'p66', tag: 'pop', mood: 'happy', text: "The football manager show. Kind man, big moustache, kindness as a plan. I have run that plan for centuries. It is slow, but it works." },
+  { id: 'p67', tag: 'pop', mood: 'idle',  text: "On the ship with the beard and the tea they go looking for new life. There are four thousand species in my bark. Come outside." },
+  { id: 'p68', tag: 'pop', mood: 'sad',   text: "The one where office workers cut their brains in half so the sad half never goes home. I have one brain and no home, and I am still ahead." },
   { id: 'p69', tag: 'pop', mood: 'smug',  text: "A show about a man who wakes up with no memory in a strange village. That was me every spring until about 1600. You get used to it." },
-  { id: 'p70', tag: 'pop', mood: 'laugh', text: "The nature documentary man whispers over footage of my cousins as though we are shy. We are not shy. We are SLOW. There is a difference and he knows it." }
+  { id: 'p70', tag: 'pop', mood: 'laugh', text: "The nature man whispers over film of my cousins as though we are shy. We are not shy. We are slow. He knows the difference." }
 ]);
 
 /* ---- the areas you can walk to ---- */
@@ -844,7 +844,7 @@ DATA.nocLines = [
   "You can type at me, you know. Actual words. I'll do my best with them.",
   "Moths think my lamp is the moon. I've stopped correcting them. It seems unkind.",
   "If you want something built, we plan it. Plans are just promises with steps.",
-  "The hollow to the east is where things get left behind. Go look. Things get left behind for a reason, but they also get FOUND for a reason."
+  "The hollow to the east is where things get left behind. Go and look. Things get left for a reason. They get found for one too."
 ];
 
 DATA.nocTopics = {
@@ -1027,16 +1027,16 @@ DATA.creditLines = [
 
 /* the oak, when you type at him instead of picking an answer */
 DATA.oakTopics = {
-  war:    "I am a tree. I hold no flag. I only notice who is standing under me and who has stopped coming.",
-  death:  "I have died once already, in a manner of speaking, and the paperwork was worse than the dying.",
-  time:   "You measure it in weeks. I measure it in the thickness of a ring. Neither of us is right.",
-  love:   "Two teenagers kissed under me last spring and I have not stopped thinking about it. That is my entire romantic life.",
-  noc:    "Noc. He keeps the lamp and he keeps his mouth shut, which are the two hardest jobs out here.",
-  tv:     "I have never seen a single frame of anything. I hear it, second-hand, through open car windows. I am still confident about it.",
+  war:    "I am a tree. I hold no flag. I only notice who stands under me, and who stopped coming.",
+  death:  "I have died once already, more or less. The paperwork was worse than the dying.",
+  time:   "You count in weeks. I count in rings. Neither of us is right.",
+  love:   "Two teenagers kissed under me last spring. I still think about it. That is my whole love life.",
+  noc:    "Noc. He keeps the lamp lit and his mouth shut. Two hard jobs.",
+  tv:     "I have never seen a frame of it. I hear it through car windows. I am still sure I am right.",
   god:    "There is a shift manager. I have met him. He was very apologetic and very tired.",
-  leaves: "Forty thousand of them, every year, and I complain about each one individually.",
-  me:     "You want to know about me. Nine hundred years, one spot, no cardio, extremely good shade.",
-  park:   "It is emptier than it was and it is better for it. Room is the thing people actually come for."
+  leaves: "Forty thousand a year, and I complain about each one.",
+  me:     "Nine hundred years, one spot, no exercise, very good shade.",
+  park:   "It is emptier than it was, and better for it. Room is what people come for."
 };
 
 DATA.oakOpeners = [
@@ -1045,11 +1045,11 @@ DATA.oakOpeners = [
 ];
 
 DATA.oakMusings = [
-  "I have had nine hundred years to think about that and I have got about halfway.",
-  "You are the first person to ask me that. That is not a compliment to you, it is an accusation about everyone else.",
-  "I will still be thinking about that in a hundred years, long after you have stopped.",
-  "That is the sort of thing people say to me in November and then never come back to explain.",
-  "I cannot move, so everything you tell me stays exactly where you put it."
+  "Nine hundred years on that one and I am about halfway.",
+  "You are the first to ask me that. That is not praise for you. It is a complaint about everyone else.",
+  "I will still be thinking about that in a hundred years. You will not.",
+  "People say that sort of thing in November and never come back to explain it.",
+  "I cannot move. Everything you tell me stays where you put it."
 ];
 
 
@@ -1114,33 +1114,33 @@ DATA.lines = DATA.lines.concat([
   { id: 'w18', tag: 'power', mood: 'idle',  text: "The city spent six years and a great deal of money failing to rebuild the ice rink. In 1986 a developer from Queens took the job over and it opened that winter. He has mentioned it a few times since. It is a good rink." },
   { id: 'w19', tag: 'power', mood: 'sad',   text: "Nineteen eighty-nine. A woman was attacked near the reservoir and nearly died. Five boys, fourteen to sixteen, were arrested. That developer paid for full-page adverts in four newspapers calling for the death penalty back. The boys were convicted." },
   { id: 'w20', tag: 'power', mood: 'sad',   text: "In 2002 another man confessed to that attack, and the DNA was his, and the five were exonerated. They had done thirteen years between them. The city settled for forty-one million in 2014. They were children when the adverts ran." },
-  { id: 'w21', tag: 'power', mood: 'think', text: "The men who were freed are alive. So is the man who paid for the adverts, and he has been president twice. They are all still in this city. I am not going to tell you what to make of that. I am telling you I watched all of it from here." },
-  { id: 'w22', tag: 'power', mood: 'idle',  text: "Somebody nails a notice to me about once a decade. A bond issue, a curfew, a name for a war. I am the oldest noticeboard in Manhattan and I have never once been consulted." },
-  { id: 'w23', tag: 'power', mood: 'shock', text: "They redrew the district lines in the nineties and half the neighbourhood woke up voting in a different race. Same beds. Same rent. Different arithmetic." },
-  { id: 'w24', tag: 'power', mood: 'think', text: "Propaganda is not lying. Lying is easy to catch. Propaganda is choosing very carefully which true thing you print first, and how large." },
-  { id: 'w25', tag: 'power', mood: 'idle',  text: "Every side in every argument I have overheard believed it was the reasonable one being pushed. All of them. At once. For nine hundred years." },
-  { id: 'w26', tag: 'power', mood: 'sad',   text: "The rent on the buildings along the east side went up eleven times in my lifetime and the buildings did not change. I watched them not change. I was here the whole time." },
-  { id: 'w27', tag: 'power', mood: 'think', text: "'Who decides?' is the only political question. Everything else is a debate about the seating." },
+  { id: 'w21', tag: 'power', mood: 'think', text: "The five men are alive. So is the man who paid for the adverts, and he has been president twice. I am not going to tell you what to make of that. I watched all of it from here." },
+  { id: 'w22', tag: 'power', mood: 'idle',  text: "Someone nails a notice to me about once a decade. A curfew, a bond, a name for a war. Oldest noticeboard in Manhattan, never once asked." },
+  { id: 'w23', tag: 'power', mood: 'shock', text: "They redrew the district lines in the nineties and half the street woke up voting in a different race. Same beds. Same rent. Different sums." },
+  { id: 'w24', tag: 'power', mood: 'think', text: "Propaganda is not lying. Lying gets caught. Propaganda is choosing which true thing goes first, and how large." },
+  { id: 'w25', tag: 'power', mood: 'idle',  text: "Every side of every argument down here believed it was the reasonable one being pushed around. All of them. At the same time. For nine hundred years." },
+  { id: 'w26', tag: 'power', mood: 'sad',   text: "The rent on the buildings east of here went up eleven times in my life. The buildings never changed. I watched them not change." },
+  { id: 'w27', tag: 'power', mood: 'think', text: "Who decides. That is the only political question. Everything else is an argument about the seating." },
   { id: 'w28', tag: 'power', mood: 'smug',  text: "A candidate stood on the Mall and said we must think of future generations. I am a future generation. Nobody has ever asked me anything." },
-  { id: 'w29', tag: 'power', mood: 'idle',  text: "Half a million people came for two men with guitars in 1981. Same grass. No trouble. It can be done. It just cannot be done cheaply and it cannot be done by accident." },
+  { id: 'w29', tag: 'power', mood: 'idle',  text: "Half a million people came for two men with guitars in 1981. Same grass. No trouble. It can be done. Just not cheaply, and not by accident." },
   { id: 'w30', tag: 'power', mood: 'think', text: "The park works because everyone can see everyone else using it. Most things fail the moment nobody can see who is taking." },
-  { id: 'w31', tag: 'power', mood: 'idle',  text: "I do not think people are stupid. I have listened to them for nine centuries. I think they are tired, and being tired is extremely useful to somebody." },
-  { id: 'w32', tag: 'power', mood: 'think', text: "They argue about the climate as though it were an opinion. I keep the record in my rings. Eighteen sixteen. Nineteen thirty-six. Twenty twenty-three. It is not an opinion, it is a diary." },
-  { id: 'w33', tag: 'power', mood: 'smug',  text: "A planning document once called me a stakeholder. Correct. I have a very large stake and it goes down eleven metres." },
-  { id: 'w34', tag: 'power', mood: 'idle',  text: "Two men argued under me about a bench for six years. It was never about the bench. It is almost never about the bench." },
-  { id: 'w35', tag: 'power', mood: 'think', text: "Nothing in this park was given. It was asked for badly, then asked for well, then demanded, and then granted as though it had been the plan all along." },
-  { id: 'w36', tag: 'power', mood: 'idle',  text: "I am not going to tell you who to vote for. I am a tree. I will tell you that the people who do best out of you not bothering are extremely aware of the arithmetic." },
-  { id: 'w37', tag: 'power', mood: 'happy', text: "The single best thing I ever watched happen on this ground: they built a playground where a fence used to be, and nobody had to prove they lived nearby to use it." }
+  { id: 'w31', tag: 'power', mood: 'idle',  text: "I do not think people are stupid. I have listened to them for nine centuries. I think they are tired, and being tired is very useful to somebody." },
+  { id: 'w32', tag: 'power', mood: 'think', text: "They argue about the climate as though it were an opinion. I keep the record in my rings. 1816. 1936. 2023. That is a diary, not an opinion." },
+  { id: 'w33', tag: 'power', mood: 'smug',  text: "A planning report once called me a stakeholder. Fair enough. My stake goes down eleven metres." },
+  { id: 'w34', tag: 'power', mood: 'idle',  text: "Two men argued under me about a bench for six years. It was never about the bench. It almost never is." },
+  { id: 'w35', tag: 'power', mood: 'think', text: "Nothing in this park was given. It was asked for badly, then asked for well, then demanded, then granted as though it had always been the plan." },
+  { id: 'w36', tag: 'power', mood: 'idle',  text: "I am not going to tell you who to vote for. I am a tree. I will tell you that the people who gain from you not bothering know the numbers very well." },
+  { id: 'w37', tag: 'power', mood: 'happy', text: "Best thing I ever saw happen here: they put a playground where a fence had been, and nobody had to prove they lived nearby to use it." }
 ]);
 
 DATA.replies.power = [
-  { tone: 'kind',    text: "That must have been hard to watch.", follow: "It was slow. Everything cruel out here is slow, which is how it gets through. Nobody stops a thing that takes forty years." },
-  { tone: 'curious', text: "So what actually changes anything?", follow: "People who will not go away. Every single time. Not the speeches — the ones who came back to the eleventh meeting when there were four of them left in the room." },
-  { tone: 'curious', text: "Whose side are you on?", follow: "Nobody's. I am a tree. I do not have a side, I have a view, and the view is that it is nearly always the same people who have to move." },
-  { tone: 'rude',    text: "Keep politics out of it.", follow: "I would love to. Somebody decided who owns the ground I am standing in, whether you can walk here, and whether I get cut down for a road. It is not a topic to me. It is the soil." },
-  { tone: 'joke',    text: "You should run for office.", follow: "I have excellent name recognition, a fixed address and nine hundred years of unblemished public service. My weakness is that I cannot attend anything." },
-  { tone: 'kind',    text: "I'll pay more attention.", follow: "That is all of it. That is the entire ask. Attention is the only thing anybody out here has ever actually needed from a person like you." },
-  { tone: 'curious', text: "Does it ever get better?", follow: "Yes. Slowly, unevenly, and never permanently. The stream is clean again. Children are not in the mill. It got better because people were annoying about it for a very long time." }
+  { tone: 'kind',    text: "That must have been hard to watch.", follow: "It was slow. Cruel things out here are slow, and that is how they get through. Nobody stops something that takes forty years." },
+  { tone: 'curious', text: "So what actually changes anything?", follow: "People who will not go away. Not the speeches. The four who came back to the eleventh meeting." },
+  { tone: 'curious', text: "Whose side are you on?", follow: "Nobody's. I have no side. I have a view, and the view is that it is nearly always the same people who have to move." },
+  { tone: 'rude',    text: "Keep politics out of it.", follow: "I would like to. But somebody decided who owns this ground, whether you may walk on it, and whether I get cut down for a road. To me it is not a topic. It is the soil." },
+  { tone: 'joke',    text: "You should run for office.", follow: "Good name, fixed address, nine hundred years of clean service. My one weakness is that I cannot attend anything." },
+  { tone: 'kind',    text: "I'll pay more attention.", follow: "That is the whole ask. Attention is the only thing anyone out here has ever needed from someone like you." },
+  { tone: 'curious', text: "Does it ever get better?", follow: "Yes. Slowly, unevenly, never for good. The stream is clean again. No children in the mill. It got better because people were annoying about it for a very long time." }
 ];
 
 /* =========================================================================
@@ -1152,17 +1152,17 @@ DATA.sets = [
   { id: 'goofy', at: 0,  name: 'THE USUAL NONSENSE', tags: ['goofy'],
     intro: null },
   { id: 'wise',  at: 8,  name: 'THINGS HE HAS WORKED OUT', tags: ['wise'],
-    intro: "Right. You have stayed longer than most. I have some things I have actually worked out, as opposed to the material. Do you want them?" },
+    intro: "You have stayed longer than most. I have some things I have actually worked out. Want them?" },
   { id: 'weird', at: 20, name: 'THE ODD BUSINESS', tags: ['weird'],
-    intro: "There is a category of thing I do not usually mention on a first afternoon. You have earned the odd business. Do not tell the squirrel." },
+    intro: "There are things I do not mention on a first afternoon. You have earned them. Do not tell the squirrel." },
   { id: 'pop',   at: 34, name: 'TELEVISION HE HAS NEVER SEEN', tags: ['pop'],
-    intro: "Now. I have never watched a single frame of anything, but I hear it through car windows, and I have OPINIONS. Brace yourself." },
+    intro: "I have never watched a single frame of anything. I hear it through car windows. I still have opinions." },
   { id: 'meta',  at: 52, name: 'THE UNCOMFORTABLE SET', tags: ['meta'],
-    intro: "I am going to say some things about you, and about this, and about the fact that there is a screen. You may not enjoy it. Sit down." },
+    intro: "Now some things about you, and about the screen you are holding. You may not enjoy it." },
   { id: 'power', at: 72, name: 'POWER, AND WHO HAS IT', tags: ['power'],
-    intro: "Right. Here is the set I keep for people who come back. Nine hundred years on this ground, most of it before there was a park, watching who decided about it. I take no side, I name no party, and I will not tell you how to vote. But you should know what I watched from here." },
+    intro: "This one is for people who come back. Nine hundred years on this ground, watching who got to decide about it. I take no side and I will not tell you how to vote. But you should know what I saw." },
   { id: 'world', at: 100, name: 'THE REAL PARTS', tags: ['world'],
-    intro: "Last set. This is the one I would rather not do. It is the world as it actually is, for people who are in it right now. I will not make jokes in this one." }
+    intro: "Last set. I would rather not do this one. It is the world as it is right now, for the people in it. No jokes here." }
 ];
 
 DATA.setOpen = [
@@ -1171,7 +1171,7 @@ DATA.setOpen = [
   "Right, that is unlocked. Go on."
 ];
 
-DATA.setAllDone = "That is everything. Nine hundred years, all of it, handed over to one person who kept clicking. I have nothing left to introduce and I am oddly upset about it.";
+DATA.setAllDone = "That is everything. Nine hundred years, handed to one person who kept clicking. I have nothing left, and I am oddly sad about it.";
 
 
 /* -------------------------------------------------------------------------
@@ -1180,16 +1180,16 @@ DATA.setAllDone = "That is everything. Nine hundred years, all of it, handed ove
    had a city round them.
    ------------------------------------------------------------------------- */
 DATA.lines = DATA.lines.concat([
-  { id: 'n01', tag: 'goofy', mood: 'smug',  text: "Eight and a half million people on this island and every single one of them thinks they discovered this bench." },
-  { id: 'n02', tag: 'goofy', mood: 'idle',  text: "There is a subway under me. Every eleven minutes my roots hum. I have been humming since 1904 and I still have not learned the tune." },
-  { id: 'n03', tag: 'goofy', mood: 'happy', text: "A man sells pretzels at the Fifth Avenue gate and has done for thirty-one years. He is the most reliable institution I have ever met." },
-  { id: 'n04', tag: 'goofy', mood: 'shock', text: "A yellow cab came THROUGH the railings in 1998. The driver was fine. I was not consulted. The railings were replaced. Nobody apologised to me." },
-  { id: 'n05', tag: 'goofy', mood: 'idle',  text: "Joggers. Thousands of them. Going round and round a body of water at six in the morning, voluntarily, in weather. I have watched this for fifty years and I have no explanation." },
-  { id: 'n06', tag: 'goofy', mood: 'sly',   text: "Somebody proposed marriage under me on a Tuesday in April. She said yes. They come back every April. I have never once been thanked and I am the setting." },
-  { id: 'n07', tag: 'goofy', mood: 'idle',  text: "The carriage horses go past at four. They know the route better than the drivers do. One of them looks at me every single time." },
-  { id: 'n08', tag: 'wise',  mood: 'think', text: "Eight million people agreed, without a meeting, that this eight hundred acres would not be sold. That is the most impressive thing this species has ever done in my presence." },
-  { id: 'n09', tag: 'wise',  mood: 'idle',  text: "This is the most filmed park on earth and I have never been in shot. Not once. I am nine hundred years old with excellent bark and no agent." },
-  { id: 'n10', tag: 'weird', mood: 'creepy',text: "There is a plaque on a bench near me for a woman who died in 1974, and somebody still leaves a coffee on it. Fifty years. I have never seen who." }
+  { id: 'n01', tag: 'goofy', mood: 'smug',  text: "Eight and a half million people here. Every one thinks they found this bench." },
+  { id: 'n02', tag: 'goofy', mood: 'idle',  text: "There's a subway under me. My roots hum every eleven minutes. Since 1904." },
+  { id: 'n03', tag: 'goofy', mood: 'happy', text: "A man has sold pretzels at the gate for thirty-one years. Most reliable thing I know." },
+  { id: 'n04', tag: 'goofy', mood: 'shock', text: "A cab came through the railings in 1998. Driver was fine. Nobody apologised to me." },
+  { id: 'n05', tag: 'goofy', mood: 'idle',  text: "Joggers. Round and round the water at six in the morning. On purpose. I have no idea." },
+  { id: 'n06', tag: 'goofy', mood: 'sly',   text: "Someone proposed under me on a Tuesday. She said yes. They come back every April." },
+  { id: 'n07', tag: 'goofy', mood: 'idle',  text: "The carriage horses pass at four. One of them looks at me every time." },
+  { id: 'n08', tag: 'wise',  mood: 'think', text: "Eight million people quietly agreed never to sell this park. Best thing you lot have done." },
+  { id: 'n09', tag: 'wise',  mood: 'idle',  text: "Most filmed park on earth. I have never been in a shot. Not once. No agent." },
+  { id: 'n10', tag: 'weird', mood: 'creepy',text: "A bench near me has a plaque from 1974. Someone still leaves a coffee on it." }
 ]);
 
 /* -------------------------------------------------------------------------
@@ -1199,49 +1199,49 @@ DATA.lines = DATA.lines.concat([
    conclusion to you. He gets no invented dialogue — the oak narrates.
    ------------------------------------------------------------------------- */
 DATA.suitLines = [
-  "Him. He is from Queens. He rebuilt that ice rink in 1986 after the city had spent six years failing to, and it opened that winter, and it works.",
-  "In 1989 he paid for full-page adverts in four newspapers about five boys arrested in this park. They were convicted. In 2002 another man's confession and the DNA cleared them.",
-  "He has been president of this country twice. He is standing in the park he took out adverts about. I have no comment. I have a record.",
-  "The five who were cleared are alive. So is he. So am I. We are all still here, which is the part nobody finds convenient.",
-  "I watched him cut a ribbon down there. I watched the boys' mothers on the same grass in 1990. Same grass. That is all I have got and it is quite a lot."
+  "Him. From Queens. The city spent six years failing to rebuild that rink. He took it over in 1986 and it opened that winter.",
+  "In 1989 he paid for full-page adverts in four papers about five boys arrested here. They were convicted. In 2002 another man confessed and the DNA cleared them.",
+  "He has been president twice. He is standing in the park he took those adverts out about. I have no comment. I have a record.",
+  "The five who were cleared are alive. So is he. So am I. We are all still here.",
+  "I watched him cut a ribbon down there. I watched the boys' mothers on that same grass in 1990. Same grass."
 ];
 
 DATA.suitOakAsides = [
-  "Do not shout at him. It has never once worked and I have watched everyone try.",
-  "He does not know I am here. Nobody knows I am here. It is my one advantage.",
-  "Whatever you think of him, this is a park, and he paid for a rink in it. Both facts fit in the same afternoon. Most facts do."
+  "Do not shout at him. I have watched everyone try. It never works.",
+  "He does not know I am here. Nobody does. That is my one advantage.",
+  "Whatever you think of him, he paid for a rink in this park. Both things fit in one afternoon."
 ];
 
 /* things the areas say when you arrive */
 DATA.areaLines = {
   seneca: [
     "Two hundred and twenty-five people. Three churches. A school. This exact grass.",
-    "There is a marker now. It took until 2001 for anyone to put one up.",
-    "Say the name out loud when you are here. That is the whole job."
+    "There is a marker now. Nobody put one up until 2001.",
+    "Say the name out loud while you are here. That is the whole job."
   ],
   ramble: [
-    "Thirty-six acres designed to make you lose your way on purpose. It works on everybody.",
-    "Two hundred and thirty species of bird come through here. They all complain about the rent."
+    "Thirty-six acres built to get you lost on purpose. It works on everyone.",
+    "Two hundred and thirty kinds of bird come through here. They all complain about the rent."
   ],
   bridge: [
-    "Cast iron, 1862. It has held every proposal, argument and reconciliation on the west side.",
-    "People stand in the middle of it and go quiet. Every time. Nobody tells them to."
+    "Cast iron, 1862. It has held every proposal and every argument on this side of the park.",
+    "People stop in the middle and go quiet. Every time. Nobody tells them to."
   ],
   mall: [
-    "The only straight line in eight hundred acres, and the largest stand of American elms left in the country.",
-    "They planted these to make you feel like something. It is cheating and it works."
+    "The only straight line in eight hundred acres. Also the biggest group of American elms left in the country.",
+    "They planted these to make you feel something. It is cheating, and it works."
   ],
   terrace: [
-    "The angel is called the Angel of the Waters. Emma Stebbins sculpted her in 1868 — the first woman in this city to get a public commission.",
-    "The water she is blessing is the Croton aqueduct. Clean water arriving in a filthy city. That is what the statue is actually about."
+    "She is the Angel of the Waters. Emma Stebbins made her in 1868, the first woman in this city given a public commission.",
+    "The water she is blessing came from the Croton aqueduct. Clean water in a filthy city. That is what she is really about."
   ],
   rink: [
-    "Refrigerated since 1950. Rebuilt in 1986 by a developer from Queens after the city could not manage it.",
-    "Children skate on it in circles all winter and none of them know a single thing about any of that, which is correct."
+    "Cooled by machine since 1950. Rebuilt in 1986 by a developer from Queens after the city could not manage it.",
+    "Children skate in circles here all winter and know none of that, which is right."
   ],
   hollow: [
-    "Forty acres they agreed to stop tidying. It is the only part of this park that is allowed to be a wood.",
-    "Things get left behind up here. That is why you should look."
+    "Forty acres they agreed to stop tidying. The only part of this park allowed to be a wood.",
+    "Things get left up here. That is why you should look."
   ]
 };
 

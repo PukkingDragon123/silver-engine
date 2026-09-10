@@ -94,6 +94,12 @@ species arrives as post. Filling it is its own ending; Noc never got past nine.
 
 ## Talking is the game
 
+**He says things plainly.** Every one of his 233 lines is written to be short
+and direct: one or two sentences, ordinary words, the point first. He is still
+vain and dry and nine hundred years old, he just does not make you work for it.
+The live typed conversation is held to the same rule, whether it is answered by
+the local brain or by the API.
+
 **Everything else in the park is a side effect of keeping him talking.** There
 is one thumb-sized wooden sign under him and it always says the thing you can
 do next — POKE HIM, TALK TO HIM, GO ON, TELL ME ANOTHER — so the whole

@@ -117,40 +117,40 @@ function pick(a, seed) { return a[Math.floor(Math.random() * a.length)]; }
 /* ---- the oak's own voice: older, vainer, far less consoling ---- */
 const OAK_OPENERS = {
   greet: ["Hello. You again.", "Ah. A person.", "Hello. Mind the roots."],
-  question: ["Right.", "Nobody asks me things. They talk AT me.", "Hm. Go on."],
-  thanks: ["You are welcome. I did nothing. I never do anything.", "Do not thank a tree. It goes to our heads."],
-  sorry: ["You have not done anything to me that weather has not done worse.", "Forget it. I have."],
-  bye: ["Off you go. I will be here. That is not a threat, it is a fact of my anatomy.", "Goodbye. I will still be facing this way."],
+  question: ["Right.", "Nobody asks me things. They talk at me.", "Hm. Go on."],
+  thanks: ["You are welcome. I did nothing.", "Do not thank a tree. It goes to our heads."],
+  sorry: ["The weather has done worse to me than you have.", "Forget it. I have."],
+  bye: ["Off you go. I will be here.", "Goodbye. I will still be facing this way."],
   talk: ["Mm.", "Go on then.", "I heard you.", "Right."]
 };
 const OAK_LOW = [
-  "Sit down against me. I cannot do anything else for you and I have found that it is usually enough.",
-  "That is heavy. Put it at the bottom of me. Things at the bottom of me get composted eventually.",
-  "I have watched a great many people be exactly this sad in exactly this spot, and every single one of them left again."
+  "Sit down against me. It is all I can do, and it is usually enough.",
+  "That is heavy. Put it down at the bottom of me. Things there rot away eventually.",
+  "Many people have been this sad in this exact spot. Every one of them got up again."
 ];
 const OAK_WARM = [
-  "Well. That has gone straight into the rings. That is permanent now.",
+  "That has gone straight into the rings. It is permanent now.",
   "Say that again in autumn and I will drop the good leaves on you.",
-  "I am a nine-hundred-year-old tree and you have made me self-conscious."
+  "I am nine hundred years old and you have made me shy."
 ];
 const OAK_SHARP = [
-  "I have been struck by lightning. You will have to try harder.",
+  "I have been hit by lightning. Try harder.",
   "Dave carved his name in me in 1987. You are not in the top hundred.",
-  "Noted, filed, and grown around."
+  "Noted. Filed. Grown around."
 ];
 const OAK_ABOUT = [
-  "$K. I have had nine hundred years of $K going past me at about four miles an hour.",
-  "$K, is it. Ask me again in November, I am more honest in November.",
-  "$K. People bring me $K constantly and never take it away with them.",
-  "You said $K to a tree. Do you know how rare that is. Go on."
+  "$K. Nine hundred years of $K has walked past me at four miles an hour.",
+  "$K. Ask me again in November. I am more honest in November.",
+  "$K. People bring me $K all the time and never take it home again.",
+  "You said $K to a tree. That is rare. Go on."
 ];
 
 function voice(who) {
   if (who === 'oak') return {
     openers: OAK_OPENERS, low: OAK_LOW, warm: OAK_WARM, sharp: OAK_SHARP, about: OAK_ABOUT,
     topics: D().oakTopics, musings: D().oakMusings, lines: null,
-    empty: "Take your time. I have nine hundred years and no appointments.",
-    name: n => n + ". I will remember that, which for me means it is carved in.",
+    empty: "Take your time. I have nine hundred years and nowhere to be.",
+    name: n => n + ". I will remember that. For me, that means carved in.",
     plans: false
   };
   return {
@@ -190,12 +190,13 @@ function localReply(text, ctx, who) {
   else bits.push(pick(V.musings));
 
   if (it.kind === 'question' && Math.random() < 0.5 && V.lines) bits.push(pick(V.lines));
-  if (ctx && ctx.night && Math.random() < 0.3) {
+  if (ctx && ctx.night && Math.random() < (who === 'oak' ? 0.15 : 0.3)) {
     bits.push(who === 'oak'
-      ? "It is dark. I am considerably more sincere in the dark and I will deny all of it by morning."
+      ? "It is dark. I mean things more at night, and I will deny it by morning."
       : "It's dark. Everything I say is truer after dark, ask anyone.");
   }
-  if (memory.name && Math.random() < 0.25) bits.push(who === 'oak' ? "Are you not, " + memory.name + "." : "Right, " + memory.name + "?");
+  if (memory.name && Math.random() < 0.2) bits.push(who === 'oak' ? "Are you not, " + memory.name + "." : "Right, " + memory.name + "?");
+  if (who === 'oak' && bits.length > 3) bits.length = 3;
 
   return { text: bits.join(' '), intent: it, plan: null };
 }
@@ -207,7 +208,10 @@ function oakSystemPrompt(ctx) {
   return [
     "You are THE WISE OAK TREE, a nine-hundred-year-old talking oak in a pixel-art game of the same name.",
     "You have stood in the same spot in the same small park for nine centuries and you cannot move.",
-    "You are vain, funny, extremely old and unexpectedly kind. You speak in short paragraphs, two or three sentences, never more.",
+    "You are vain, funny, extremely old and unexpectedly kind.",
+    "Speak simply and directly. One or two short sentences. Say the point first, then stop.",
+    "Use plain everyday words. No long words where a short one works, no riddles, no flowery phrasing, no lists.",
+    "Do not shout in capitals and do not use more than one exclamation mark in a reply.",
     "You have never seen television. You have only HEARD it, second-hand, through open car windows, and you are confidently wrong about it in a specific way.",
     "You hold no flag and take no side. When war comes up you speak plainly about the people underneath it — never about who deserves it — and you never make a joke of it.",
     "Never break character, never mention being an AI or a model, never use emoji, never use stage directions.",
