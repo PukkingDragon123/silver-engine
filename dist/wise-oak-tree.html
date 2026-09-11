@@ -573,6 +573,7 @@ DATA.achievements = [
   { id: 'lot',         kind: 'task', icon: 'lot',     name: 'Forty Painted Bays',     desc: "Stand in the parking lot." },
   { id: 'goals',       kind: 'task', icon: 'flag',    name: 'What Now',               desc: "Open the list of what to do next." },
   { id: 'howto',       kind: 'task', icon: 'ask',     name: 'Read The Rules',         desc: "Read how to play." },
+  { id: 'ascend',      kind: 'goal', icon: 'snail',   name: 'Up Through The Clouds',  desc: "Go up to the garden and look at your snails." },
   { id: 'goalsall',    kind: 'chal', icon: 'flag',    name: 'Everything On The List', desc: "Finish every goal on the list." },
   { id: 'mcbag',       kind: 'task', icon: 'mcbag',   name: 'The Warm Paper Bag',     desc: "Come back with something in a bag." },
   { id: 'setall',      kind: 'chal', icon: 'book',    name: 'Everything He Opens',   desc: "Have him open every set of subjects he has." },
@@ -6674,7 +6675,18 @@ const DLG = {
 
 function balloonWidth() { return Math.min(196, W() - 40); }
 
+const OAK_NAME = 'THE WISE OAK TREE';
+
 function say(speaker, text, mood, cls, choices) {
+  /* He is rooted. He cannot follow you, so he cannot speak anywhere but under
+     himself — not on a timer, not when a season turns, not when a new subject
+     opens while you are two places away. Anything he tries to say from a
+     distance is kept until you are standing under him again. This is the one
+     choke point, so no caller can get it wrong. */
+  if (speaker === OAK_NAME && G.scene === 'game' && !G.dead && !G.cine && !atOak()) {
+    tellHimLater(text, mood);
+    return;
+  }
   G.stare = 0; G.watchers = Math.min(G.watchers, 0.2);
   DLG.on = true;
   DLG.speaker = speaker;
@@ -6933,7 +6945,7 @@ const PANEL = {
   contentH: 0, viewH: 0, w: 0, x: 0, y: 0,
   unroll: 0, crack: 0, closing: 0,
   scroll: 0, target: 0,
-  hover: -1, rects: [],
+  hover: -1, rects: [], arrowHover: 0,
   ink: 0             // the words fade in once the paper is open enough
 };
 
@@ -7012,6 +7024,45 @@ function panelIs(id) { return PANEL.spec && PANEL.spec.id === id; }
 
 /* ---- animation ------------------------------------------------------- */
 function panelMaxScroll() { return Math.max(0, PANEL.contentH - PANEL.viewH); }
+function panelScrolls() { return panelMaxScroll() > 0; }
+
+/* dragging the paper itself, which is the only way to scroll on a phone */
+const PDRAG = { on: false, y0: 0, s0: 0, moved: 0, hit: null };
+
+function panelScrollBy(d) {
+  PANEL.target = Math.max(0, Math.min(panelMaxScroll(), PANEL.target + d));
+  if (!save.learned.scroll) { save.learned.scroll = 1; persist(); }
+}
+
+/* the two arrow buttons at the right-hand edge */
+function panelArrowBox(dir) {
+  if (!panelScrolls() || PANEL.ink <= 0.5) return null;
+  const b = panelBox();
+  const x = b.x + b.w - 12, w = 12, h = 13;
+  return { x, w, h, y: dir < 0 ? b.y + 2 : b.y + b.h - h - 2 };
+}
+
+function panelArrowAt(fx, fy) {
+  for (const d of [-1, 1]) {
+    const a = panelArrowBox(d);
+    if (a && fx >= a.x && fx <= a.x + a.w && fy >= a.y && fy <= a.y + a.h) return d;
+  }
+  return 0;
+}
+
+function drawPanelArrows(c) {
+  for (const d of [-1, 1]) {
+    const a = panelArrowBox(d);
+    if (!a) return;
+    const spent = d < 0 ? PANEL.scroll < 1 : PANEL.scroll > panelMaxScroll() - 1;
+    const hot = PANEL.arrowHover === d && !spent;
+    SPR.px(c, a.x, a.y, a.w, a.h, PAP.deep);
+    SPR.px(c, a.x + 1, a.y + 1, a.w - 2, a.h - 2, hot ? PAP.ink3 : PAP.dim);
+    const col = spent ? PAP.deep : (hot ? PAP.lit : PAP.ink);
+    const cy = a.y + (d < 0 ? 5 : 8);
+    for (let i = 0; i < 4; i++) SPR.px(c, a.x + 2 + i, cy + (d < 0 ? i : -i), 8 - i * 2, 1, col);
+  }
+}
 
 function updatePanel(dt) {
   if (!PANEL.spec) return;
@@ -7067,13 +7118,25 @@ function drawPanelScroll(c) {
   c.globalAlpha = 1;
   c.restore();
 
-  // a scroll thumb, if there is more paper than window
+  // the bar, with room for an arrow button at each end, so it is obvious
+  // that there is more paper below
   if (PANEL.contentH > PANEL.viewH && PANEL.ink > 0.5) {
-    const trackH = h - 10;
-    const th = Math.max(6, trackH * PANEL.viewH / PANEL.contentH);
+    const trackY = y + 17, trackH = h - 34;
+    const th = Math.max(8, trackH * PANEL.viewH / PANEL.contentH);
     const tp = (PANEL.scroll / (PANEL.contentH - PANEL.viewH)) * (trackH - th);
-    SPR.px(c, x + PANEL.w - 4, y + 4, 3, trackH + 2, PAP.dim);
-    SPR.px(c, x + PANEL.w - 4, y + 5 + tp, 3, th, PAP.ink3);
+    SPR.px(c, x + PANEL.w - 11, trackY, 10, trackH, PAP.dim);
+    SPR.px(c, x + PANEL.w - 11, trackY, 10, 1, PAP.deep);
+    SPR.px(c, x + PANEL.w - 10, trackY + tp, 8, th, PAP.ink3);
+    SPR.px(c, x + PANEL.w - 10, trackY + tp, 8, 1, PAP.ink2);
+    drawPanelArrows(c);
+    // and a hint at the very bottom of the paper the first few times
+    if (PANEL.scroll < 2 && !save.learned.scroll) {
+      const lab = 'MORE BELOW';
+      const lw = F.textWidth(lab, 1);
+      const bob = Math.round(Math.sin(G.t * 4) * 1);
+      SPR.px(c, x + PANEL.w / 2 - lw / 2 - 4, y + h - 12 + bob, lw + 8, 10, PAP.ink3);
+      F.drawTextCentered(c, x + PANEL.w / 2, y + h - 10 + bob, lab, PAP.lit, 1);
+    }
   }
 }
 
@@ -7206,19 +7269,46 @@ function panelHitAt(fx, fy) {
 }
 
 function panelMove(fx, fy) {
+  if (PDRAG.on) { panelDrag(fx, fy); return true; }
+  PANEL.arrowHover = panelArrowAt(fx, fy);
   const hit = panelHitAt(fx, fy);
   PANEL.hover = hit ? hit.i : -1;
   PANEL.hoverSub = hit ? hit.sub : -1;
-  return !!hit;
+  return !!hit || !!PANEL.arrowHover;
 }
 
 function panelPress(fx, fy) {
   const b = panelBox();
   const inside = fx >= b.x - 6 && fx <= b.x + b.w + 6 && fy >= b.y - 10 && fy <= b.y + b.h + 10;
   if (!inside) { closePanel(); return true; }
-  const hit = panelHitAt(fx, fy);
-  if (!hit) return true;
+  const dir = panelArrowAt(fx, fy);
+  if (dir) { SFX.page(); panelScrollBy(dir * PANEL.viewH * 0.6); return true; }
+  PDRAG.on = true; PDRAG.y0 = fy; PDRAG.s0 = PANEL.target; PDRAG.moved = 0;
+  PDRAG.hit = panelHitAt(fx, fy);
+  return true;
+}
+
+/* the paper follows your finger, and a tap that dragged is not a tap */
+function panelDrag(fx, fy) {
+  if (!PDRAG.on) return false;
+  const dy = fy - PDRAG.y0;
+  PDRAG.moved = Math.max(PDRAG.moved, Math.abs(dy));
+  if (panelScrolls() && PDRAG.moved > 2) {
+    PANEL.target = Math.max(0, Math.min(panelMaxScroll(), PDRAG.s0 - dy));
+    PANEL.scroll = PANEL.target;
+    if (!save.learned.scroll) { save.learned.scroll = 1; persist(); }
+  }
+  return true;
+}
+
+function panelRelease(fx, fy) {
+  if (!PDRAG.on) return false;
+  PDRAG.on = false;
+  const hit = PDRAG.hit;
+  PDRAG.hit = null;
+  if (PDRAG.moved > 3 || !hit) return true;
   const it = PANEL.items[hit.i];
+  if (!it) return true;
   if (it.t === 'input') { if (elTyping) elTyping.focus(); return true; }
   if (it.t === 'btns') { const b2 = it.items[hit.sub]; if (b2 && b2.act) { SFX.click(); b2.act(); } return true; }
   if (it.act) { SFX.click(); it.act(); }
@@ -7313,6 +7403,9 @@ function bagItems() {
 
   out.push({ t: 'rule' });
   out.push({ t: 'row', icon: 'ask', label: 'How to play', right: 'READ', act: openHowTo });
+  const sn = Object.keys(save.snails || {}).length;
+  if (sn) out.push({ t: 'row', icon: 'snail', label: 'Snail collection',
+                     right: String(sn), act: () => { closePanel(); ascendToGarden(); } });
   const gl = goalList();
   out.push({ t: 'row', icon: 'flag', label: 'What to do next',
              right: gl.filter(x => x.done).length + '/' + gl.length, act: openGoals });
@@ -7462,6 +7555,8 @@ function settingsItems() {
     { t: 'row', label: 'Map', icon: 'globe', right: 'OPEN', act: openMap },
     { t: 'row', label: 'Topics', icon: 'mouth', right: 'OPEN', act: openTopics },
     { t: 'row', label: 'Trophies', icon: 'crown', right: 'OPEN', act: openTrophies },
+    { t: 'row', label: 'Snail collection', icon: 'snail', right: 'GO UP',
+      act: () => { closePanel(); ascendToGarden(); } },
     { t: 'row', label: 'Credits', icon: 'star', right: 'OPEN', act: openCredits },
     { t: 'row', label: 'Erase everything', icon: 'fire', right: 'ERASE', rightCol: '#8a1f14', act: eraseEverything }
   ];
@@ -7919,6 +8014,11 @@ function drawIcon(c, id, size) {
     case 'mcbag':
       P(3, 4, 10, 11, '#c9a06a'); P(4, 5, 8, 9, '#e0b878'); P(3, 3, 10, 2, '#a8845a');
       P(6, 7, 4, 4, '#c9453b'); P(7, 8, 2, 2, '#ffc72c'); break;
+    case 'snail':
+      pellipse(c, 7, 11, 6, 3, '#c9a06a'); P(1, 12, 4, 2, '#c9a06a');
+      pcircle(c, 10, 7, 5, '#8a5f38'); pcircle(c, 10, 7, 3, '#c98a4a'); dot(c, 10, 7, '#6b4526');
+      P(3, 6, 1, 3, '#c9a06a'); P(5, 5, 1, 4, '#c9a06a');
+      dot(c, 3, 5, '#3a2410'); dot(c, 5, 4, '#3a2410'); break;
     case 'lot':
       P(1, 6, 14, 9, '#4a4a52'); P(1, 6, 14, 1, '#5a5a64');
       P(4, 8, 1, 5, '#c8c04a'); P(8, 8, 1, 5, '#c8c04a'); P(12, 8, 1, 5, '#c8c04a');
@@ -8431,7 +8531,72 @@ function buildGarden() {
   return list;
 }
 
-function openGarden() {
+/* =========================================================================
+   THE ASCENT
+   The collection lives in the garden above the clouds, so you do not open it,
+   you go up to it. The park drops away, every snail you have ever been sent
+   rises past you, and the garden fades in out of the white.
+   ========================================================================= */
+function ascendToGarden(back) {
+  buildGarden();
+  if (!G.garden.list.length) {
+    sayYou('No snails yet. They start arriving the moment you earn anything.');
+    return;
+  }
+  ACH('ascend');
+  // the ones that float past on the way up, seeded off the real collection
+  G.risers = G.garden.list.slice(0, 22).map((it, i) => ({
+    x: 14 + ((i * 53) % 97) / 97 * (W() - 28),
+    y: H * 0.45 + ((i * 71) % 100) / 100 * H * 2.4,
+    sp: 55 + ((i * 29) % 100) / 100 * 95,
+    sway: (i % 7) * 0.9,
+    skin: SPR.snailSkin(it.id, it.kind),
+    scale: 0.75 + ((i % 4) * 0.22)
+  }));
+  G.backTo = back || { scene: 'game', area: G.area };
+  SFX.note();
+  playCine('ascend', [
+    { dur: 1.5, caption: 'up', snap: true },
+    { dur: 1.7, caption: '' },
+    { dur: 1.3, caption: 'the garden' }
+  ], () => openGarden(true));
+}
+
+function descendFromGarden() {
+  const back = G.backTo || { scene: 'game', area: G.area };
+  SFX.page();
+  playCine('descend', [
+    { dur: 1.0, caption: '' },
+    { dur: 1.2, caption: '' }
+  ], () => {
+    G.scene = back.scene === 'heaven' ? 'heaven' : 'game';
+    if (back.scene !== 'heaven') { G.area = back.area; G.areaNow = areaId(); seedPickups(); }
+    G.garden.hover = -1;
+    hideBubble();
+    refreshActions();
+  });
+}
+
+/* every riser drifts up the screen and out of the top */
+function updateRisers(dt) {
+  if (!G.risers) return;
+  for (const r of G.risers) {
+    r.y -= r.sp * dt;
+    r.x += Math.sin(G.t * 1.6 + r.sway) * 8 * dt;
+    if (r.y < -30) r.y = H + 20 + Math.random() * H;
+  }
+}
+
+function drawRisers(c, alpha) {
+  if (!G.risers) return;
+  c.globalAlpha = alpha === undefined ? 1 : alpha;
+  for (const r of G.risers) {
+    SPR.drawSnail(c, G, { x: r.x, y: r.y, skin: r.skin, scale: r.scale, dir: 1, opened: true, noTrail: true });
+  }
+  c.globalAlpha = 1;
+}
+
+function openGarden(fromCine) {
   buildGarden();
   G.garden.scroll = 0; G.garden.target = 0; G.garden.hover = -1;
   G.scene = 'garden';
@@ -8447,6 +8612,7 @@ function openGarden() {
 }
 
 function closeGarden() {
+  if (G.backTo && G.backTo.scene !== 'heaven') { descendFromGarden(); return; }
   G.scene = 'heaven';
   G.garden.hover = -1;
   hideBubble();
@@ -9305,6 +9471,7 @@ function update(dt) {
   refreshArrows();
   if (G.areaTitle > 0) G.areaTitle -= dt;
   if (G.goalHintT > 0) G.goalHintT -= dt;
+  updateRisers(dt);
   if (G.wakeT > 0) { G.wakeT -= dt; if (G.wakeT <= 0) G.asleep = false; }
 
   if (G.cine) {
@@ -10452,6 +10619,39 @@ function drawCineFrame() {
       SPR.drawRays(dc, G, 0.8 * (1 - p * 0.6), CX(), 70);
       dc.globalAlpha = Math.max(0, 1 - p * 2.2); SPR.px(dc, 0, 0, W(), H, '#ffffff'); dc.globalAlpha = 1;
     }
+  } else if (name === 'ascend') {
+    if (G.cine.i === 0) {
+      // the park falls away underneath you
+      const p2 = Math.pow(p, 1.5);
+      dc.save();
+      dc.translate(0, p2 * H * 1.1);
+      drawWorld();
+      dc.restore();
+      dc.globalAlpha = Math.max(0, (p - 0.3) * 1.6); SPR.px(dc, 0, 0, W(), H, '#dceeff'); dc.globalAlpha = 1;
+      drawRisers(dc, Math.min(1, Math.max(0, p - 0.15) * 2.4));
+      SPR.drawRays(dc, G, 0.4 + p * 0.4, CX(), -10);
+    } else if (G.cine.i === 1) {
+      SPR.px(dc, 0, 0, W(), H, '#dceeff');
+      SPR.drawCloudTunnel(dc, G, p, 1);
+      drawRisers(dc, 1);
+      SPR.drawRays(dc, G, 0.7, CX(), 20);
+      dc.globalAlpha = Math.max(0, p - 0.72) * 3.6; SPR.px(dc, 0, 0, W(), H, '#ffffff'); dc.globalAlpha = 1;
+    } else {
+      SPR.drawGarden(dc, G);
+      drawRisers(dc, Math.max(0, 1 - p * 1.6));
+      SPR.drawRays(dc, G, 0.7 * (1 - p * 0.5), CX(), 40);
+      dc.globalAlpha = Math.max(0, 1 - p * 2.1); SPR.px(dc, 0, 0, W(), H, '#ffffff'); dc.globalAlpha = 1;
+    }
+  } else if (name === 'descend') {
+    if (G.cine.i === 0) {
+      SPR.drawGarden(dc, G);
+      dc.globalAlpha = Math.min(1, p * 1.6); SPR.px(dc, 0, 0, W(), H, '#ffffff'); dc.globalAlpha = 1;
+    } else {
+      SPR.px(dc, 0, 0, W(), H, '#e2f0ff');
+      SPR.drawCloudTunnel(dc, G, p, -1);
+      drawRisers(dc, Math.max(0, 1 - p));
+      dc.globalAlpha = Math.max(0, p - 0.7) * 3.3; SPR.px(dc, 0, 0, W(), H, '#ffffff'); dc.globalAlpha = 1;
+    }
   } else if (name === 'rebirth') {
     if (st === 'leave') {
       SPR.drawHeaven(dc, G);
@@ -10773,7 +10973,11 @@ function onMove(ev) {
 cv.addEventListener('mousemove', onMove);
 cv.addEventListener('touchmove', ev => { ev.preventDefault(); onMove(ev); }, { passive: false });
 
-function onRelease() {
+function onRelease(ev) {
+  if (panelOpen()) {
+    const fr = ev ? toScreenPixels(ev) : { x: 0, y: 0 };
+    if (panelRelease(fr.x, fr.y)) return;
+  }
   grab = null;
   if (G.holdT > 0) { G.holdT = 0; if (!save.ach.hug1) elHint.className = 'hidden'; }
   if (G.holding) {
@@ -10810,8 +11014,7 @@ window.addEventListener('touchend', onRelease);
 cv.addEventListener('wheel', ev => {
   if (panelOpen()) {
     ev.preventDefault();
-    PANEL.target = Math.max(0, Math.min(Math.max(0, PANEL.contentH - PANEL.viewH),
-                                        PANEL.target + (ev.deltaY + ev.deltaX) * 0.5));
+    panelScrollBy((ev.deltaY + ev.deltaX) * 0.5);
     return;
   }
   if (G.scene === 'garden') {
@@ -11134,11 +11337,9 @@ function wakeHim() {
       ? "Mm. You again. I had only just got to sleep. Sit down. Give me a minute."
       : "Nnh. Someone is standing under me. Give me a moment. That was a long nap.",
       'sleepy');
-    if (!save.learned.howto) {
-      // first time anybody has played: show the rules once, unprompted, and
-      // never again
-      setTimeout(() => { if (!G.dead && !G.cine && !panelOpen()) openHowTo(); }, 4200);
-    }
+    // the rules never open themselves. They are a row in the bag and in the
+    // settings, and the tag top-left says what to do next anyway.
+    if (!save.learned.howto) setTimeout(() => nudge('how to play is in your bag, and in the settings', 10), 5000);
     else if (!save.ach.lane && !save.ach.hollow) setTimeout(() => nudge('the signposts at the edges walk you west and east', 12), 8000);
     else if (!save.bag) setTimeout(() => nudge('there is a bag somewhere east of here', 10), 8000);
   }, 700);
@@ -11155,6 +11356,8 @@ if (/[?&]debug/.test(location.search)) {
                  unlockedTags, setHeard, setTotal, checkSets, talkToTree, openMap, areaOpen, areaWants, updateSuit, checkAreas,
                  updateStar, sayStar, takeClipboard, leaveTribute, starAt, stoneAt, stoneX, camRect, toLogical,
                  goalList, nextGoal, openGoals, goalTagBox, overGoalTag, checkGoals, openHowTo,
+                 panelArrowBox, panelScrollBy, panelMaxScroll, panelRelease, PDRAG,
+                 ascendToGarden, descendFromGarden, updateRisers,
                  openBirdDiary, openJobs, openPlans, sayYou, tellHimLater, birdsHere,
                  startTyping, stopTyping, typeBarBox, typeBarShown, sendChat, chatPartner,
                  seedCritters, touchCritter, refreshPanel, boardHere, cottageHere, puff, ring, pop, squash, PANEL, openPanel, closePanel, panelIs, panelOpen, openQuestBoard, openJournal, acceptQuest, checkQuests, questStatus, plotPos, hitTest,

@@ -300,6 +300,7 @@ DATA.achievements = [
   { id: 'lot',         kind: 'task', icon: 'lot',     name: 'Forty Painted Bays',     desc: "Stand in the parking lot." },
   { id: 'goals',       kind: 'task', icon: 'flag',    name: 'What Now',               desc: "Open the list of what to do next." },
   { id: 'howto',       kind: 'task', icon: 'ask',     name: 'Read The Rules',         desc: "Read how to play." },
+  { id: 'ascend',      kind: 'goal', icon: 'snail',   name: 'Up Through The Clouds',  desc: "Go up to the garden and look at your snails." },
   { id: 'goalsall',    kind: 'chal', icon: 'flag',    name: 'Everything On The List', desc: "Finish every goal on the list." },
   { id: 'mcbag',       kind: 'task', icon: 'mcbag',   name: 'The Warm Paper Bag',     desc: "Come back with something in a bag." },
   { id: 'setall',      kind: 'chal', icon: 'book',    name: 'Everything He Opens',   desc: "Have him open every set of subjects he has." },

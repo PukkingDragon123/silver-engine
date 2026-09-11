@@ -112,17 +112,46 @@ him by a dotted line and an arrowhead, and it stays up until you tap him.
 Once you have opened one parcel the tag never appears again — you know what
 snails are now, and a permanent instruction is just clutter.
 
-**The rules open themselves, once.** The first time anybody plays, a HOW TO
-PLAY scroll unrolls a few seconds after he wakes up: eight short rows saying
-tap the tree, leaves are the money, you can type at him, the tag top-left is
-what to do next, snails bring trophies, the signposts walk you west and east,
-the backpack is east in the north woods, and say hello to things. It never
-opens itself again, and it stays in the backpack and the settings under HOW
-TO PLAY.
+**Nothing opens itself.** There is no tutorial that takes the game off you.
+HOW TO PLAY is a row in the backpack and in the settings — eight short lines
+saying tap the tree, leaves are the money, you can type at him, the tag
+top-left is what to do next, snails bring trophies, the signposts walk you
+west and east, the backpack is east in the north woods, say hello to things —
+and it is there when you want it and silent when you do not.
+
+**Every scroll scrolls.** Drag the paper with a finger or the mouse, roll the
+wheel, or tap the arrow buttons at the top and bottom of the bar down the
+right-hand edge. A drag is not a tap, so pulling the page never fires the row
+under your thumb: rows act on release, and only if the paper did not move. The
+first time a scroll has more paper below the fold it says MORE BELOW at the
+bottom, and once you have scrolled anything it stops saying it.
 
 **Every signpost says where it goes**, open or shut. A locked one shows the
 place name with a padlock hanging off it rather than the word LOCKED, and
 tapping it tells you what it is still waiting for.
+
+## He cannot speak away from himself
+
+He is rooted. He cannot follow you, so he cannot talk anywhere except under
+his own branches — not on a timer, not when a season turns, not when a new
+subject opens while you are two places across the park. Every line he tries
+to say from a distance is held and delivered when you are standing under him
+again. That used to be enforced caller by caller and things leaked through;
+it is now one guard inside `say()` itself, so no future caller can get it
+wrong.
+
+## The snail collection
+
+Every trophy in this game arrives on a snail, and the snails you have been
+sent live in a garden above the clouds. It is not a menu — **you go up to
+it**, from a row in the backpack or the settings.
+
+The park drops away underneath you, the sky washes in, and every snail in
+your collection floats up past you through a tunnel of cloud, each one wearing
+the shell its own achievement gave it. The white takes over, and the garden
+fades in: a still pool with reeds, and one lily pad for every snail you own.
+Tap any of them to read who they were and what they brought you. Going BACK
+runs the whole thing in reverse and puts you down exactly where you left.
 
 ## Talking is the game
 
@@ -472,7 +501,7 @@ promise.
 
 **You cannot get in until you die.** Death is not the end of the collection. In heaven there is a marble gallery
 under vaulted arches, with a red carpet running away into the light and a
-plinth for every one of the **138 achievements** — each with its own carved
+plinth for every one of the **139 achievements** — each with its own carved
 trophy on a gold mount: a stone tissue for the sneeze, a leaf vault for the
 hoarder, a lighter sinking into water for the one who threw it away, a film
 reel for the whole canon. Chandeliers burn overhead, a skylight throws shafts
