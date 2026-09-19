@@ -205,3 +205,12 @@ automated smoke tests to reach the late game without playing for an hour.
 They are deliberately written to sit alongside the jokes rather than replace
 them, and to describe civilians rather than argue politics. The tree's position
 on every war he mentions is the same one: no child anywhere chose it.
+
+---
+
+## Also in this repo
+
+**[AETHERIA — SKY SCHOLARS](aetheria/)** — a cozy pixel-art study RPG on a
+floating island, where answering a question is how you swing a sword. Open
+`aetheria/index.html`. Entirely separate from the tree; shares nothing but the
+bitmap font.
