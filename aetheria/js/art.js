@@ -461,10 +461,13 @@ const ART = (() => {
 })();
 
 /* draw a named sprite, with optional scale / flip / tint / alpha */
+/* Every sprite in the game is authored on one grid and blown up by a whole
+   number. Fractional zoom resamples the art onto half-pixels, which is what
+   makes pixel art look mushy and inconsistent from screen to screen. */
 function spr(c, name, x, y, opt) {
   opt = opt || {};
   const img = ART.get(name, opt.swap);
-  const s = opt.scale || 1;
+  const s = Math.max(1, Math.round(opt.scale || 1));
   const w = img.width*s, h = img.height*s;
   x = Math.round(x); y = Math.round(y);
   if (opt.center) { x -= Math.round(w/2); y -= Math.round(h/2); }

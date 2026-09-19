@@ -12,6 +12,7 @@ Game.register('battle', (() => {
   let timeLimit, timeLeft, relics, answered, correct, damageTaken, chosen;
   let shakeFoe, foeFlash, meFlash, result, typed, keypad;
   let stars, rewards, banner, ultReady, petTick;
+  let aiPanel = null, lastWrong = null, hintUsed = false;
 
   const R = id => relics.includes(id);
 
@@ -51,7 +52,7 @@ Game.register('battle', (() => {
     if (R('glasses')) burnOne();
     timeLimit = 14 + (R('time') ? 4 : 0) - (mode === 'boss' ? 2 : 0);
     timeLeft = timeLimit;
-    chosen = -1;
+    chosen = -1; hintUsed = false;
     phase = 'q'; phaseT = 0;
   }
   function burnOne(n) {
@@ -123,9 +124,10 @@ Game.register('battle', (() => {
       petTick++;
     } else {
       me.combo = 0;
+      lastWrong = { q:q.q, given:card.opt, correct:q.a };
       act = { type:'miss', t:0, dur:.5, i };
       phase = 'resolve'; phaseT = 0;
-      FX.float(cards[i] ? VW/2 : VW/2, 300, 'WRONG', P.red, { scale:2 });
+      FX.float(VW/2, 300, 'WRONG', P.red, { scale:2 });
     }
   }
   function heatEgg(n) {
@@ -224,7 +226,7 @@ Game.register('battle', (() => {
       me = { hp:S.maxHp(), maxHp:S.maxHp(), focus:0, combo:0, best:0, x:70, y:556 };
       intent = foe.boss ? 3 : 4;
       shakeFoe = 0; foeFlash = 0; meFlash = 0; draft = null; hatchPet = null; result = null;
-      banner = 1.6; ultReady = false;
+      banner = 1.6; ultReady = false; aiPanel = null; lastWrong = null; hintUsed = false;
       phase = 'intro'; phaseT = 0; act = null;
       SFX.music(false); SFX.duck(.05);
       nextQuestion();
@@ -234,7 +236,9 @@ Game.register('battle', (() => {
     back() { if (phase === 'win' || phase === 'lose') leave(); },
 
     update(dt) {
-      t += dt; phaseT += dt;
+      t += dt;
+      if (aiPanel) return;                       /* the fight waits for the tutor */
+      phaseT += dt;
       foe.bob = Math.sin(t*2.2)*3;
       if (shakeFoe > 0) shakeFoe -= dt;
       if (foeFlash > 0) foeFlash -= dt;
@@ -328,11 +332,15 @@ Game.register('battle', (() => {
         AV.draw(c, fx, 178, foe.cfg, phase === 'resolve' && act && act.type === 'foeStrike' ? 'attack' : 'idle',
                 Math.floor(t*3)%2, { scale:2.6 });
       } else {
-        const sq = shakeFoe > 0 ? 1 + shakeFoe*.4 : 1;
         const fsc = foe.boss ? 5 : 4;
         c.globalAlpha = .25; pxEllipse(c, fx, 172, 8*fsc, 2.4*fsc, '#000'); c.globalAlpha = 1;
-        spr(c, foe.spr, fx, fy, { center:true, scale:fsc, swap:foe.swap });
-        if (foeFlash > 0) spr(c, foe.spr, fx, fy, { center:true, scale:fsc, swap:foe.swap, tint:'#ffffff', tintAmt:foeFlash*4 });
+        /* squash on impact, then an elastic overshoot back — cartoon weight */
+        const fsq = shakeFoe > 0 ? 1 + shakeFoe*1.1 : 1 + Math.sin(t*2.4)*.03;
+        const iw = Math.round(16*fsc*fsq), ih = Math.round(16*fsc*(2-fsq));
+        const img = ART.get(foe.spr, foe.swap);
+        c.drawImage(img, Math.round(fx-iw/2), Math.round(fy-ih/2), iw, ih);
+        if (foeFlash > 0) spr(c, foe.spr, fx, fy, { center:true, scale:fsc, swap:foe.swap,
+                                                     tint:'#ffffff', tintAmt:foeFlash*4 });
       }
       /* name + hp */
       const hpW = 190;
@@ -513,8 +521,58 @@ Game.register('battle', (() => {
       if (phase === 'q' && UI.btn(c, VW-44, 4, 38, 18, 'FLEE', { col:'#3a2a5e', col2:'#5a4790' })) {
         S.addTrophies(mode === 'duel' ? -10 : -2); leave();
       }
+
+      /* --- the tutor, in the middle of a fight ---------------------------- */
+      if (phase === 'q' && !keypad && AI.available()) {
+        if (UI.btn(c, VW-62, 284, 54, 16, hintUsed ? 'HINTED' : 'HINT',
+                   { col: hintUsed ? '#241640' : '#2358c9', col2: hintUsed ? '#3a2a5e' : P.blue,
+                     disabled: hintUsed, shadow:false })) {
+          hintUsed = true;
+          openTutor('A NUDGE', cb => AI.hint(q.q, cards.filter(x=>!x.dead).map(x=>x.opt), cb));
+        }
+      }
+      if (phase === 'resolve' && lastWrong && act && act.type === 'miss' && AI.available()) {
+        if (UI.btn(c, VW/2-70, 284, 140, 18, 'WHY WAS THAT WRONG?',
+                   { col:'#8a2a10', col2:P.orange, shadow:false }))
+          openTutor('WHY', cb => AI.explain(lastWrong.q, lastWrong.given, lastWrong.correct, cb));
+      }
+      if (aiPanel) drawTutorPanel(c);
     }
   };
+
+  /* ---- the tutor overlay -------------------------------------------------- */
+  function openTutor(label, fn) {
+    aiPanel = { label, text:'', err:'', done:false };
+    SFX.play('power');
+    fn(({ text }) => { if (aiPanel) aiPanel.text = text; })
+      .then(txt2 => { if (aiPanel) { aiPanel.text = txt2 || aiPanel.text; aiPanel.done = true; } })
+      .catch(e => { if (aiPanel) { aiPanel.err = AI.errText(e); aiPanel.done = true; } });
+  }
+  function drawTutorPanel(c) {
+    c.fillStyle = rgba(P.shadow,.92); c.fillRect(0,0,VW,VH);
+    const boxY = 190;
+    panel(c, 16, boxY, VW-32, 200, '#241640', { r:4 });
+    pbox(c, 16, boxY, VW-32, 4, P.cyan, 3);
+    AV.draw(c, 56, boxY+84, S.d.cfg, aiPanel.err ? 'hurt' : 'idle', Math.floor(t*3)%2,
+            { scale:2, shadow:false });
+    txt(c, 100, boxY+12, aiPanel.label === 'WHY' ? 'THE TUTOR SAYS' : 'A NUDGE', P.gold, 1);
+    const body = aiPanel.err || aiPanel.text;
+    if (!body) {
+      txt(c, 100, boxY+34, 'thinking' + '.'.repeat(1+Math.floor(t*2)%3), P.grey, 1);
+      bar(c, 100, boxY+50, VW-140, 5, (t*.4)%1, P.cyan, { shine:t*2 });
+    } else {
+      wrap(body, VW-70, 1).slice(0,11).forEach((l,i) =>
+        txt(c, 30, boxY+34+i*13, l, aiPanel.err ? P.red : P.bone, 1));
+    }
+    if (aiPanel.label === 'WHY' && lastWrong && !aiPanel.err) {
+      txt(c, 30, boxY+168, 'CORRECT: ' + String(lastWrong.correct).slice(0,30), P.lime, 1);
+    }
+    if (UI.btn(c, VW/2-70, boxY+176, 140, 22, aiPanel.done ? 'GOT IT' : 'SKIP',
+               { col:'#1a7331', col2:'#3fe07a' })) {
+      if (aiPanel.label === 'WHY' && aiPanel.done) S.dailyTick(0);
+      aiPanel = null;
+    }
+  }
 
   /* ---- overlays ---------------------------------------------------------- */
   function drawIntro(c) {

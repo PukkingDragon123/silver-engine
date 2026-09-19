@@ -147,7 +147,7 @@ const UI = (() => {
         const slide = k < .12 ? ease.back(k/.12) : 1;
         const a = k > .78 ? 1-(k-.78)/.22 : 1;
         const w = tw(t.msg,1) + 22 + (t.icon?14:0);
-        const x = VW/2 - w/2, y = 58 + i*22 - (1-slide)*20;
+        const x = VW/2 - w/2, y = 148 + i*22 - (1-slide)*20;
         c.globalAlpha = a;
         panel(c, x, y, w, 18, '#2e1b50');
         if (t.icon) spr(c, t.icon, x+5, y+3);

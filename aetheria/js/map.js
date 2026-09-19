@@ -85,6 +85,8 @@ Game.register('map', (() => {
       pbox(c, 13, y+1, 64, 64, 'rgba(0,0,0,0)', 3);
 
       txt(c, 84, y+8, p.name, open ? p.col : P.grey, 2, P.shadow);
+      if (list[i].mine) { pbox(c, 84 + tw(p.name,2) + 6, y+7, 34, 12, '#1a7331', 2);
+                          ctxt(c, 101 + tw(p.name,2) + 6, y+9, 'YOURS', P.lime, 1); }
       txt(c, 84, y+26, p.sub, P.grey, 1);
       bar(c, 84, y+38, 170, 6, pr.cleared/p.nodes.length, open ? p.col : '#4a4a6a', { shine:t });
       txt(c, 84, y+48, pr.cleared + '/' + p.nodes.length + ' STOPS', P.bone, 1);
@@ -105,19 +107,13 @@ Game.register('map', (() => {
     }
 
     /* custom decks get their own world */
-    panel(c, 10, y, VW-20, 52, '#241640', { r:4 });
-    spr(c, 'i_book', 42, y+26, { center:true, scale:2 });
-    txt(c, 78, y+8, 'YOUR OWN LESSONS', P.cyan, 2, P.shadow);
-    txt(c, 78, y+26, S.d.decks.length + ' custom ' + plural(S.d.decks.length,'deck'), P.grey, 1);
-    txt(c, 78, y+38, 'write one in the DECK screen', P.grey, 1);
-    const hasDeck = S.d.decks.some(d => d.cards.filter(x=>x.term&&x.def).length >= 2);
-    if (UI.btn(c, VW-84, y+12, 66, 28, hasDeck ? 'TRAIN' : 'WRITE',
-               { col:'#2358c9', col2:P.blue, key:'cust' })) {
-      if (hasDeck) {
-        const deck = S.d.decks.find(d => d.cards.filter(x=>x.term&&x.def).length >= 2);
-        Game.go('battle', { mode:'custom', deckId:deck.id });
-      } else Game.go('dex', { tab:2 });
-    }
+    panel(c, 10, y, VW-20, 56, '#241640', { r:4 });
+    spr(c, 'i_paw', 42, y+28, { center:true, scale:2 });
+    txt(c, 78, y+8, 'MAKE YOUR OWN', P.cyan, 2, P.shadow);
+    txt(c, 78, y+26, 'give the tutor your notes and it builds', P.grey, 1);
+    txt(c, 78, y+38, 'a world like these out of them', P.grey, 1);
+    if (UI.btn(c, VW-84, y+14, 66, 28, 'NOTES', { col:'#2358c9', col2:P.blue, key:'cust' }))
+      Game.go('study', { tab:1 });
   }
 
   /* --- the trail --------------------------------------------------------- */
@@ -174,7 +170,7 @@ Game.register('map', (() => {
       pbox(c, pos.x-R/1.6, y-R/1.6+bob, R*1.25, R*1.25, P.ink, 4);
       pbox(c, pos.x-R/1.6+1, y-R/1.6+1+bob, R*1.25-2, R*1.25-2, bcol, 4);
       pbox(c, pos.x-R/1.6+1, y-R/1.6+1+bob, R*1.25-2, 3, shade(bcol,.4), 3);
-      spr(c, locked ? 'i_lock' : k.icon, pos.x, y+bob, { center:true, scale: isBoss?2:1.4 });
+      spr(c, locked ? 'i_lock' : k.icon, pos.x, y+bob, { center:true, scale: isBoss?3:2 });
       if (cleared) UI.stars(c, pos.x, y+R/1.6+5+bob, pr.stars[i]||0, 3, 1);
       txt(c, pos.x + R/1.6 + 6, y-4+bob, String(i+1), rgba(P.white,.7), 1, P.ink);
 

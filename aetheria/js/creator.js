@@ -4,11 +4,11 @@
    ========================================================================= */
 Game.register('creator', (() => {
   let t = 0, tab = 0, cfg, name, bob, petals = 0, entered = 0;
-  const TABS = ['YOU','HAIR','FIT','NAME'];
+  const TABS = ['CAT','COAT','FIT','NAME'];
   const GENDERS = [
-    { k:'girl', label:'GIRL',  body:0, hair:1 },
-    { k:'boy',  label:'BOY',   body:1, hair:0 },
-    { k:'them', label:'THEM',  body:0, hair:4 }
+    { k:'girl', label:'GIRL',  body:0, pattern:3 },
+    { k:'boy',  label:'BOY',   body:1, pattern:1 },
+    { k:'them', label:'THEM',  body:0, pattern:5 }
   ];
   const KEYS = ['ABCDEFG','HIJKLMN','OPQRSTU','VWXYZ_'];
 
@@ -88,8 +88,8 @@ Game.register('creator', (() => {
       /* --- title -------------------------------------------------------- */
       const slide = ease.back(entered);
       c.save(); c.translate(0, (1-slide)*-60);
-      ctxt(c, VW/2, 14, 'WHO ARE YOU?', P.white, 2, P.ink);
-      ctxt(c, VW/2, 32, 'the sky is waiting', rgba(P.white,.8), 1, P.ink);
+      ctxt(c, VW/2, 14, 'WHICH CAT ARE YOU?', P.white, 2, P.ink);
+      ctxt(c, VW/2, 32, 'the sky is waiting, and so is the exam', rgba(P.white,.8), 1, P.ink);
       c.restore();
 
       /* --- tabs --------------------------------------------------------- */
@@ -106,33 +106,35 @@ Game.register('creator', (() => {
       panel(c, 8, py, VW-16, ph, rgba('#1b1030',.92), { r:4 });
 
       if (tab === 0) {
-        ctxt(c, VW/2, py+8, 'PICK YOUR LOOK', P.gold, 1);
+        ctxt(c, VW/2, py+8, 'PICK YOUR CAT', P.gold, 1);
         const gi = GENDERS.findIndex(g => g.k === (cfg.gender||'girl'));
         const g = chips(c, 18, py+20, VW-36, GENDERS.map(x=>x.label), gi < 0 ? 0 : gi, 'gen');
         if (g >= 0) { cfg.gender = GENDERS[g].k; cfg.body = GENDERS[g].body;
-                      if (!cfg.touchedHair) cfg.hair = GENDERS[g].hair; SFX.play('power'); }
-        ctxt(c, VW/2, py+56, 'SKIN', P.grey, 1);
-        const sk = swatches(c, 38, py+70, 6, 36, AV.SKINS, cfg.skin, 'sk');
-        if (sk >= 0) cfg.skin = sk;
-        ctxt(c, VW/2, py+120, 'BUILD', P.grey, 1);
-        const b = chips(c, 60, py+134, VW-120, ['SLIM','SOLID'], cfg.body, 'bd');
+                      if (!cfg.touchedCoat) cfg.pattern = GENDERS[g].pattern; SFX.play('power'); }
+        ctxt(c, VW/2, py+56, 'FUR', P.grey, 1);
+        const sk = swatches(c, 22, py+70, 6, 48, AV.FURS, cfg.fur, 'fu');
+        if (sk >= 0) cfg.fur = sk;
+        ctxt(c, VW/2, py+176, 'BUILD', P.grey, 1);
+        const b = chips(c, 60, py+190, VW-120, ['LITHE','CHONK'], cfg.body, 'bd');
         if (b >= 0) cfg.body = b;
       } else if (tab === 1) {
-        ctxt(c, VW/2, py+8, 'HAIR STYLE', P.gold, 1);
-        const h = chips(c, 18, py+20, VW-36, AV.STYLES.map(s=>s.toUpperCase()), cfg.hair, 'hs', 3);
-        if (h >= 0) { cfg.hair = h; cfg.touchedHair = 1; }
-        ctxt(c, VW/2, py+90, 'HAIR COLOUR', P.gold, 1);
-        const hc = swatches(c, 22, py+104, 6, 48, AV.HAIRS, cfg.hairCol, 'hc');
-        if (hc >= 0) cfg.hairCol = hc;
+        ctxt(c, VW/2, py+8, 'COAT PATTERN', P.gold, 1);
+        const h = chips(c, 18, py+20, VW-36, AV.PATTERNS.map(s=>s.toUpperCase()), cfg.pattern, 'pt', 3);
+        if (h >= 0) { cfg.pattern = h; cfg.touchedCoat = 1; }
+        ctxt(c, VW/2, py+90, 'MARKINGS', P.gold, 1);
+        const hc = swatches(c, 22, py+104, 6, 48, AV.MARKS, cfg.mark, 'mk');
+        if (hc >= 0) cfg.mark = hc;
+        ctxt(c, VW/2, py+210, 'stripes, patches and points use this colour', P.grey, 1);
       } else if (tab === 2) {
-        ctxt(c, VW/2, py+8, 'SHIRT', P.gold, 1);
-        const tp = chips(c, 18, py+20, VW-36, ['PLAIN','STRIPE','HOODIE'], cfg.top, 'tp');
-        if (tp >= 0) cfg.top = tp;
-        const sc2 = swatches(c, 32, py+52, 5, 48, AV.SHIRTS, cfg.shirtCol, 'sc');
+        ctxt(c, VW/2, py+8, 'EYES', P.gold, 1);
+        const ey = swatches(c, 48, py+20, 7, 36, AV.EYES, cfg.eyes, 'ey');
+        if (ey >= 0) cfg.eyes = ey;
+        ctxt(c, VW/2, py+64, 'WHAT THEY WEAR', P.gold, 1);
+        const tp = chips(c, 18, py+76, VW-36, AV.OUTFITS.map(s=>s.toUpperCase()), cfg.outfit, 'of', 2);
+        if (tp >= 0) cfg.outfit = tp;
+        ctxt(c, VW/2, py+136, 'COLOUR', P.gold, 1);
+        const sc2 = swatches(c, 32, py+150, 5, 48, AV.SHIRTS, cfg.shirtCol, 'sc');
         if (sc2 >= 0) cfg.shirtCol = sc2;
-        ctxt(c, VW/2, py+118, 'TROUSERS', P.gold, 1);
-        const pc = swatches(c, 62, py+132, 6, 36, AV.PANTS, cfg.pants, 'pc');
-        if (pc >= 0) cfg.pants = pc;
       } else {
         ctxt(c, VW/2, py+6, 'YOUR NAME', P.gold, 1);
         panel(c, 60, py+18, VW-120, 22, '#2e1b50');
@@ -158,7 +160,7 @@ Game.register('creator', (() => {
       /* --- bottom actions ------------------------------------------------ */
       if (UI.btn(c, 12, 592, 104, 30, 'SURPRISE', { col:'#6a27c8', col2:P.purple, scale:1 })) {
         const g = pick(GENDERS);
-        cfg = Object.assign(AV.randomCfg(), { gender:g.k, body:g.body, touchedHair:1 });
+        cfg = Object.assign(AV.randomCfg(), { gender:g.k, body:g.body, touchedCoat:1 });
         SFX.play('power'); FX.stars(VW/2, gy-40, 14);
       }
       const ready = (name.trim().length > 0) || tab !== 3;

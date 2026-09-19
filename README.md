@@ -210,7 +210,8 @@ on every war he mentions is the same one: no child anywhere chose it.
 
 ## Also in this repo
 
-**[AETHERIA — SKY SCHOLARS](aetheria/)** — a cozy pixel-art study RPG on a
-floating island, where answering a question is how you swing a sword. Open
+**[AETHERIA — SKY SCHOLARS](aetheria/)** — a cozy pixel-art study RPG about
+cats, with an AI tutor that reads your notes and builds your revision plan, a
+Terraria-style mine under the island, and Gizmo-style interactive labs. Open
 `aetheria/index.html`. Entirely separate from the tree; shares nothing but the
 bitmap font.

@@ -117,6 +117,7 @@ const Game = (() => {
     start() {
       if (running) return; running = true;
       resize(); SFX.unlock(); SFX.toggle(S.d.sound); SFX.music(true);
+      AI.restore();
       const bonus = S.checkDay();
       swap(S.d.made ? 'island' : 'creator', bonus ? { dailyBonus:bonus } : null);
       last = performance.now();

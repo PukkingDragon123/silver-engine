@@ -142,11 +142,13 @@ const S = (() => {
     },
     unlockedPacks() {
       const out = [];
-      for (let i=0;i<CONTENT.PACKS.length;i++) {
-        const p = CONTENT.PACKS[i];
-        const prev = i === 0 ? null : S.prog(CONTENT.PACKS[i-1].id);
-        out.push({ pack:p, open: i === 0 || (prev && prev.cleared >= 4) });
+      const built = CONTENT.PACKS.filter(p => !p.ai);
+      for (let i=0;i<built.length;i++) {
+        const prev = i === 0 ? null : S.prog(built[i-1].id);
+        out.push({ pack:built[i], open: i === 0 || (prev && prev.cleared >= 4) });
       }
+      /* a world made from your own notes is never locked — you wrote it */
+      for (const p of CONTENT.PACKS) if (p.ai) out.push({ pack:p, open:true, mine:true });
       return out;
     },
     clearNode(packId, idx, stars) {

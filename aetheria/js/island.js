@@ -12,7 +12,7 @@ Game.register('island', (() => {
   const ICX = 180, ICY = 368, IRX = 156, IRY = 64;   /* the grass disc */
   const CX = 180, CY = 370, RX = 128, RY = 50;       /* where feet may go */
   /* things further back are drawn smaller — cheap, convincing depth */
-  const depthScale = y => 0.95 + clamp((y - (ICY-IRY)) / (IRY*2), 0, 1) * 0.38;
+  const depthScale = y => (y > ICY + 6 ? 2 : 1);   /* two zoom steps, never a fraction */
   const inside = (x,y) => ((x-CX)/RX)**2 + ((y-CY)/RY)**2 <= 1;
   function randomSpot() {
     for (let i=0;i<30;i++) {
@@ -166,7 +166,7 @@ Game.register('island', (() => {
       let tapped = null;
       for (const it of items) {
         if (it.kind === 'b') {
-          const r = drawBuilding(c, it.b.type, it.x, it.y, it.b.lvl, t, depthScale(it.y));
+          const r = drawBuilding(c, it.b.type, it.x, it.y, it.b.lvl, t, 1);
           const z = UI.zone(r.x, r.y, r.w, r.h, 'b'+it.plot);
           if (z.over) { c.globalAlpha = .2; pbox(c, r.x-2, r.y-2, r.w+4, r.h+4, P.white, 3); c.globalAlpha = 1; }
           if (z.click && !popup) tapped = { type:'building', b:it.b };
@@ -203,8 +203,12 @@ Game.register('island', (() => {
           const z = UI.zone(it.x-14, it.y-22, 28, 26, 'p'+it.plot);
           if (z.click && !popup) tapped = { type:'plot', plot:it.plot };
         } else if (it.kind === 'hero') {
-          const hs = depthScale(hero.y)*1.35;
-          AV.draw(c, hero.x, hero.y, S.d.cfg, hero.st === 'walk' ? 'walk' : hero.st, hero.f, { scale:hs, flip:hero.flip });
+          const hs = 2;
+          /* a little squash on each footfall — the whole game bounces */
+          const sq = hero.st === 'walk' ? 1 + (hero.f % 2 ? .06 : -.04)
+                   : hero.st === 'idle' ? 1 + Math.sin(t*3)*.02 : 1;
+          AV.draw(c, hero.x, hero.y, S.d.cfg, hero.st === 'walk' ? 'walk' : hero.st, hero.f,
+                  { scale:hs, flip:hero.flip, squash:sq });
           if (hero.st === 'sleep') { /* a blanket of Zs handled by particles */ }
           const z = UI.zone(hero.x-18, hero.y-46, 36, 48, 'hero');
           if (z.click && !popup) { hero.st = 'cheer'; hero.timer = 1.2; SFX.play('pop');
@@ -213,7 +217,7 @@ Game.register('island', (() => {
           ctxt(c, hero.x, hero.y - 34*hs, S.d.name, P.white, 1, P.ink);
         } else if (it.kind === 'pet' && pet) {
           spr(c, pet.def.spr, pet.x, pet.y - 10 + pet.bob, { center:true, flip:pet.flip,
-                                                             scale: depthScale(pet.y) });
+                                                             scale: 1 });
         } else if (it.kind === 'chest') {
           const n = S.d.chests.length;
           const by = Math.sin(t*2.4)*2;
@@ -223,10 +227,25 @@ Game.register('island', (() => {
           const z = UI.zone(it.x-14, 390, 30, 30, 'chest');
           if (z.click && !popup) Game.go('chest');
         } else if (it.kind === 'mine') {
-          drawRock(c, MINE.x, MINE.y, 1.2, 77);
-          const z = UI.zone(MINE.x-14, MINE.y-20, 28, 24, 'mine');
-          if (z.over) ctxt(c, MINE.x, MINE.y-28, 'MINE', P.white, 1, P.ink);
-          if (z.click && !popup) Game.go('minigame', { kind:'mine' });
+          /* the way down into The Deep: a timber frame over a dark hole */
+          const mx = MINE.x, my = MINE.y;
+          c.fillStyle = P.shadow; pxEllipse(c, mx, my, 15, 7, '#0a0714');
+          c.fillStyle = '#05030c'; pxEllipse(c, mx, my-1, 13, 5, '#05030c');
+          c.fillStyle = P.wood3;
+          c.fillRect(mx-16, my-22, 4, 22); c.fillRect(mx+12, my-22, 4, 22);
+          c.fillRect(mx-18, my-26, 36, 5);
+          c.fillStyle = P.wood2; c.fillRect(mx-18, my-26, 36, 2);
+          c.fillStyle = P.wood;  c.fillRect(mx-16, my-22, 4, 2); c.fillRect(mx+12, my-22, 4, 2);
+          for (let i=0;i<3;i++) {
+            const gy2 = my - 2 - ((t*14 + i*9) % 20);
+            c.globalAlpha = .5; c.fillStyle = P.purple;
+            c.fillRect(Math.round(mx - 5 + Math.sin(t*2+i)*5), Math.round(gy2), 2, 2);
+            c.globalAlpha = 1;
+          }
+          ctxt(c, mx, my-36, 'THE DEEP', P.pink, 1, P.ink);
+          const z = UI.zone(mx-20, my-30, 40, 34, 'mine');
+          if (z.over) ctxt(c, mx, my+6, 'dig for ore', P.white, 1, P.ink);
+          if (z.click && !popup) Game.go('deep');
         }
       }
       /* the choppable tree sits behind everything, so handle it separately */
@@ -281,29 +300,40 @@ Game.register('island', (() => {
       }
 
       /* --- bottom nav ---------------------------------------------------- */
-      const navY = 568;
-      pbox(c, -2, navY-6, VW+4, 82, rgba(P.ink,.92), 4);
-      hline(c, 0, navY-6, VW, rgba(P.purple,.6));
-      if (UI.btn(c, 8, navY, 74, 30, 'BUILD', { col:'#6a4a10', col2:'#c08a4a', icon:'i_wood', scale:1 }))
-        Game.go('build');
-      if (UI.btn(c, 88, navY, 74, 30, 'DECK', { col:'#2358c9', col2:'#49a7ff', icon:'i_book', scale:1 }))
-        Game.go('dex');
-      if (UI.btn(c, 168, navY, 74, 30, 'RANK', { col:'#6a27c8', col2:'#a35cff', icon:'i_trophy', scale:1 }))
-        Game.go('rank');
-      if (UI.btn(c, 248, navY, 104, 30, 'ADVENTURE', { col:'#1a7331', col2:'#3fe07a', glow:P.gold, scale:1 }))
+      const navY = 556;
+      pbox(c, -2, navY-8, VW+4, 96, rgba(P.ink,.93), 4);
+      hline(c, 0, navY-8, VW, rgba(P.purple,.6));
+      /* the two things this game is for, given the whole top row */
+      if (UI.btn(c, 8, navY, 168, 40, 'ADVENTURE',
+                 { col:'#1a7331', col2:'#3fe07a', glow:P.gold, scale:2 }))
         Game.go('map');
-      /* second row: small utilities */
-      if (UI.btn(c, 8, navY+34, 74, 26, 'ME', { col:'#3a2a5e', col2:'#5a4790', scale:1 })) Game.go('creator');
-      if (UI.btn(c, 88, navY+34, 74, 26, 'PETS', { col:'#3a2a5e', col2:'#5a4790', icon:'i_paw', scale:1 }))
-        popup = { type:'pets' };
-      if (UI.btn(c, 168, navY+34, 74, 26, 'GEAR', { col:'#3a2a5e', col2:'#5a4790', icon:'i_sword', scale:1 }))
-        popup = { type:'gear' };
-      if (UI.btn(c, 248, navY+34, 50, 26, S.d.sound ? 'ON' : 'OFF',
-                 { col:'#3a2a5e', col2:'#5a4790', icon:'i_speaker', scale:1 })) {
-        S.d.sound = SFX.toggle(); S.save();
+      const dl = AI.material().examDate
+        ? Math.ceil((new Date(AI.material().examDate + 'T23:59:59') - Date.now())/86400000) : null;
+      if (UI.btn(c, 184, navY, 168, 40, 'STUDY',
+                 { col:'#2358c9', col2:P.blue, glow:P.cyan, scale:2 }))
+        Game.go('study');
+      if (dl != null && dl >= 0) {
+        pbox(c, 296, navY-6, 56, 14, dl <= 3 ? P.red : '#b3600f', 3);
+        ctxt(c, 324, navY-4, dl + 'd', P.white, 1);
       }
-      if (UI.btn(c, 302, navY+34, 50, 26, 'INFO', { col:'#3a2a5e', col2:'#5a4790', scale:1 }))
-        popup = { type:'info' };
+      /* everything else, small */
+      const small = [
+        ['BASE',  '#6a4a10', '#c08a4a', 'i_wood',  () => Game.go('build')],
+        ['CARDS', '#2358c9', '#49a7ff', 'i_book',  () => Game.go('dex')],
+        ['RANK',  '#6a27c8', '#a35cff', 'i_trophy',() => Game.go('rank')],
+        ['PETS',  '#3a2a5e', '#5a4790', 'i_paw',   () => { popup = { type:'pets' }; }],
+        ['GEAR',  '#3a2a5e', '#5a4790', 'i_sword', () => { popup = { type:'gear' }; }],
+        ['LABS',  '#6a27c8', '#a35cff', 'i_flask', () => Game.go('lab')],
+        ['ME',    '#3a2a5e', '#5a4790', null,      () => Game.go('creator')]
+      ];
+      small.forEach((b,i) => {
+        const x = 8 + (i%7)*50;
+        if (UI.btn(c, x, navY+46, 46, 24, b[0], { col:b[1], col2:b[2], key:'nv'+i })) b[4]();
+      });
+      if (UI.btn(c, 8, navY+74, 170, 12, S.d.sound ? 'SOUND ON' : 'SOUND OFF',
+                 { col:'#241640', col2:'#3a2a5e', shadow:false })) { S.d.sound = SFX.toggle(); S.save(); }
+      if (UI.btn(c, 182, navY+74, 170, 12, 'HOW IT WORKS',
+                 { col:'#241640', col2:'#3a2a5e', shadow:false })) popup = { type:'info' };
 
       if (tapped) { popup = tapped; SFX.play('tap'); }
       if (popup) drawPopup(c);

@@ -41,6 +41,43 @@ body {
 }
 #bstart:active { transform:translateY(4px); box-shadow:0 1px 0 #1a7331; }
 .bfoot { margin-top:20px; font-size:10px; letter-spacing:1.6px; color:#6b5f92; }
+
+/* ---------------------------------------------------------------------------
+   The only DOM the game raises after boot: a sheet for getting real text in.
+   Typing a page of notes on a pixel keyboard is a punishment, so pasting and
+   file-picking use the platform's own controls, dressed to match.
+   --------------------------------------------------------------------------- */
+#sheet { position:fixed; inset:0; z-index:40; display:none; align-items:center; justify-content:center;
+         background:rgba(8,4,16,.86); padding:16px; }
+#sheet.on { display:flex; }
+.sh {
+  width:100%; max-width:460px; max-height:100%; overflow:auto;
+  background:#241640; border:2px solid #1b1030;
+  box-shadow:0 0 0 2px #6a27c8, 0 18px 50px rgba(0,0,0,.6);
+  padding:16px; border-radius:4px; color:#fffdf5;
+}
+.sh h3 { font-size:15px; letter-spacing:2px; color:#ffd23f; margin-bottom:4px; }
+.sh p  { font-size:11px; line-height:1.5; color:#9a8fb5; margin-bottom:12px; }
+.sh label { display:block; font-size:10px; letter-spacing:1.5px; color:#46ecd5; margin:10px 0 4px; }
+.sh input[type=text], .sh input[type=date], .sh textarea {
+  width:100%; font:inherit; font-size:12px; color:#fffdf5; background:#1b1030;
+  border:2px solid #3f2a68; border-radius:3px; padding:8px; outline:none;
+}
+.sh input:focus, .sh textarea:focus { border-color:#a35cff; }
+.sh textarea { min-height:190px; resize:vertical; line-height:1.5; }
+.sh .row { display:flex; gap:8px; margin-top:14px; flex-wrap:wrap; }
+.sh button {
+  flex:1 1 120px; font:inherit; font-size:12px; letter-spacing:1.5px; font-weight:700;
+  cursor:pointer; color:#1b1030; background:linear-gradient(#7ef08a,#2fb84a); border:0;
+  padding:11px 12px; border-radius:4px; box-shadow:0 4px 0 #1a7331;
+}
+.sh button.alt  { background:linear-gradient(#b99bf0,#6a27c8); color:#fffdf5; box-shadow:0 4px 0 #3d1580; }
+.sh button.ghost{ background:linear-gradient(#5a4790,#3a2a5e); color:#fffdf5; box-shadow:0 4px 0 #241640; }
+.sh button:active { transform:translateY(3px); box-shadow:none; }
+.sh .files { font-size:10px; color:#9a8fb5; margin-top:8px; }
+.sh .drop { border:2px dashed #5a4790; border-radius:4px; padding:14px; text-align:center;
+            font-size:11px; color:#9a8fb5; cursor:pointer; margin-top:6px; }
+.sh .drop.hot { border-color:#3fe07a; color:#3fe07a; }
 </style>
 <div id="frame">
   <canvas id="screen"></canvas>
@@ -53,6 +90,9 @@ body {
     </div>
   </div>
 </div>
+
+<!-- the one sheet of real DOM: pasting and uploading study material -->
+<div id="sheet"><div class="sh" id="shbody"></div></div>
 <script>
 /* =========================================================================
    PIXEL FONT — 5x7 bitmap glyphs, drawn straight onto the canvas.
@@ -1157,10 +1197,13 @@ const ART = (() => {
 })();
 
 /* draw a named sprite, with optional scale / flip / tint / alpha */
+/* Every sprite in the game is authored on one grid and blown up by a whole
+   number. Fractional zoom resamples the art onto half-pixels, which is what
+   makes pixel art look mushy and inconsistent from screen to screen. */
 function spr(c, name, x, y, opt) {
   opt = opt || {};
   const img = ART.get(name, opt.swap);
-  const s = opt.scale || 1;
+  const s = Math.max(1, Math.round(opt.scale || 1));
   const w = img.width*s, h = img.height*s;
   x = Math.round(x); y = Math.round(y);
   if (opt.center) { x -= Math.round(w/2); y -= Math.round(h/2); }
@@ -1719,146 +1762,236 @@ function drawPlateau(c, cx, cy, rx, ry, depth, opt) {
 </script>
 <script>
 /* =========================================================================
-   AVATAR — you, made of about four hundred pixels.
+   CAT — you, and every other cat in Aetheria.
 
-   The body is painted procedurally so hair colour, shirt colour and skin
-   tone are live values rather than twelve hand-drawn variants. Each finished
-   pose is then stamped with a hard outline (draw the silhouette four times,
-   one pixel out, then the art on top) which is what gives everything that
-   sticker look.
+   Painted procedurally at a fixed 30x40 grid so fur colour, markings, eye
+   colour and outfit are live values rather than forty hand-drawn variants.
+   Each finished pose is stamped with a hard outline (the silhouette drawn
+   four times, one pixel out, then the art on top), which is what gives
+   everything the sticker look.
+
+   Proportions are deliberately cartoony: a big round head on a small body,
+   and a tail that never stops moving.
    ========================================================================= */
 const AV = (() => {
-  const W = 26, H = 34, FEET = H-2;
+  const W = 30, H = 40, FEET = H - 2;
   const cache = new Map();
 
-  const SKINS  = ['#ffd2ab','#f0b184','#d18a5c','#a86238','#7a4526','#5a3320'];
-  const HAIRS  = ['#3a2a1e','#6b4423','#c98b3a','#ffd23f','#e0523a','#ff5fb8','#a35cff','#49a7ff','#3fe07a','#e7dcc6','#1b1030','#46ecd5'];
-  const SHIRTS = ['#ff4d5e','#49a7ff','#3fe07a','#ffd23f','#a35cff','#ff5fb8','#46ecd5','#ff9330','#fffdf5','#2e1b50'];
-  const PANTS  = ['#2358c9','#434f74','#8a5a2c','#1b1030','#6a27c8','#1d9a52'];
-  const STYLES = ['short','long','spike','bun','curly','buzz'];
-  const TOPS   = ['plain','stripe','hoodie'];
+  /* coats, chosen to read at a glance against grass and against night sky */
+  const FURS = ['#f4a742','#e7dcc6','#8a6a4f','#4a3b33','#2a2436','#f0e9df',
+                '#d9773f','#9aa6c4','#c9b08a','#5a4a72','#e0a9c8','#7fb3a0'];
+  const MARKS = ['#c47a20','#c2b498','#5f4635','#1f1a24','#14121c','#cfc6bb',
+                 '#a8501f','#6b789c','#a08a5c','#3a3050','#b87a9c','#4f8272'];
+  const EYES = ['#3fe07a','#ffd23f','#49a7ff','#a35cff','#46ecd5','#ff9330','#e7dcc6'];
+  const PATTERNS = ['solid','tabby','tuxedo','calico','siamese','spotted'];
+  const SHIRTS = ['#ff4d5e','#49a7ff','#3fe07a','#ffd23f','#a35cff','#ff5fb8',
+                  '#46ecd5','#ff9330','#fffdf5','#2e1b50'];
+  const OUTFITS = ['scarf','hoodie','cape','satchel'];
 
-  const defaults = () => ({
-    body:1, skin:0, hair:0, hairCol:1, shirt:0, shirtCol:0, pants:0, top:0
-  });
+  const defaults = () => ({ fur:0, mark:0, pattern:1, eyes:0, shirtCol:0, outfit:0, body:1 });
 
-  /* ---- the painter. everything positions off the feet ------------------- */
+  /* ---------------------------------------------------------------------- */
   function paint(c, cfg, pose, f) {
-    const skin = SKINS[cfg.skin % SKINS.length];
-    const skinD = shade(skin,-.22), skinL = shade(skin,.22);
-    const hair = HAIRS[cfg.hairCol % HAIRS.length];
-    const hairD = shade(hair,-.3), hairL = shade(hair,.3);
+    const fur  = FURS[cfg.fur % FURS.length];
+    const furD = shade(fur,-.24), furL = shade(fur,.26), furX = shade(fur,-.42);
+    const mark = MARKS[cfg.mark % MARKS.length];
+    const belly = shade(fur,.42);
+    const eye  = EYES[cfg.eyes % EYES.length];
     const shirt = SHIRTS[cfg.shirtCol % SHIRTS.length];
-    const shirtD = shade(shirt,-.25), shirtL = shade(shirt,.28);
-    const pant = PANTS[cfg.pants % PANTS.length], pantD = shade(pant,-.28);
-    const slim = cfg.body === 0;                       /* silhouette width */
+    const shirtD = shade(shirt,-.28), shirtL = shade(shirt,.3);
+    const pat = PATTERNS[cfg.pattern % PATTERNS.length];
+    const outfit = OUTFITS[cfg.outfit % OUTFITS.length];
     const cx = Math.round(W/2);
-    const R = (x,y,w,h,col) => { c.fillStyle = col; c.fillRect(Math.round(cx+x), Math.round(FEET+y), Math.round(w), Math.round(h)); };
+    const R = (x,y,w,h,col) => { if (w<=0||h<=0) return; c.fillStyle = col;
+      c.fillRect(Math.round(cx+x), Math.round(FEET+y), Math.round(w), Math.round(h)); };
 
-    /* pose offsets: body bob, lean, leg split, arm angle */
-    let bob = 0, lean = 0, legA = 0, legB = 0, armA = 0, armB = 0, headT = 0, squash = 0;
-    if (pose === 'idle')  { bob = f === 1 ? -1 : 0; armA = f === 1 ? -1 : 0; }
+    /* ---- pose offsets ------------------------------------------------- */
+    let bob=0, lean=0, legA=0, legB=0, armA=0, armB=0, headT=0, headB=0, tail=0, squash=0, ear=0;
+    const wob = Math.sin(f*1.7)*0;
+    if (pose === 'idle')  { bob = f===1?-1:0; tail = f===1?2:-1; headB = f===1?-1:0; }
     else if (pose === 'walk') {
-      const k = f % 4;
-      bob  = (k === 1 || k === 3) ? -1 : 0;
+      const k = f%4;
+      bob  = (k===1||k===3) ? -1 : 0;
       legA = [0,-2,0,2][k]; legB = -legA;
       armA = [0,2,0,-2][k]; armB = -armA;
+      tail = [2,0,-2,0][k];
+    } else if (pose === 'run') {
+      const k = f%4;
+      bob = (k%2)?-2:0; lean = 2;
+      legA = [3,-3,3,-3][k]; legB = -legA; armA = -legA; armB = legA; tail = 4;
     } else if (pose === 'dance') {
-      lean = f % 2 ? 2 : -2; bob = f % 2 ? -2 : 0;
-      armA = -7; armB = -7; headT = f % 2 ? -1 : 1; legA = f % 2 ? -1 : 1; legB = -legA;
-    } else if (pose === 'cheer') { bob = -2; armA = -9; armB = -9; }
-    else if (pose === 'wave')    { armB = -8; bob = f === 1 ? -1 : 0; }
-    else if (pose === 'sit')     { bob = 4; legA = 0; legB = 0; }
-    else if (pose === 'sleep')   { bob = 0; }
-    else if (pose === 'attack')  { lean = 3; armB = -6; bob = -1; }
-    else if (pose === 'hurt')    { lean = -3; bob = 1; squash = 1; }
+      lean = f%2?2:-2; bob = f%2?-2:0; armA=-8; armB=-8;
+      headT = f%2?-1:1; legA = f%2?-1:1; legB=-legA; tail = f%2?4:-4; ear = f%2?-1:0;
+    } else if (pose === 'cheer') { bob=-2; armA=-10; armB=-10; tail=4; ear=-1; }
+    else if (pose === 'wave')    { armB=-9; bob = f===1?-1:0; tail=2; }
+    else if (pose === 'sit')     { bob=5; tail=3; squash=1; }
+    else if (pose === 'attack')  { lean=3; armB=-7; bob=-1; tail=-4; ear=-1; }
+    else if (pose === 'hurt')    { lean=-3; bob=1; squash=2; ear=2; tail=-2; }
+    else if (pose === 'dig')     { lean=2; armA=-4; armB=4; bob = f%2?-1:0; tail = f%2?2:-2; }
 
-    /* --- sleeping is drawn lying down, so it gets its own little routine -- */
+    /* ---- sleeping is a curled-up ball, so it gets its own routine ----- */
     if (pose === 'sleep') {
-      const yy = -6;
-      R(-11,yy+4,22,6,shirt); R(-11,yy+8,22,2,shirtD);
-      R(6,yy+4,6,6,pant); R(9,yy+9,4,2,pantD);
-      /* head on the left, hair spread on the ground */
-      R(-16,yy+1,8,8,skin); R(-16,yy+1,8,2,skinL); R(-16,yy+7,8,2,skinD);
-      R(-18,yy,10,3,hair); R(-18,yy+3,3,6,hair); R(-18,yy,10,1,hairL);
-      R(-13,yy+4,1,1,P.ink); R(-11,yy+4,1,1,P.ink);   /* closed eyes: dashes */
-      R(-13,yy+4,2,1,P.ink); R(-10,yy+4,2,1,P.ink);
-      R(-1,yy+3,3,1,shirtL);
+      const y = -9;
+      R(-12,y+2,24,9,fur); R(-12,y+9,24,2,furD); R(-12,y+2,24,1,furL);
+      if (pat === 'tabby') { R(-8,y+2,2,8,mark); R(-2,y+2,2,8,mark); R(4,y+2,2,8,mark); }
+      R(-13,y+1,9,9,fur);                          /* head tucked in */
+      R(-13,y+1,9,2,furL); R(-13,y+8,9,2,furD);
+      R(-13,y-2,3,4,fur); R(-8,y-2,3,4,fur);       /* ears */
+      R(-12,y-1,1,2,shade(mark,.2)); R(-7,y-1,1,2,shade(mark,.2));
+      R(-11,y+5,3,1,P.ink); R(-6,y+5,3,1,P.ink);   /* closed eyes */
+      R(-9,y+7,2,1,'#c2707f');
+      R(8,y+1,5,3,fur); R(11,y-1,3,4,fur);         /* tail wrapped round */
+      R(8,y+1,5,1,furL);
       return;
     }
 
-    const y0 = bob;                                    /* feet stay planted */
-    /* --- legs ------------------------------------------------------------ */
+    const y0 = bob;
+    /* ---- tail (behind everything) -------------------------------------- */
+    {
+      const tx = 6 + lean, ty = -13 + y0;
+      R(tx,ty,4,3,furD);
+      R(tx+3,ty-2+tail*0.5,4,3,fur);
+      R(tx+6,ty-5+tail,4,3,fur);
+      R(tx+8,ty-9+tail*1.4,3,4,fur);
+      R(tx+8,ty-9+tail*1.4,3,1,furL);
+      if (pat === 'tabby')   { R(tx+3,ty-2+tail*0.5,4,1,mark); R(tx+8,ty-8+tail*1.4,3,1,mark); }
+      if (pat === 'siamese') { R(tx+8,ty-9+tail*1.4,3,4,mark); }
+      if (pat === 'tuxedo')  { R(tx+8,ty-6+tail*1.4,3,1,belly); }
+    }
+
+    /* ---- legs and paws -------------------------------------------------- */
     if (pose === 'sit') {
-      R(-6+lean,-8+y0,5,7,pant); R(1+lean,-8+y0,5,7,pant);
-      R(-6+lean,-2+y0,5,2,pantD); R(1+lean,-2+y0,5,2,pantD);
-      R(-8+lean,-2+y0,4,2,'#2e1b50'); R(4+lean,-2+y0,4,2,'#2e1b50');
+      R(-6+lean,-7+y0,5,7,fur); R(1+lean,-7+y0,5,7,fur);
+      R(-7+lean,-3+y0,7,3,fur); R(0+lean,-3+y0,7,3,fur);
+      R(-7+lean,-1+y0,7,1,furD); R(0+lean,-1+y0,7,1,furD);
+      if (pat === 'tuxedo' || pat === 'siamese') { R(-7+lean,-3+y0,7,3,pat==='tuxedo'?belly:mark);
+                                                   R(0+lean,-3+y0,7,3,pat==='tuxedo'?belly:mark); }
     } else {
-      R(-5+lean+legA*0.4,-8+y0,4,6,pant);  R(1+lean+legB*0.4,-8+y0,4,6,pant);
-      R(-5+lean+legA*0.4,-4+y0,4,2,pantD); R(1+lean+legB*0.4,-4+y0,4,2,pantD);
-      R(-6+lean+legA*0.6,-2+y0,5,2,'#2e1b50'); R(1+lean+legB*0.6,-2+y0,5,2,'#2e1b50');
-      R(-6+lean+legA*0.6,-2+y0,5,1,'#4a3a70'); R(1+lean+legB*0.6,-2+y0,5,1,'#4a3a70');
+      const lx = -5+lean+legA*.4, rx = 1+lean+legB*.4;
+      R(lx,-9+y0,4,6,fur);  R(rx,-9+y0,4,6,fur);
+      R(lx,-5+y0,4,2,furD); R(rx,-5+y0,4,2,furD);
+      const px = -6+lean+legA*.6, qx = 1+lean+legB*.6;
+      const pawCol = pat === 'tuxedo' ? belly : pat === 'siamese' ? mark : fur;
+      R(px,-3+y0,6,3,pawCol); R(qx,-3+y0,6,3,pawCol);
+      R(px,-1+y0,6,1,shade(pawCol,-.3)); R(qx,-1+y0,6,1,shade(pawCol,-.3));
+      R(px+1,-3+y0,1,1,shade(pawCol,.4)); R(qx+1,-3+y0,1,1,shade(pawCol,.4));
     }
-    /* --- torso ----------------------------------------------------------- */
-    const bw = slim ? 9 : 11, bx = -Math.floor(bw/2) + lean;
-    R(bx,-17+y0+squash,bw,10-squash,shirt);
-    R(bx,-17+y0+squash,bw,2,shirtL);
-    R(bx,-9+y0,bw,2,shirtD);
-    if (cfg.top === 1) { R(bx,-14+y0,bw,2,shirtL); R(bx,-11+y0,bw,1,shirtL); }
-    if (cfg.top === 2) {                              /* hoodie: hood + pocket */
-      R(bx-1,-18+y0,bw+2,3,shirtD);
-      R(bx+2,-12+y0,bw-4,3,shirtD);
-      R(cx*0-0+lean,-19+y0,1,2,shirtL);
+
+    /* ---- torso ---------------------------------------------------------- */
+    const bw = cfg.body === 0 ? 11 : 13, bx = -Math.floor(bw/2) + lean;
+    const ty0 = -20 + y0 + squash;
+    R(bx,ty0,bw,12-squash,fur);
+    R(bx,ty0,bw,2,furL);
+    R(bx,ty0+10-squash,bw,2,furD);
+    R(bx+3,ty0+3,bw-6,8-squash,belly);            /* chest floof */
+    if (pat === 'tabby') { R(bx,ty0+2,bw,1,mark); R(bx,ty0+5,bw,1,mark); R(bx,ty0+8,bw,1,mark); }
+    if (pat === 'tuxedo') { R(bx+2,ty0+1,bw-4,10-squash,belly); }
+    if (pat === 'calico') { R(bx,ty0,5,6,mark); R(bx+bw-4,ty0+5,4,5,mark); }
+    if (pat === 'spotted') { R(bx+2,ty0+2,2,2,mark); R(bx+7,ty0+4,2,2,mark); R(bx+4,ty0+8,2,2,mark); }
+
+    /* ---- outfit --------------------------------------------------------- */
+    if (outfit === 'scarf') {
+      R(bx-1,ty0+1,bw+2,3,shirt); R(bx-1,ty0+1,bw+2,1,shirtL);
+      R(bx+bw-3,ty0+3,3,6,shirt); R(bx+bw-3,ty0+8,3,1,shirtD);
+    } else if (outfit === 'hoodie') {
+      R(bx-1,ty0,bw+2,4,shirtD);
+      R(bx,ty0+3,bw,8-squash,shirt); R(bx,ty0+3,bw,1,shirtL);
+      R(bx+3,ty0+7,bw-6,3,shirtD);
+    } else if (outfit === 'cape') {
+      R(bx-2,ty0+1,bw+4,2,shirt);
+      R(bx+bw,ty0+2,3,11,shirtD); R(bx+bw,ty0+2,3,1,shirt);
+    } else if (outfit === 'satchel') {
+      R(bx,ty0+2,bw,2,shirtD);
+      R(bx+bw-4,ty0+5,5,5,shirt); R(bx+bw-4,ty0+5,5,1,shirtL);
+      R(bx+bw-3,ty0+7,3,1,shirtD);
     }
-    /* --- arms ------------------------------------------------------------ */
-    const aw = 3;
-    R(bx-aw,-16+y0+armA*0.5,aw,7,shirtD);
-    R(bx+bw,-16+y0+armB*0.5,aw,7,shirtD);
-    R(bx-aw,-10+y0+armA,aw,3,skin);                   /* hands */
-    R(bx+bw,-10+y0+armB,aw,3,skin);
-    /* --- head ------------------------------------------------------------ */
-    const hy = -27+y0, hx = lean + headT;
-    R(hx-5,hy,10,10,skin);
-    R(hx-5,hy,10,1,skinL); R(hx-5,hy+9,10,1,skinD);
-    R(hx-6,hy+2,1,6,skin); R(hx+5,hy+2,1,6,skin);     /* ears */
-    R(hx-6,hy+4,1,2,skinD); R(hx+5,hy+4,1,2,skinD);
-    /* eyes — a white, a pupil, a glint */
+
+    /* ---- front paws / arms ---------------------------------------------- */
+    const aw = 4;
+    R(bx-aw+1,-18+y0+armA*.5,aw,7,fur);
+    R(bx+bw-1,-18+y0+armB*.5,aw,7,fur);
+    const mitt = pat === 'tuxedo' ? belly : pat === 'siamese' ? mark : fur;
+    R(bx-aw+1,-12+y0+armA,aw,3,mitt);
+    R(bx+bw-1,-12+y0+armB,aw,3,mitt);
+    R(bx-aw+1,-10+y0+armA,aw,1,shade(mitt,-.3));
+    R(bx+bw-1,-10+y0+armB,aw,1,shade(mitt,-.3));
+
+    /* ---- head ------------------------------------------------------------ */
+    const hx = lean + headT, hy = -34 + y0 + headB;
+    /* ears, drawn first so the head overlaps their base */
+    const earCol = pat === 'siamese' ? mark : fur;
+    for (const side of [-1,1]) {
+      const ex = side < 0 ? hx-8 : hx+3;
+      const tilt = side < 0 ? ear : -ear;
+      R(ex,hy-6+tilt,5,3,earCol);
+      R(ex+ (side<0?0:1),hy-4+tilt,4,3,earCol);
+      R(ex+1,hy-5+tilt,3,3,shade('#f0a0b0',.1));   /* inner ear */
+      R(ex+ (side<0?0:1),hy-6+tilt,5,1,shade(earCol,.3));
+    }
+    /* the skull is built row by row so the corners round off — a square
+       head is the single fastest way to stop reading as a cat */
+    R(hx-6,hy,13,1,fur);
+    R(hx-7,hy+1,15,1,fur);
+    R(hx-8,hy+2,16,9,fur);
+    R(hx-7,hy+11,15,1,fur);
+    R(hx-6,hy+12,13,1,fur);
+    R(hx-4,hy+13,9,1,fur);
+    R(hx-9,hy+4,1,6,fur); R(hx+8,hy+4,1,6,fur);    /* cheek floof */
+    R(hx-6,hy,13,2,furL);
+    R(hx-6,hy+12,13,1,furD); R(hx-4,hy+13,9,1,furD);
+    if (pat === 'tabby') {
+      R(hx-5,hy,2,3,mark); R(hx-1,hy,2,3,mark); R(hx+3,hy,2,3,mark);
+      R(hx-8,hy+3,2,1,mark); R(hx+7,hy+3,2,1,mark);
+    }
+    if (pat === 'siamese') { R(hx-5,hy+6,10,7,mark); R(hx-4,hy+13,9,1,mark); }
+    if (pat === 'calico')  { R(hx-7,hy+1,6,5,mark); R(hx+4,hy+8,4,4,mark); }
+    if (pat === 'spotted') { R(hx-6,hy+2,2,2,mark); R(hx+4,hy+3,2,2,mark); }
+    if (pat === 'tuxedo')  { R(hx-3,hy+5,6,8,belly); }
+
+    /* eyes — big, with a highlight and a slit pupil */
     const blink = pose === 'blink';
-    if (blink) { R(hx-4,hy+5,3,1,P.ink); R(hx+1,hy+5,3,1,P.ink); }
-    else {
-      R(hx-4,hy+4,3,3,'#ffffff'); R(hx+1,hy+4,3,3,'#ffffff');
-      R(hx-3,hy+5,2,2,P.ink);     R(hx+2,hy+5,2,2,P.ink);
-      R(hx-3,hy+5,1,1,'#ffffff'); R(hx+2,hy+5,1,1,'#ffffff');
+    const ex1 = hx-7, ex2 = hx+2;
+    if (blink) { R(ex1,hy+5,5,1,P.ink); R(ex2,hy+5,5,1,P.ink);
+                 R(ex1,hy+4,1,1,P.ink); R(ex2+4,hy+4,1,1,P.ink); }
+    else for (const ex of [ex1,ex2]) {
+      /* a rounded eye: mostly iris, a one-pixel slit, one white glint */
+      R(ex+1,hy+3,3,1,P.ink);
+      R(ex,hy+4,5,3,eye);
+      R(ex+1,hy+7,3,1,eye);
+      R(ex,hy+4,5,1,shade(eye,.35));
+      R(ex+2,hy+4,1,4,P.ink);                        /* the slit */
+      R(ex+1,hy+4,1,1,'#ffffff');
+      R(ex+3,hy+6,1,1,shade(eye,-.45));
     }
-    R(hx-5,hy+7,2,1,rgba('#ff8090',.6)); R(hx+3,hy+7,2,1,rgba('#ff8090',.6));  /* blush */
-    if (pose === 'cheer' || pose === 'dance') { R(hx-2,hy+8,4,2,'#8a2a3a'); R(hx-1,hy+8,2,1,'#ff97a4'); }
-    else if (pose === 'hurt') { R(hx-2,hy+8,4,1,'#8a2a3a'); R(hx-2,hy+7,1,1,'#8a2a3a'); R(hx+1,hy+7,1,1,'#8a2a3a'); }
-    else R(hx-1,hy+8,3,1,'#8a2a3a');
-    /* --- hair ------------------------------------------------------------ */
-    const st = STYLES[cfg.hair % STYLES.length];
-    R(hx-5,hy-1,10,3,hair); R(hx-6,hy+1,1,3,hair); R(hx+5,hy+1,1,3,hair);
-    R(hx-5,hy-1,10,1,hairL);
-    if (st === 'short') { R(hx-5,hy+2,3,2,hair); R(hx+3,hy+2,2,1,hairD); }
-    else if (st === 'buzz') { R(hx-5,hy-1,10,2,hairD); R(hx-5,hy-1,10,1,hair); }
-    else if (st === 'long') {
-      R(hx-7,hy+1,2,11,hair); R(hx+5,hy+1,2,11,hair);
-      R(hx-7,hy+10,2,2,hairD); R(hx+5,hy+10,2,2,hairD);
-      R(hx-7,hy+1,1,7,hairL);
-    } else if (st === 'spike') {
-      for (let i=0;i<5;i++) { R(hx-5+i*2,hy-2-(i%2?2:1),2,3,hair); R(hx-5+i*2,hy-2-(i%2?2:1),1,1,hairL); }
-      R(hx-6,hy+1,2,3,hair);
-    } else if (st === 'bun') {
-      R(hx-2,hy-5,5,4,hair); R(hx-2,hy-5,5,1,hairL); R(hx-3,hy-4,1,2,hairD); R(hx+3,hy-4,1,2,hairD);
-      R(hx+5,hy+2,2,5,hair);
-    } else if (st === 'curly') {
-      R(hx-7,hy,3,3,hair); R(hx+4,hy,3,3,hair); R(hx-4,hy-3,4,3,hair); R(hx+1,hy-3,4,3,hair);
-      R(hx-7,hy+2,2,4,hair); R(hx+5,hy+2,2,4,hair); R(hx-4,hy-3,2,1,hairL);
+    /* muzzle, nose and a proper cat mouth */
+    const muz = pat === 'siamese' ? shade(mark,.35) : belly;
+    R(hx-4,hy+8,8,4,muz);
+    R(hx-3,hy+12,7,1,muz);
+    R(hx-3,hy+12,7,1,shade(muz,-.2));
+    R(hx-1,hy+8,3,2,'#e07a8a'); R(hx-1,hy+8,2,1,'#ff9aa8');
+    if (pose === 'cheer' || pose === 'dance') {
+      R(hx-2,hy+10,5,4,'#8a2a3a'); R(hx-1,hy+11,3,2,'#ff97a4'); R(hx-2,hy+10,5,1,P.ink);
+    } else if (pose === 'hurt') {
+      R(hx-2,hy+10,5,3,'#8a2a3a'); R(hx-2,hy+10,5,1,P.ink);
+    } else if (pose === 'attack') {
+      R(hx-3,hy+10,7,3,'#8a2a3a'); R(hx-3,hy+10,7,1,P.ink);
+      R(hx-2,hy+10,1,2,'#ffffff'); R(hx+2,hy+10,1,2,'#ffffff');   /* fangs */
+    } else {
+      R(hx,hy+10,1,1,P.ink);
+      R(hx-3,hy+11,3,1,P.ink); R(hx+1,hy+11,3,1,P.ink);
+      R(hx-4,hy+10,1,1,P.ink); R(hx+4,hy+10,1,1,P.ink);
     }
+    /* whiskers */
+    const wcol = rgba('#ffffff',.85);
+    R(hx-12,hy+8,4,1,wcol); R(hx-13,hy+10,5,1,wcol);
+    R(hx+9,hy+8,4,1,wcol);  R(hx+9,hy+10,5,1,wcol);
+    /* a bit of forehead floof so the silhouette is not a plain dome */
+    R(hx-3,hy-1,2,2,furL); R(hx,hy-2,2,3,furL); R(hx+3,hy-1,2,2,furL);
   }
 
-  /* outline pass — the thing that makes it pop off the background */
+  /* outline pass — the thing that makes a cat pop off the background */
   function render(cfg, pose, f) {
-    const key = [cfg.body,cfg.skin,cfg.hair,cfg.hairCol,cfg.shirtCol,cfg.pants,cfg.top,pose,f].join(',');
+    const key = [cfg.fur,cfg.mark,cfg.pattern,cfg.eyes,cfg.shirtCol,cfg.outfit,cfg.body,pose,f].join(',');
     if (cache.has(key)) return cache.get(key);
     const base = surface(W,H), b = base.getContext('2d');
     paint(b, cfg, pose, f);
@@ -1868,39 +2001,47 @@ const AV = (() => {
     const out = surface(W,H), o = out.getContext('2d');
     o.drawImage(sil,-1,0); o.drawImage(sil,1,0); o.drawImage(sil,0,-1); o.drawImage(sil,0,1);
     o.drawImage(base,0,0);
-    if (cache.size > 260) cache.clear();
+    if (cache.size > 300) cache.clear();
     cache.set(key,out);
     return out;
   }
 
   return {
-    W, H, SKINS, HAIRS, SHIRTS, PANTS, STYLES, TOPS, defaults, render,
-    /* draw with feet at (x,y) */
+    W, H, FURS, MARKS, EYES, PATTERNS, SHIRTS, OUTFITS, defaults, render,
+    /* aliases kept so older call sites keep working */
+    get SKINS() { return FURS; }, get HAIRS() { return MARKS; },
+    get STYLES() { return PATTERNS; }, get PANTS() { return MARKS; },
+    get TOPS() { return OUTFITS; },
+
+    /* draw with paws at (x,y). scale is forced to a whole number so a cat
+       is never resampled onto half a pixel. */
     draw(c, x, y, cfg, pose, f, opt) {
       opt = opt || {};
       const img = render(cfg, pose||'idle', f||0);
-      const sc = opt.scale || 1;
-      const dx = Math.round(x - (W/2)*sc), dy = Math.round(y - (H-2)*sc);
+      const sc = Math.max(1, Math.round(opt.scale || 1));
+      const squash = opt.squash || 1;               /* cartoon squash & stretch */
+      const dw = Math.round(W*sc*squash), dh = Math.round(H*sc*(2-squash));
+      const dx = Math.round(x - dw/2), dy = Math.round(y - dh + 2*sc);
       if (opt.shadow !== false) {
-        c.globalAlpha = .22;
-        pxEllipse(c, Math.round(x), Math.round(y), Math.round(7*sc), Math.round(2.5*sc), '#000');
+        c.globalAlpha = .24;
+        pxEllipse(c, Math.round(x), Math.round(y), Math.round(8*sc), Math.round(2.5*sc), '#000');
         c.globalAlpha = 1;
       }
       if (opt.alpha != null) c.globalAlpha = opt.alpha;
-      if (opt.flip) { c.save(); c.translate(dx+W*sc, dy); c.scale(-1,1); c.drawImage(img,0,0,W*sc,H*sc); c.restore(); }
-      else c.drawImage(img, dx, dy, W*sc, H*sc);
+      if (opt.flip) { c.save(); c.translate(dx+dw, dy); c.scale(-1,1); c.drawImage(img,0,0,dw,dh); c.restore(); }
+      else c.drawImage(img, dx, dy, dw, dh);
       c.globalAlpha = 1;
       if (opt.glow) {
         c.globalAlpha = .3 + .2*Math.sin(performance.now()/180);
         c.globalCompositeOperation = 'lighter';
-        c.drawImage(img, dx, dy-1, W*sc, H*sc);
+        c.drawImage(img, dx, dy-1, dw, dh);
         c.globalCompositeOperation = 'source-over'; c.globalAlpha = 1;
       }
     },
     randomCfg() {
-      return { body:rndi(0,1), skin:rndi(0,SKINS.length-1), hair:rndi(0,STYLES.length-1),
-               hairCol:rndi(0,HAIRS.length-1), shirt:0, shirtCol:rndi(0,SHIRTS.length-1),
-               pants:rndi(0,PANTS.length-1), top:rndi(0,2) };
+      return { fur:rndi(0,FURS.length-1), mark:rndi(0,MARKS.length-1),
+               pattern:rndi(0,PATTERNS.length-1), eyes:rndi(0,EYES.length-1),
+               shirtCol:rndi(0,SHIRTS.length-1), outfit:rndi(0,OUTFITS.length-1), body:rndi(0,1) };
     }
   };
 })();
@@ -2233,6 +2374,152 @@ const CONTENT = (() => {
 </script>
 <script>
 /* =========================================================================
+   SHEET — the small amount of real DOM the game allows itself.
+
+   Everything else is canvas, but getting a page of revision notes into the
+   game through a pixel keyboard would be cruel, so text entry borrows the
+   platform's own textarea, file picker and date field, dressed to match.
+   ========================================================================= */
+const Sheet = (() => {
+  const host = () => document.getElementById('sheet');
+  const body = () => document.getElementById('shbody');
+  let openNow = false;
+
+  function close() { const h = host(); if (h) h.classList.remove('on'); openNow = false; }
+  const isOpen = () => openNow;
+
+  function show(html, wire) {
+    const h = host(), b = body();
+    if (!h || !b) return;
+    b.innerHTML = html;
+    h.classList.add('on');
+    openNow = true;
+    wire(b);
+  }
+
+  /* read a dropped or picked file as text; binary formats are refused
+     honestly rather than pasted in as mojibake */
+  function readFile(file) {
+    return new Promise((res, rej) => {
+      const name = (file.name||'notes').toLowerCase();
+      if (/\.(pdf|docx?|pptx?|xlsx?|zip|png|jpe?g|gif|mp[34]|heic)$/.test(name))
+        return rej(new Error(file.name + ' is not plain text — open it, select all, and paste instead.'));
+      if (file.size > 400000) return rej(new Error('That file is over 400 KB. Paste the part you need.'));
+      const r = new FileReader();
+      r.onload = () => res(String(r.result||''));
+      r.onerror = () => rej(new Error('Could not read that file.'));
+      r.readAsText(file);
+    });
+  }
+
+  return {
+    isOpen, close,
+
+    /* --- add study material -------------------------------------------- */
+    addMaterial(done) {
+      show(`
+        <h3>FEED THE TUTOR</h3>
+        <p>Paste your notes, a syllabus, a past paper, a textbook chapter — anything you
+           are being tested on. The tutor reads it to build your plan and to make levels.</p>
+        <label for="shname">WHAT IS THIS?</label>
+        <input type="text" id="shname" maxlength="40" placeholder="Biology — cell division">
+        <label for="shtext">PASTE IT HERE</label>
+        <textarea id="shtext" placeholder="Paste your notes..."></textarea>
+        <div class="drop" id="shdrop">or tap to pick a .txt / .md / .csv file</div>
+        <input type="file" id="shfile" accept=".txt,.md,.markdown,.csv,.json,.rtf,text/*" hidden>
+        <div class="files" id="shmsg"></div>
+        <div class="row">
+          <button id="shadd">ADD IT</button>
+          <button class="ghost" id="shcancel">CANCEL</button>
+        </div>`, b => {
+        const ta = b.querySelector('#shtext'), nm = b.querySelector('#shname');
+        const msg = b.querySelector('#shmsg'), drop = b.querySelector('#shdrop');
+        const file = b.querySelector('#shfile');
+        drop.onclick = () => file.click();
+        file.onchange = async () => {
+          const f = file.files && file.files[0];
+          if (!f) return;
+          try {
+            const text = await readFile(f);
+            ta.value = text;
+            if (!nm.value) nm.value = f.name.replace(/\.[^.]+$/,'').slice(0,40);
+            msg.textContent = f.name + ' loaded — ' + text.length.toLocaleString() + ' characters';
+            msg.style.color = '#3fe07a';
+          } catch (e) { msg.textContent = e.message; msg.style.color = '#ff4d5e'; }
+        };
+        ['dragover','dragenter'].forEach(ev => drop.addEventListener(ev, e => {
+          e.preventDefault(); drop.classList.add('hot'); }));
+        ['dragleave','drop'].forEach(ev => drop.addEventListener(ev, e => {
+          e.preventDefault(); drop.classList.remove('hot'); }));
+        drop.addEventListener('drop', async e => {
+          const f = e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files[0];
+          if (!f) return;
+          try { ta.value = await readFile(f); if (!nm.value) nm.value = f.name.slice(0,40);
+                msg.textContent = f.name + ' loaded'; msg.style.color = '#3fe07a'; }
+          catch (err) { msg.textContent = err.message; msg.style.color = '#ff4d5e'; }
+        });
+        b.querySelector('#shcancel').onclick = close;
+        b.querySelector('#shadd').onclick = () => {
+          const text = ta.value.trim();
+          if (text.length < 40) { msg.textContent = 'That is too short to work with — give it a few sentences.';
+                                  msg.style.color = '#ff4d5e'; return; }
+          AI.addMaterial(nm.value.trim() || 'notes', text);
+          close(); done && done();
+        };
+        setTimeout(() => ta.focus(), 60);
+      });
+    },
+
+    /* --- set the exam date ---------------------------------------------- */
+    examDate(done) {
+      const cur = AI.material().examDate || '';
+      show(`
+        <h3>WHEN IS THE EXAM?</h3>
+        <p>Everything the tutor plans works backwards from this date. You can change it later.</p>
+        <label for="shdate">EXAM DATE</label>
+        <input type="date" id="shdate" value="${cur}">
+        <label for="shsubj">SUBJECT</label>
+        <input type="text" id="shsubj" maxlength="40" placeholder="Biology" value="${(AI.material().subject||'').replace(/"/g,'&quot;')}">
+        <div class="row">
+          <button id="shok">SET IT</button>
+          <button class="ghost" id="shcancel">CANCEL</button>
+        </div>`, b => {
+        b.querySelector('#shcancel').onclick = close;
+        b.querySelector('#shok').onclick = () => {
+          const a = AI.material();
+          a.examDate = b.querySelector('#shdate').value || '';
+          a.subject = b.querySelector('#shsubj').value.trim();
+          S.save(); close(); done && done();
+        };
+      });
+    },
+
+    /* --- ask the tutor something ---------------------------------------- */
+    askBox(done) {
+      show(`
+        <h3>ASK THE TUTOR</h3>
+        <p>Anything you are stuck on. It has read everything you have given it.</p>
+        <label for="shq">YOUR QUESTION</label>
+        <textarea id="shq" style="min-height:110px" placeholder="Why does mitosis need to make identical cells?"></textarea>
+        <div class="row">
+          <button id="shok">ASK</button>
+          <button class="ghost" id="shcancel">CANCEL</button>
+        </div>`, b => {
+        const q = b.querySelector('#shq');
+        b.querySelector('#shcancel').onclick = close;
+        b.querySelector('#shok').onclick = () => {
+          const v = q.value.trim();
+          if (!v) return;
+          close(); done && done(v);
+        };
+        setTimeout(() => q.focus(), 60);
+      });
+    }
+  };
+})();
+</script>
+<script>
+/* =========================================================================
    STATE — the save file, the economy, the ladder.
 
    Everything persistent lives in S. Resource buildings keep producing while
@@ -2376,11 +2663,13 @@ const S = (() => {
     },
     unlockedPacks() {
       const out = [];
-      for (let i=0;i<CONTENT.PACKS.length;i++) {
-        const p = CONTENT.PACKS[i];
-        const prev = i === 0 ? null : S.prog(CONTENT.PACKS[i-1].id);
-        out.push({ pack:p, open: i === 0 || (prev && prev.cleared >= 4) });
+      const built = CONTENT.PACKS.filter(p => !p.ai);
+      for (let i=0;i<built.length;i++) {
+        const prev = i === 0 ? null : S.prog(built[i-1].id);
+        out.push({ pack:built[i], open: i === 0 || (prev && prev.cleared >= 4) });
       }
+      /* a world made from your own notes is never locked — you wrote it */
+      for (const p of CONTENT.PACKS) if (p.ai) out.push({ pack:p, open:true, mine:true });
       return out;
     },
     clearNode(packId, idx, stars) {
@@ -2670,7 +2959,7 @@ const UI = (() => {
         const slide = k < .12 ? ease.back(k/.12) : 1;
         const a = k > .78 ? 1-(k-.78)/.22 : 1;
         const w = tw(t.msg,1) + 22 + (t.icon?14:0);
-        const x = VW/2 - w/2, y = 58 + i*22 - (1-slide)*20;
+        const x = VW/2 - w/2, y = 148 + i*22 - (1-slide)*20;
         c.globalAlpha = a;
         panel(c, x, y, w, 18, '#2e1b50');
         if (t.icon) spr(c, t.icon, x+5, y+3);
@@ -2702,6 +2991,280 @@ const UI = (() => {
     get time() { return time; }
   };
   return api;
+})();
+</script>
+<script>
+/* =========================================================================
+   THE TUTOR — a cat that has read your notes.
+
+   Everything here goes through the artifact `sample` capability, which is
+   how a published page asks Claude a question. It is not available when the
+   file is opened straight off disk, so every entry point degrades: the UI
+   says so plainly instead of pretending to work.
+
+   Four jobs, all asked for by name:
+     plan()     your material + an exam date -> a dated revision plan
+     pack()     your material -> a real playable world on the adventure map
+     explain()  a question you just got wrong -> why, in two sentences
+     retune()   the cards you keep missing -> a rewritten plan and drills
+   ========================================================================= */
+const AI = (() => {
+  let sample = null, state = 'cold';     /* cold | booting | ready | absent */
+  let bootPromise = null;
+
+  function boot() {
+    if (bootPromise) return bootPromise;
+    state = 'booting';
+    bootPromise = (async () => {
+      try {
+        if (typeof claude === 'undefined' || !claude || !claude.use) { state = 'absent'; return null; }
+        sample = await claude.use('sample');
+        state = sample ? 'ready' : 'absent';
+        return sample;
+      } catch (e) { state = 'absent'; return null; }
+    })();
+    return bootPromise;
+  }
+  boot();
+
+  const available = () => state === 'ready';
+  const statusLine = () => state === 'ready' ? 'tutor is awake'
+                         : state === 'booting' ? 'waking the tutor...'
+                         : 'the tutor only wakes in the published game';
+
+  /* everything the tutor has been given to read */
+  function material() {
+    if (!S.d.ai) S.d.ai = { material:[], plan:null, packs:[], examDate:'', drills:[] };
+    return S.d.ai;
+  }
+  function materialText(limit) {
+    const m = material().material.map(x => '### ' + x.name + '\n' + x.text).join('\n\n');
+    return m.length > (limit||14000) ? m.slice(0, limit||14000) + '\n[...truncated]' : m;
+  }
+  function addMaterial(name, text) {
+    const a = material();
+    text = String(text||'').replace(/\r/g,'').trim();
+    if (!text) return false;
+    a.material.push({ name: (name||'notes').slice(0,40), text: text.slice(0,40000), at: Date.now() });
+    S.save(); return true;
+  }
+  function dropMaterial(i) { material().material.splice(i,1); S.save(); }
+
+  /* ---- shared call wrapper ------------------------------------------- */
+  async function ask(prompt, opts) {
+    const s = await boot();
+    if (!s) throw { code:'not_granted', message:'The tutor is not available here.' };
+    return s(prompt, opts);
+  }
+  async function askJson(prompt, opts) {
+    const s = await boot();
+    if (!s) throw { code:'not_granted', message:'The tutor is not available here.' };
+    return s.json(prompt, opts);
+  }
+  const errText = e => {
+    const code = e && e.code;
+    if (code === 'not_granted') return 'You said no to the tutor. Reload to be asked again.';
+    if (code === 'rate_limited') return 'Too many questions too fast. Give it a minute.';
+    if (code === 'cancelled') return 'Stopped.';
+    return (e && e.message) || 'The tutor could not answer that one.';
+  };
+
+  /* ==== 1. THE PLAN ===================================================== */
+  async function plan(examDate, subject, onText) {
+    const notes = materialText(9000);
+    const today = new Date().toISOString().slice(0,10);
+    const days = examDate ? Math.max(1, Math.round((new Date(examDate) - new Date(today))/86400000)) : 14;
+    const out = await askJson(
+`You are a study coach for a teenager revising for an exam. Today is ${today}.
+The exam is on ${examDate || 'about two weeks from today'} — ${days} days away.
+Subject: ${subject || 'inferred from the notes'}.
+
+Their material:
+"""
+${notes || '(they have not added any notes yet — build a sensible generic plan for the subject)'}
+"""
+
+Write a revision plan. Rules:
+- One entry per study day, at most ${Math.min(days, 21)} entries, in date order starting ${today}.
+- Each session is 25-50 minutes and names ONE specific topic drawn from their material.
+- Build up: recall first, then application, then mixed practice, then two review days before the exam.
+- Leave the day before the exam light.
+- "focus" must be concrete and specific to the notes, never "revise chapter 1".
+
+Reply as JSON only:
+{"subject":"...","examDate":"YYYY-MM-DD","summary":"one sentence on the shape of the plan",
+ "sessions":[{"date":"YYYY-MM-DD","title":"short title, 3-5 words","focus":"what to actually do, one sentence","minutes":30,"kind":"learn|practice|review|rest"}],
+ "weakSpotsToWatch":["...","..."]}`,
+      { onText, modelTier:'default' });
+    const a = material();
+    a.plan = out; a.examDate = examDate || out.examDate || '';
+    S.save();
+    return out;
+  }
+
+  /* ==== 2. A PLAYABLE WORLD ============================================= */
+  async function pack(name, onText) {
+    const notes = materialText(9000);
+    if (!notes) throw { code:'no_material', message:'Add some notes first — the tutor has nothing to read.' };
+    const out = await askJson(
+`Turn these study notes into a playable quiz world for a study RPG.
+
+Notes:
+"""
+${notes}
+"""
+
+Produce:
+- 18 multiple-choice questions covering the WHOLE of the material, easiest first, hardest last.
+  Each has exactly one correct answer and three wrong ones that are plausible and similar in
+  length and shape to the correct one — never "none of these", never obviously silly.
+  Keep every option under 60 characters. Keep every question under 90 characters.
+- 6 term/meaning pairs for a matching game, drawn from the same material.
+- One ordered sequence of 6 steps that genuinely has a correct order (a process, a
+  timeline, a ranking). If the material has no natural sequence, order six facts by size,
+  date or magnitude and say so in the title.
+
+Reply as JSON only:
+{"name":"SHORT WORLD NAME IN CAPS, 1-3 words","sub":"lowercase subtitle, under 40 chars",
+ "questions":[{"q":"...","a":"correct","w":["wrong1","wrong2","wrong3"]}],
+ "pairs":[["term","meaning"]],
+ "sequence":{"title":"Order these ...","items":["first","second","third","fourth","fifth","sixth"]}}`,
+      { onText, modelTier:'complex' });
+    return install(out, name);
+  }
+
+  /* drop a generated world into the game's own content tables */
+  function install(out, fallbackName) {
+    const id = 'ai' + Date.now().toString(36);
+    const rows = (out.questions||[])
+      .filter(q => q && q.q && q.a && Array.isArray(q.w) && q.w.length >= 3)
+      .map(q => [String(q.q), String(q.a), String(q.w[0]), String(q.w[1]), String(q.w[2])])
+      .filter(r => new Set(r.slice(1)).size === 4);
+    if (rows.length < 4) throw { code:'thin', message:'The tutor could not get enough questions out of that.' };
+    CONTENT.Q[id] = rows;
+    if (out.pairs && out.pairs.length >= 4)
+      CONTENT.MATCHES[id] = out.pairs.slice(0,6).map(p => [String(p[0]), String(p[1])]);
+    if (out.sequence && (out.sequence.items||[]).length >= 4)
+      CONTENT.SEQUENCES[id] = { title:String(out.sequence.title||'Put these in order'),
+                                items: out.sequence.items.slice(0,6).map(String) };
+    const hue = ['#46ecd5','#ff5fb8','#c3ff4d','#ff9330','#49a7ff','#a35cff'];
+    const c1 = pick(hue), c2 = shade(c1,-.35);
+    const p = {
+      id, name: String(out.name || fallbackName || 'YOUR NOTES').toUpperCase().slice(0,18),
+      sub: String(out.sub || 'made from your own material').slice(0,40),
+      col:c1, col2:c2, el:'arcane', icon:'i_book', ai:true,
+      sky:{ top:shade(c2,-.45), mid:c2, bot:shade(c1,.35) },
+      bank:id,
+      enemies:['slime','bat','shroom','wisp','golem'], boss:'wyrm',
+      nodes:['fight','match','fight','seq','elite','gather','fight','match','fight','boss'].map((k,i)=>({kind:k,i}))
+    };
+    if (!CONTENT.MATCHES[id]) p.nodes = p.nodes.map(n => n.kind === 'match' ? { kind:'fight', i:n.i } : n);
+    if (!CONTENT.SEQUENCES[id]) p.nodes = p.nodes.map(n => n.kind === 'seq' ? { kind:'fight', i:n.i } : n);
+    CONTENT.PACKS.push(p);
+    const a = material();
+    a.packs.push({ id, name:p.name, sub:p.sub, col:c1, rows,
+                   pairs: CONTENT.MATCHES[id] || null,
+                   seq: CONTENT.SEQUENCES[id] || null, at:Date.now() });
+    S.save();
+    return p;
+  }
+  /* rebuild every generated world from the save on boot */
+  function restore() {
+    const a = material();
+    for (const g of a.packs || []) {
+      if (CONTENT.pack(g.id)) continue;
+      CONTENT.Q[g.id] = g.rows;
+      if (g.pairs) CONTENT.MATCHES[g.id] = g.pairs;
+      if (g.seq) CONTENT.SEQUENCES[g.id] = g.seq;
+      CONTENT.PACKS.push({
+        id:g.id, name:g.name, sub:g.sub, col:g.col, col2:shade(g.col,-.35),
+        el:'arcane', icon:'i_book', ai:true,
+        sky:{ top:shade(g.col,-.6), mid:shade(g.col,-.35), bot:shade(g.col,.35) },
+        bank:g.id, enemies:['slime','bat','shroom','wisp','golem'], boss:'wyrm',
+        nodes:['fight','match','fight','seq','elite','gather','fight','match','fight','boss']
+          .map((k,i) => ({ kind: (k==='match' && !g.pairs) || (k==='seq' && !g.seq) ? 'fight' : k, i }))
+      });
+    }
+  }
+
+  /* ==== 3. WHY WAS I WRONG ============================================== */
+  async function explain(q, given, correct, onText, signal) {
+    const r = await ask(
+`A student answered a revision question wrongly. Explain it to them.
+
+Question: ${q}
+They answered: ${given}
+The correct answer: ${correct}
+
+Reply in at most 45 words, plain language, no preamble, no "great question".
+First say in one sentence why the correct answer is correct. Then, in one sentence,
+say what their answer confused it with. No markdown, no bullet points.`,
+      { onText, signal, modelTier:'quick', cache:true });
+    return r.text;
+  }
+
+  /* a hint that does not give the answer away */
+  async function hint(q, options, onText, signal) {
+    const r = await ask(
+`Give a nudge for this revision question WITHOUT revealing the answer.
+
+Question: ${q}
+Options: ${options.join(' | ')}
+
+In at most 25 words, point at the idea they need or the thing to rule out first.
+Never name the correct option. No preamble. No markdown.`,
+      { onText, signal, modelTier:'quick' });
+    return r.text;
+  }
+
+  /* ==== 4. RETUNE ======================================================= */
+  async function retune(onText) {
+    const a = material();
+    const weak = S.dexList()
+      .filter(e => e.seen > e.right)
+      .sort((x,y) => (y.seen-y.right) - (x.seen-x.right))
+      .slice(0,25)
+      .map(e => `- ${e.q} (got it right ${e.right} of ${e.seen})`);
+    if (!weak.length) throw { code:'no_data', message:'Play a few rounds first — there is nothing to go on yet.' };
+    const today = new Date().toISOString().slice(0,10);
+    const out = await askJson(
+`You coach a student revising for an exam on ${a.examDate || 'a date they have not set'}. Today is ${today}.
+
+These are the questions they keep getting wrong:
+${weak.join('\n')}
+
+${a.plan ? 'Their current plan focuses on: ' + (a.plan.sessions||[]).map(s=>s.title).join(', ') : 'They have no plan yet.'}
+
+Work out what the UNDERLYING weak spots are — group the misses into 2-4 themes, not a list of
+individual questions. Then give them today's drill.
+
+Reply as JSON only:
+{"verdict":"one blunt sentence on where they actually stand",
+ "themes":[{"name":"SHORT NAME IN CAPS","why":"one sentence on what the misses have in common","fix":"one concrete thing to do about it"}],
+ "todayDrill":{"title":"short title","minutes":20,"steps":["...","...","..."]}}`,
+      { onText, modelTier:'default' });
+    a.drills = [{ at:Date.now(), ...out }].concat((a.drills||[]).slice(0,4));
+    S.save();
+    return out;
+  }
+
+  /* ==== free chat ======================================================= */
+  async function chat(turns, onText, signal) {
+    const notes = materialText(5000);
+    const sys = `You are a study tutor cat in a pixel-art study RPG called Aetheria. You are warm,
+brief and a bit dry. The student is a teenager revising for an exam${material().examDate ? ' on ' + material().examDate : ''}.
+${notes ? 'Their own notes, use them when relevant:\n"""\n' + notes + '\n"""' : 'They have not added notes yet.'}
+Answer in at most 70 words. No markdown, no bullet lists, no headings. Plain sentences.
+If they ask something off-topic, answer briefly and steer back to studying.`;
+    const msgs = [{ role:'user', content: sys + '\n\nFirst message follows.\n\n' + turns[0].content }]
+      .concat(turns.slice(1));
+    const r = await ask(msgs, { onText, signal, modelTier:'default' });
+    return r.text;
+  }
+
+  return { boot, available, get state() { return state; }, statusLine, errText,
+           material, materialText, addMaterial, dropMaterial,
+           plan, pack, install, restore, explain, hint, retune, chat };
 })();
 </script>
 <script>
@@ -2824,6 +3387,7 @@ const Game = (() => {
     start() {
       if (running) return; running = true;
       resize(); SFX.unlock(); SFX.toggle(S.d.sound); SFX.music(true);
+      AI.restore();
       const bonus = S.checkDay();
       swap(S.d.made ? 'island' : 'creator', bonus ? { dailyBonus:bonus } : null);
       last = performance.now();
@@ -2899,11 +3463,11 @@ const Game = (() => {
    ========================================================================= */
 Game.register('creator', (() => {
   let t = 0, tab = 0, cfg, name, bob, petals = 0, entered = 0;
-  const TABS = ['YOU','HAIR','FIT','NAME'];
+  const TABS = ['CAT','COAT','FIT','NAME'];
   const GENDERS = [
-    { k:'girl', label:'GIRL',  body:0, hair:1 },
-    { k:'boy',  label:'BOY',   body:1, hair:0 },
-    { k:'them', label:'THEM',  body:0, hair:4 }
+    { k:'girl', label:'GIRL',  body:0, pattern:3 },
+    { k:'boy',  label:'BOY',   body:1, pattern:1 },
+    { k:'them', label:'THEM',  body:0, pattern:5 }
   ];
   const KEYS = ['ABCDEFG','HIJKLMN','OPQRSTU','VWXYZ_'];
 
@@ -2983,8 +3547,8 @@ Game.register('creator', (() => {
       /* --- title -------------------------------------------------------- */
       const slide = ease.back(entered);
       c.save(); c.translate(0, (1-slide)*-60);
-      ctxt(c, VW/2, 14, 'WHO ARE YOU?', P.white, 2, P.ink);
-      ctxt(c, VW/2, 32, 'the sky is waiting', rgba(P.white,.8), 1, P.ink);
+      ctxt(c, VW/2, 14, 'WHICH CAT ARE YOU?', P.white, 2, P.ink);
+      ctxt(c, VW/2, 32, 'the sky is waiting, and so is the exam', rgba(P.white,.8), 1, P.ink);
       c.restore();
 
       /* --- tabs --------------------------------------------------------- */
@@ -3001,33 +3565,35 @@ Game.register('creator', (() => {
       panel(c, 8, py, VW-16, ph, rgba('#1b1030',.92), { r:4 });
 
       if (tab === 0) {
-        ctxt(c, VW/2, py+8, 'PICK YOUR LOOK', P.gold, 1);
+        ctxt(c, VW/2, py+8, 'PICK YOUR CAT', P.gold, 1);
         const gi = GENDERS.findIndex(g => g.k === (cfg.gender||'girl'));
         const g = chips(c, 18, py+20, VW-36, GENDERS.map(x=>x.label), gi < 0 ? 0 : gi, 'gen');
         if (g >= 0) { cfg.gender = GENDERS[g].k; cfg.body = GENDERS[g].body;
-                      if (!cfg.touchedHair) cfg.hair = GENDERS[g].hair; SFX.play('power'); }
-        ctxt(c, VW/2, py+56, 'SKIN', P.grey, 1);
-        const sk = swatches(c, 38, py+70, 6, 36, AV.SKINS, cfg.skin, 'sk');
-        if (sk >= 0) cfg.skin = sk;
-        ctxt(c, VW/2, py+120, 'BUILD', P.grey, 1);
-        const b = chips(c, 60, py+134, VW-120, ['SLIM','SOLID'], cfg.body, 'bd');
+                      if (!cfg.touchedCoat) cfg.pattern = GENDERS[g].pattern; SFX.play('power'); }
+        ctxt(c, VW/2, py+56, 'FUR', P.grey, 1);
+        const sk = swatches(c, 22, py+70, 6, 48, AV.FURS, cfg.fur, 'fu');
+        if (sk >= 0) cfg.fur = sk;
+        ctxt(c, VW/2, py+176, 'BUILD', P.grey, 1);
+        const b = chips(c, 60, py+190, VW-120, ['LITHE','CHONK'], cfg.body, 'bd');
         if (b >= 0) cfg.body = b;
       } else if (tab === 1) {
-        ctxt(c, VW/2, py+8, 'HAIR STYLE', P.gold, 1);
-        const h = chips(c, 18, py+20, VW-36, AV.STYLES.map(s=>s.toUpperCase()), cfg.hair, 'hs', 3);
-        if (h >= 0) { cfg.hair = h; cfg.touchedHair = 1; }
-        ctxt(c, VW/2, py+90, 'HAIR COLOUR', P.gold, 1);
-        const hc = swatches(c, 22, py+104, 6, 48, AV.HAIRS, cfg.hairCol, 'hc');
-        if (hc >= 0) cfg.hairCol = hc;
+        ctxt(c, VW/2, py+8, 'COAT PATTERN', P.gold, 1);
+        const h = chips(c, 18, py+20, VW-36, AV.PATTERNS.map(s=>s.toUpperCase()), cfg.pattern, 'pt', 3);
+        if (h >= 0) { cfg.pattern = h; cfg.touchedCoat = 1; }
+        ctxt(c, VW/2, py+90, 'MARKINGS', P.gold, 1);
+        const hc = swatches(c, 22, py+104, 6, 48, AV.MARKS, cfg.mark, 'mk');
+        if (hc >= 0) cfg.mark = hc;
+        ctxt(c, VW/2, py+210, 'stripes, patches and points use this colour', P.grey, 1);
       } else if (tab === 2) {
-        ctxt(c, VW/2, py+8, 'SHIRT', P.gold, 1);
-        const tp = chips(c, 18, py+20, VW-36, ['PLAIN','STRIPE','HOODIE'], cfg.top, 'tp');
-        if (tp >= 0) cfg.top = tp;
-        const sc2 = swatches(c, 32, py+52, 5, 48, AV.SHIRTS, cfg.shirtCol, 'sc');
+        ctxt(c, VW/2, py+8, 'EYES', P.gold, 1);
+        const ey = swatches(c, 48, py+20, 7, 36, AV.EYES, cfg.eyes, 'ey');
+        if (ey >= 0) cfg.eyes = ey;
+        ctxt(c, VW/2, py+64, 'WHAT THEY WEAR', P.gold, 1);
+        const tp = chips(c, 18, py+76, VW-36, AV.OUTFITS.map(s=>s.toUpperCase()), cfg.outfit, 'of', 2);
+        if (tp >= 0) cfg.outfit = tp;
+        ctxt(c, VW/2, py+136, 'COLOUR', P.gold, 1);
+        const sc2 = swatches(c, 32, py+150, 5, 48, AV.SHIRTS, cfg.shirtCol, 'sc');
         if (sc2 >= 0) cfg.shirtCol = sc2;
-        ctxt(c, VW/2, py+118, 'TROUSERS', P.gold, 1);
-        const pc = swatches(c, 62, py+132, 6, 36, AV.PANTS, cfg.pants, 'pc');
-        if (pc >= 0) cfg.pants = pc;
       } else {
         ctxt(c, VW/2, py+6, 'YOUR NAME', P.gold, 1);
         panel(c, 60, py+18, VW-120, 22, '#2e1b50');
@@ -3053,7 +3619,7 @@ Game.register('creator', (() => {
       /* --- bottom actions ------------------------------------------------ */
       if (UI.btn(c, 12, 592, 104, 30, 'SURPRISE', { col:'#6a27c8', col2:P.purple, scale:1 })) {
         const g = pick(GENDERS);
-        cfg = Object.assign(AV.randomCfg(), { gender:g.k, body:g.body, touchedHair:1 });
+        cfg = Object.assign(AV.randomCfg(), { gender:g.k, body:g.body, touchedCoat:1 });
         SFX.play('power'); FX.stars(VW/2, gy-40, 14);
       }
       const ready = (name.trim().length > 0) || tab !== 3;
@@ -3087,7 +3653,7 @@ Game.register('island', (() => {
   const ICX = 180, ICY = 368, IRX = 156, IRY = 64;   /* the grass disc */
   const CX = 180, CY = 370, RX = 128, RY = 50;       /* where feet may go */
   /* things further back are drawn smaller — cheap, convincing depth */
-  const depthScale = y => 0.95 + clamp((y - (ICY-IRY)) / (IRY*2), 0, 1) * 0.38;
+  const depthScale = y => (y > ICY + 6 ? 2 : 1);   /* two zoom steps, never a fraction */
   const inside = (x,y) => ((x-CX)/RX)**2 + ((y-CY)/RY)**2 <= 1;
   function randomSpot() {
     for (let i=0;i<30;i++) {
@@ -3241,7 +3807,7 @@ Game.register('island', (() => {
       let tapped = null;
       for (const it of items) {
         if (it.kind === 'b') {
-          const r = drawBuilding(c, it.b.type, it.x, it.y, it.b.lvl, t, depthScale(it.y));
+          const r = drawBuilding(c, it.b.type, it.x, it.y, it.b.lvl, t, 1);
           const z = UI.zone(r.x, r.y, r.w, r.h, 'b'+it.plot);
           if (z.over) { c.globalAlpha = .2; pbox(c, r.x-2, r.y-2, r.w+4, r.h+4, P.white, 3); c.globalAlpha = 1; }
           if (z.click && !popup) tapped = { type:'building', b:it.b };
@@ -3278,8 +3844,12 @@ Game.register('island', (() => {
           const z = UI.zone(it.x-14, it.y-22, 28, 26, 'p'+it.plot);
           if (z.click && !popup) tapped = { type:'plot', plot:it.plot };
         } else if (it.kind === 'hero') {
-          const hs = depthScale(hero.y)*1.35;
-          AV.draw(c, hero.x, hero.y, S.d.cfg, hero.st === 'walk' ? 'walk' : hero.st, hero.f, { scale:hs, flip:hero.flip });
+          const hs = 2;
+          /* a little squash on each footfall — the whole game bounces */
+          const sq = hero.st === 'walk' ? 1 + (hero.f % 2 ? .06 : -.04)
+                   : hero.st === 'idle' ? 1 + Math.sin(t*3)*.02 : 1;
+          AV.draw(c, hero.x, hero.y, S.d.cfg, hero.st === 'walk' ? 'walk' : hero.st, hero.f,
+                  { scale:hs, flip:hero.flip, squash:sq });
           if (hero.st === 'sleep') { /* a blanket of Zs handled by particles */ }
           const z = UI.zone(hero.x-18, hero.y-46, 36, 48, 'hero');
           if (z.click && !popup) { hero.st = 'cheer'; hero.timer = 1.2; SFX.play('pop');
@@ -3288,7 +3858,7 @@ Game.register('island', (() => {
           ctxt(c, hero.x, hero.y - 34*hs, S.d.name, P.white, 1, P.ink);
         } else if (it.kind === 'pet' && pet) {
           spr(c, pet.def.spr, pet.x, pet.y - 10 + pet.bob, { center:true, flip:pet.flip,
-                                                             scale: depthScale(pet.y) });
+                                                             scale: 1 });
         } else if (it.kind === 'chest') {
           const n = S.d.chests.length;
           const by = Math.sin(t*2.4)*2;
@@ -3298,10 +3868,25 @@ Game.register('island', (() => {
           const z = UI.zone(it.x-14, 390, 30, 30, 'chest');
           if (z.click && !popup) Game.go('chest');
         } else if (it.kind === 'mine') {
-          drawRock(c, MINE.x, MINE.y, 1.2, 77);
-          const z = UI.zone(MINE.x-14, MINE.y-20, 28, 24, 'mine');
-          if (z.over) ctxt(c, MINE.x, MINE.y-28, 'MINE', P.white, 1, P.ink);
-          if (z.click && !popup) Game.go('minigame', { kind:'mine' });
+          /* the way down into The Deep: a timber frame over a dark hole */
+          const mx = MINE.x, my = MINE.y;
+          c.fillStyle = P.shadow; pxEllipse(c, mx, my, 15, 7, '#0a0714');
+          c.fillStyle = '#05030c'; pxEllipse(c, mx, my-1, 13, 5, '#05030c');
+          c.fillStyle = P.wood3;
+          c.fillRect(mx-16, my-22, 4, 22); c.fillRect(mx+12, my-22, 4, 22);
+          c.fillRect(mx-18, my-26, 36, 5);
+          c.fillStyle = P.wood2; c.fillRect(mx-18, my-26, 36, 2);
+          c.fillStyle = P.wood;  c.fillRect(mx-16, my-22, 4, 2); c.fillRect(mx+12, my-22, 4, 2);
+          for (let i=0;i<3;i++) {
+            const gy2 = my - 2 - ((t*14 + i*9) % 20);
+            c.globalAlpha = .5; c.fillStyle = P.purple;
+            c.fillRect(Math.round(mx - 5 + Math.sin(t*2+i)*5), Math.round(gy2), 2, 2);
+            c.globalAlpha = 1;
+          }
+          ctxt(c, mx, my-36, 'THE DEEP', P.pink, 1, P.ink);
+          const z = UI.zone(mx-20, my-30, 40, 34, 'mine');
+          if (z.over) ctxt(c, mx, my+6, 'dig for ore', P.white, 1, P.ink);
+          if (z.click && !popup) Game.go('deep');
         }
       }
       /* the choppable tree sits behind everything, so handle it separately */
@@ -3356,29 +3941,40 @@ Game.register('island', (() => {
       }
 
       /* --- bottom nav ---------------------------------------------------- */
-      const navY = 568;
-      pbox(c, -2, navY-6, VW+4, 82, rgba(P.ink,.92), 4);
-      hline(c, 0, navY-6, VW, rgba(P.purple,.6));
-      if (UI.btn(c, 8, navY, 74, 30, 'BUILD', { col:'#6a4a10', col2:'#c08a4a', icon:'i_wood', scale:1 }))
-        Game.go('build');
-      if (UI.btn(c, 88, navY, 74, 30, 'DECK', { col:'#2358c9', col2:'#49a7ff', icon:'i_book', scale:1 }))
-        Game.go('dex');
-      if (UI.btn(c, 168, navY, 74, 30, 'RANK', { col:'#6a27c8', col2:'#a35cff', icon:'i_trophy', scale:1 }))
-        Game.go('rank');
-      if (UI.btn(c, 248, navY, 104, 30, 'ADVENTURE', { col:'#1a7331', col2:'#3fe07a', glow:P.gold, scale:1 }))
+      const navY = 556;
+      pbox(c, -2, navY-8, VW+4, 96, rgba(P.ink,.93), 4);
+      hline(c, 0, navY-8, VW, rgba(P.purple,.6));
+      /* the two things this game is for, given the whole top row */
+      if (UI.btn(c, 8, navY, 168, 40, 'ADVENTURE',
+                 { col:'#1a7331', col2:'#3fe07a', glow:P.gold, scale:2 }))
         Game.go('map');
-      /* second row: small utilities */
-      if (UI.btn(c, 8, navY+34, 74, 26, 'ME', { col:'#3a2a5e', col2:'#5a4790', scale:1 })) Game.go('creator');
-      if (UI.btn(c, 88, navY+34, 74, 26, 'PETS', { col:'#3a2a5e', col2:'#5a4790', icon:'i_paw', scale:1 }))
-        popup = { type:'pets' };
-      if (UI.btn(c, 168, navY+34, 74, 26, 'GEAR', { col:'#3a2a5e', col2:'#5a4790', icon:'i_sword', scale:1 }))
-        popup = { type:'gear' };
-      if (UI.btn(c, 248, navY+34, 50, 26, S.d.sound ? 'ON' : 'OFF',
-                 { col:'#3a2a5e', col2:'#5a4790', icon:'i_speaker', scale:1 })) {
-        S.d.sound = SFX.toggle(); S.save();
+      const dl = AI.material().examDate
+        ? Math.ceil((new Date(AI.material().examDate + 'T23:59:59') - Date.now())/86400000) : null;
+      if (UI.btn(c, 184, navY, 168, 40, 'STUDY',
+                 { col:'#2358c9', col2:P.blue, glow:P.cyan, scale:2 }))
+        Game.go('study');
+      if (dl != null && dl >= 0) {
+        pbox(c, 296, navY-6, 56, 14, dl <= 3 ? P.red : '#b3600f', 3);
+        ctxt(c, 324, navY-4, dl + 'd', P.white, 1);
       }
-      if (UI.btn(c, 302, navY+34, 50, 26, 'INFO', { col:'#3a2a5e', col2:'#5a4790', scale:1 }))
-        popup = { type:'info' };
+      /* everything else, small */
+      const small = [
+        ['BASE',  '#6a4a10', '#c08a4a', 'i_wood',  () => Game.go('build')],
+        ['CARDS', '#2358c9', '#49a7ff', 'i_book',  () => Game.go('dex')],
+        ['RANK',  '#6a27c8', '#a35cff', 'i_trophy',() => Game.go('rank')],
+        ['PETS',  '#3a2a5e', '#5a4790', 'i_paw',   () => { popup = { type:'pets' }; }],
+        ['GEAR',  '#3a2a5e', '#5a4790', 'i_sword', () => { popup = { type:'gear' }; }],
+        ['LABS',  '#6a27c8', '#a35cff', 'i_flask', () => Game.go('lab')],
+        ['ME',    '#3a2a5e', '#5a4790', null,      () => Game.go('creator')]
+      ];
+      small.forEach((b,i) => {
+        const x = 8 + (i%7)*50;
+        if (UI.btn(c, x, navY+46, 46, 24, b[0], { col:b[1], col2:b[2], key:'nv'+i })) b[4]();
+      });
+      if (UI.btn(c, 8, navY+74, 170, 12, S.d.sound ? 'SOUND ON' : 'SOUND OFF',
+                 { col:'#241640', col2:'#3a2a5e', shadow:false })) { S.d.sound = SFX.toggle(); S.save(); }
+      if (UI.btn(c, 182, navY+74, 170, 12, 'HOW IT WORKS',
+                 { col:'#241640', col2:'#3a2a5e', shadow:false })) popup = { type:'info' };
 
       if (tapped) { popup = tapped; SFX.play('tap'); }
       if (popup) drawPopup(c);
@@ -3860,6 +4456,8 @@ Game.register('map', (() => {
       pbox(c, 13, y+1, 64, 64, 'rgba(0,0,0,0)', 3);
 
       txt(c, 84, y+8, p.name, open ? p.col : P.grey, 2, P.shadow);
+      if (list[i].mine) { pbox(c, 84 + tw(p.name,2) + 6, y+7, 34, 12, '#1a7331', 2);
+                          ctxt(c, 101 + tw(p.name,2) + 6, y+9, 'YOURS', P.lime, 1); }
       txt(c, 84, y+26, p.sub, P.grey, 1);
       bar(c, 84, y+38, 170, 6, pr.cleared/p.nodes.length, open ? p.col : '#4a4a6a', { shine:t });
       txt(c, 84, y+48, pr.cleared + '/' + p.nodes.length + ' STOPS', P.bone, 1);
@@ -3880,19 +4478,13 @@ Game.register('map', (() => {
     }
 
     /* custom decks get their own world */
-    panel(c, 10, y, VW-20, 52, '#241640', { r:4 });
-    spr(c, 'i_book', 42, y+26, { center:true, scale:2 });
-    txt(c, 78, y+8, 'YOUR OWN LESSONS', P.cyan, 2, P.shadow);
-    txt(c, 78, y+26, S.d.decks.length + ' custom ' + plural(S.d.decks.length,'deck'), P.grey, 1);
-    txt(c, 78, y+38, 'write one in the DECK screen', P.grey, 1);
-    const hasDeck = S.d.decks.some(d => d.cards.filter(x=>x.term&&x.def).length >= 2);
-    if (UI.btn(c, VW-84, y+12, 66, 28, hasDeck ? 'TRAIN' : 'WRITE',
-               { col:'#2358c9', col2:P.blue, key:'cust' })) {
-      if (hasDeck) {
-        const deck = S.d.decks.find(d => d.cards.filter(x=>x.term&&x.def).length >= 2);
-        Game.go('battle', { mode:'custom', deckId:deck.id });
-      } else Game.go('dex', { tab:2 });
-    }
+    panel(c, 10, y, VW-20, 56, '#241640', { r:4 });
+    spr(c, 'i_paw', 42, y+28, { center:true, scale:2 });
+    txt(c, 78, y+8, 'MAKE YOUR OWN', P.cyan, 2, P.shadow);
+    txt(c, 78, y+26, 'give the tutor your notes and it builds', P.grey, 1);
+    txt(c, 78, y+38, 'a world like these out of them', P.grey, 1);
+    if (UI.btn(c, VW-84, y+14, 66, 28, 'NOTES', { col:'#2358c9', col2:P.blue, key:'cust' }))
+      Game.go('study', { tab:1 });
   }
 
   /* --- the trail --------------------------------------------------------- */
@@ -3949,7 +4541,7 @@ Game.register('map', (() => {
       pbox(c, pos.x-R/1.6, y-R/1.6+bob, R*1.25, R*1.25, P.ink, 4);
       pbox(c, pos.x-R/1.6+1, y-R/1.6+1+bob, R*1.25-2, R*1.25-2, bcol, 4);
       pbox(c, pos.x-R/1.6+1, y-R/1.6+1+bob, R*1.25-2, 3, shade(bcol,.4), 3);
-      spr(c, locked ? 'i_lock' : k.icon, pos.x, y+bob, { center:true, scale: isBoss?2:1.4 });
+      spr(c, locked ? 'i_lock' : k.icon, pos.x, y+bob, { center:true, scale: isBoss?3:2 });
       if (cleared) UI.stars(c, pos.x, y+R/1.6+5+bob, pr.stars[i]||0, 3, 1);
       txt(c, pos.x + R/1.6 + 6, y-4+bob, String(i+1), rgba(P.white,.7), 1, P.ink);
 
@@ -3998,6 +4590,7 @@ Game.register('battle', (() => {
   let timeLimit, timeLeft, relics, answered, correct, damageTaken, chosen;
   let shakeFoe, foeFlash, meFlash, result, typed, keypad;
   let stars, rewards, banner, ultReady, petTick;
+  let aiPanel = null, lastWrong = null, hintUsed = false;
 
   const R = id => relics.includes(id);
 
@@ -4037,7 +4630,7 @@ Game.register('battle', (() => {
     if (R('glasses')) burnOne();
     timeLimit = 14 + (R('time') ? 4 : 0) - (mode === 'boss' ? 2 : 0);
     timeLeft = timeLimit;
-    chosen = -1;
+    chosen = -1; hintUsed = false;
     phase = 'q'; phaseT = 0;
   }
   function burnOne(n) {
@@ -4109,9 +4702,10 @@ Game.register('battle', (() => {
       petTick++;
     } else {
       me.combo = 0;
+      lastWrong = { q:q.q, given:card.opt, correct:q.a };
       act = { type:'miss', t:0, dur:.5, i };
       phase = 'resolve'; phaseT = 0;
-      FX.float(cards[i] ? VW/2 : VW/2, 300, 'WRONG', P.red, { scale:2 });
+      FX.float(VW/2, 300, 'WRONG', P.red, { scale:2 });
     }
   }
   function heatEgg(n) {
@@ -4210,7 +4804,7 @@ Game.register('battle', (() => {
       me = { hp:S.maxHp(), maxHp:S.maxHp(), focus:0, combo:0, best:0, x:70, y:556 };
       intent = foe.boss ? 3 : 4;
       shakeFoe = 0; foeFlash = 0; meFlash = 0; draft = null; hatchPet = null; result = null;
-      banner = 1.6; ultReady = false;
+      banner = 1.6; ultReady = false; aiPanel = null; lastWrong = null; hintUsed = false;
       phase = 'intro'; phaseT = 0; act = null;
       SFX.music(false); SFX.duck(.05);
       nextQuestion();
@@ -4220,7 +4814,9 @@ Game.register('battle', (() => {
     back() { if (phase === 'win' || phase === 'lose') leave(); },
 
     update(dt) {
-      t += dt; phaseT += dt;
+      t += dt;
+      if (aiPanel) return;                       /* the fight waits for the tutor */
+      phaseT += dt;
       foe.bob = Math.sin(t*2.2)*3;
       if (shakeFoe > 0) shakeFoe -= dt;
       if (foeFlash > 0) foeFlash -= dt;
@@ -4314,11 +4910,15 @@ Game.register('battle', (() => {
         AV.draw(c, fx, 178, foe.cfg, phase === 'resolve' && act && act.type === 'foeStrike' ? 'attack' : 'idle',
                 Math.floor(t*3)%2, { scale:2.6 });
       } else {
-        const sq = shakeFoe > 0 ? 1 + shakeFoe*.4 : 1;
         const fsc = foe.boss ? 5 : 4;
         c.globalAlpha = .25; pxEllipse(c, fx, 172, 8*fsc, 2.4*fsc, '#000'); c.globalAlpha = 1;
-        spr(c, foe.spr, fx, fy, { center:true, scale:fsc, swap:foe.swap });
-        if (foeFlash > 0) spr(c, foe.spr, fx, fy, { center:true, scale:fsc, swap:foe.swap, tint:'#ffffff', tintAmt:foeFlash*4 });
+        /* squash on impact, then an elastic overshoot back — cartoon weight */
+        const fsq = shakeFoe > 0 ? 1 + shakeFoe*1.1 : 1 + Math.sin(t*2.4)*.03;
+        const iw = Math.round(16*fsc*fsq), ih = Math.round(16*fsc*(2-fsq));
+        const img = ART.get(foe.spr, foe.swap);
+        c.drawImage(img, Math.round(fx-iw/2), Math.round(fy-ih/2), iw, ih);
+        if (foeFlash > 0) spr(c, foe.spr, fx, fy, { center:true, scale:fsc, swap:foe.swap,
+                                                     tint:'#ffffff', tintAmt:foeFlash*4 });
       }
       /* name + hp */
       const hpW = 190;
@@ -4499,8 +5099,58 @@ Game.register('battle', (() => {
       if (phase === 'q' && UI.btn(c, VW-44, 4, 38, 18, 'FLEE', { col:'#3a2a5e', col2:'#5a4790' })) {
         S.addTrophies(mode === 'duel' ? -10 : -2); leave();
       }
+
+      /* --- the tutor, in the middle of a fight ---------------------------- */
+      if (phase === 'q' && !keypad && AI.available()) {
+        if (UI.btn(c, VW-62, 284, 54, 16, hintUsed ? 'HINTED' : 'HINT',
+                   { col: hintUsed ? '#241640' : '#2358c9', col2: hintUsed ? '#3a2a5e' : P.blue,
+                     disabled: hintUsed, shadow:false })) {
+          hintUsed = true;
+          openTutor('A NUDGE', cb => AI.hint(q.q, cards.filter(x=>!x.dead).map(x=>x.opt), cb));
+        }
+      }
+      if (phase === 'resolve' && lastWrong && act && act.type === 'miss' && AI.available()) {
+        if (UI.btn(c, VW/2-70, 284, 140, 18, 'WHY WAS THAT WRONG?',
+                   { col:'#8a2a10', col2:P.orange, shadow:false }))
+          openTutor('WHY', cb => AI.explain(lastWrong.q, lastWrong.given, lastWrong.correct, cb));
+      }
+      if (aiPanel) drawTutorPanel(c);
     }
   };
+
+  /* ---- the tutor overlay -------------------------------------------------- */
+  function openTutor(label, fn) {
+    aiPanel = { label, text:'', err:'', done:false };
+    SFX.play('power');
+    fn(({ text }) => { if (aiPanel) aiPanel.text = text; })
+      .then(txt2 => { if (aiPanel) { aiPanel.text = txt2 || aiPanel.text; aiPanel.done = true; } })
+      .catch(e => { if (aiPanel) { aiPanel.err = AI.errText(e); aiPanel.done = true; } });
+  }
+  function drawTutorPanel(c) {
+    c.fillStyle = rgba(P.shadow,.92); c.fillRect(0,0,VW,VH);
+    const boxY = 190;
+    panel(c, 16, boxY, VW-32, 200, '#241640', { r:4 });
+    pbox(c, 16, boxY, VW-32, 4, P.cyan, 3);
+    AV.draw(c, 56, boxY+84, S.d.cfg, aiPanel.err ? 'hurt' : 'idle', Math.floor(t*3)%2,
+            { scale:2, shadow:false });
+    txt(c, 100, boxY+12, aiPanel.label === 'WHY' ? 'THE TUTOR SAYS' : 'A NUDGE', P.gold, 1);
+    const body = aiPanel.err || aiPanel.text;
+    if (!body) {
+      txt(c, 100, boxY+34, 'thinking' + '.'.repeat(1+Math.floor(t*2)%3), P.grey, 1);
+      bar(c, 100, boxY+50, VW-140, 5, (t*.4)%1, P.cyan, { shine:t*2 });
+    } else {
+      wrap(body, VW-70, 1).slice(0,11).forEach((l,i) =>
+        txt(c, 30, boxY+34+i*13, l, aiPanel.err ? P.red : P.bone, 1));
+    }
+    if (aiPanel.label === 'WHY' && lastWrong && !aiPanel.err) {
+      txt(c, 30, boxY+168, 'CORRECT: ' + String(lastWrong.correct).slice(0,30), P.lime, 1);
+    }
+    if (UI.btn(c, VW/2-70, boxY+176, 140, 22, aiPanel.done ? 'GOT IT' : 'SKIP',
+               { col:'#1a7331', col2:'#3fe07a' })) {
+      if (aiPanel.label === 'WHY' && aiPanel.done) S.dailyTick(0);
+      aiPanel = null;
+    }
+  }
 
   /* ---- overlays ---------------------------------------------------------- */
   function drawIntro(c) {
@@ -5643,5 +6293,1296 @@ Game.register('dex', (() => {
       Game.go('battle', { mode:'custom', deckId:d.id });
     ctxt(c, VW/2, VH-20, n + ' usable ' + plural(n,'card') + ' — drag to scroll', P.grey, 1);
   }
+})());
+</script>
+<script>
+/* =========================================================================
+   STUDY — the half of the game that is not a game.
+
+   PLAN   the exam countdown, today's session, the whole dated plan
+   NOTES  what you have fed the tutor, and turning it into playable worlds
+   TUTOR  a cat that has read your notes and will answer questions
+   ========================================================================= */
+Game.register('study', (() => {
+  let t = 0, tab = 0, scroll = 0, maxScroll = 0, dragging = false, startScroll = 0;
+  let busy = null;            /* { label, streamed, err, kind } */
+  let chat = [];              /* {role, content} */
+  let chatStream = '', chatErr = '';
+  const TABS = ['PLAN','NOTES','TUTOR'];
+
+  const a = () => AI.material();
+  const daysLeft = () => {
+    const d = a().examDate;
+    if (!d) return null;
+    return Math.ceil((new Date(d + 'T23:59:59') - Date.now()) / 86400000);
+  };
+  const KIND = { learn:{ c:'#49a7ff', n:'LEARN' }, practice:{ c:'#3fe07a', n:'PRACTISE' },
+                 review:{ c:'#ffd23f', n:'REVIEW' }, rest:{ c:'#9a8fb5', n:'REST' } };
+
+  function run(kind, label, fn) {
+    busy = { kind, label, streamed:'', err:'' };
+    const onText = ({ text }) => { if (busy && busy.kind === kind) busy.streamed = text; };
+    fn(onText).then(res => {
+      busy = null; SFX.play('levelup'); FX.confetti(VW/2, 220, 50);
+      if (kind === 'pack' && res) UI.toast(res.name + ' IS ON THE MAP', res.col, 'i_book');
+      if (kind === 'plan') UI.toast('PLAN READY', P.gold, 'i_clock');
+      if (kind === 'retune') { tab = 0; UI.toast('PLAN RETUNED', P.cyan, 'i_bolt'); }
+    }).catch(e => {
+      if (busy) { busy.err = AI.errText(e); busy.done = true; }
+      SFX.play('wrong');
+    });
+  }
+
+  return {
+    enter(data) {
+      t = 0; scroll = 0; busy = null;
+      if (data && data.tab != null) tab = data.tab;
+      AI.boot();
+    },
+    back() { if (Sheet.isOpen()) { Sheet.close(); return; } Game.go('island'); },
+    update(dt) {
+      t += dt;
+      if (Sheet.isOpen()) return;
+      if (Input.justDown) { dragging = true; startScroll = scroll; }
+      if (Input.down && dragging && Math.abs(Input.dy) > 3) scroll = clamp(startScroll + Input.dy, -maxScroll, 0);
+      if (!Input.down) dragging = false;
+      scroll = clamp(scroll - Input.wheel*26, -maxScroll, 0);
+    },
+
+    draw(c) {
+      drawSky(c, t*.25, { top:'#161036', mid:'#33215e', bot:'#5b3a8e', sun:false, stars:true });
+      c.fillStyle = rgba(P.ink,.5); c.fillRect(0,0,VW,VH);
+      UI.topBar(c);
+      if (UI.btn(c, 8, 34, 36, 22, '<', { col:'#4a3a70', col2:'#6b56a0' })) Game.go('island');
+
+      /* --- exam header -------------------------------------------------- */
+      const d = daysLeft();
+      panel(c, 10, 32, VW-20, 40, '#241640', { r:4 });
+      const subj = (a().subject || 'YOUR EXAM').toUpperCase().slice(0,20);
+      ctxt(c, VW/2, 38, subj, P.gold, 2, P.shadow);
+      if (d == null) ctxt(c, VW/2, 58, 'no exam date set yet', P.grey, 1);
+      else if (d < 0) ctxt(c, VW/2, 58, 'that exam has been and gone', P.grey, 1);
+      else {
+        const col = d <= 3 ? P.red : d <= 10 ? P.orange : P.lime;
+        ctxt(c, VW/2, 58, d === 0 ? 'IT IS TODAY. GOOD LUCK.' : d + ' ' + plural(d,'DAY') + ' TO GO', col, 1);
+      }
+      if (UI.btn(c, VW-52, 36, 44, 20, d == null ? 'SET' : 'EDIT',
+                 { col:'#6a27c8', col2:P.purple })) Sheet.examDate();
+
+      for (let i=0;i<TABS.length;i++)
+        if (UI.btn(c, 10 + i*114, 78, 110, 24, TABS[i],
+                   { col: tab===i?'#6a27c8':'#2e1b50', col2: tab===i?P.purple:'#3f2a68',
+                     txt: tab===i?P.white:P.grey })) { tab = i; scroll = 0; }
+
+      /* --- tutor status strip ------------------------------------------- */
+      const okAI = AI.available();
+      pbox(c, 10, 106, VW-20, 16, rgba(okAI ? '#1a5a33' : '#3a2a5e', .8), 3);
+      spr(c, 'i_paw', 14, 108);
+      txt(c, 30, 110, AI.statusLine(), okAI ? P.lime : P.grey, 1);
+
+      c.save(); c.beginPath(); c.rect(0, 126, VW, VH-126); c.clip();
+      if (busy) drawBusy(c);
+      else if (tab === 0) drawPlan(c);
+      else if (tab === 1) drawNotes(c);
+      else drawTutor(c);
+      c.restore();
+
+      /* --- bottom: straight to the cards -------------------------------- */
+      pbox(c, -2, VH-42, VW+4, 44, rgba(P.ink,.92), 4);
+      if (UI.btn(c, 8, VH-36, 108, 28, 'CARDS', { col:'#2358c9', col2:P.blue, icon:'i_book' }))
+        Game.go('dex');
+      if (UI.btn(c, 124, VH-36, 108, 28, 'DRILL', { col:'#1a7331', col2:'#3fe07a', icon:'i_bolt' }))
+        Game.go('dex', { tab:1 });
+      if (UI.btn(c, 240, VH-36, 112, 28, 'LABS', { col:'#6a27c8', col2:P.purple, icon:'i_flask' }))
+        Game.go('lab');
+    }
+  };
+
+  /* ---------------------------------------------------------------------- */
+  function drawBusy(c) {
+    const cy = 280;
+    /* the tutor cat, reading */
+    AV.draw(c, VW/2, cy, S.d.cfg, Math.floor(t*3)%2 ? 'idle' : 'blink', Math.floor(t*3)%2, { scale:3 });
+    spr(c, 'i_book', VW/2 + 26, cy - 46, { center:true, scale:2 });
+    for (let i=0;i<5;i++) {
+      const k = (t*1.4 + i*.2) % 1;
+      c.globalAlpha = 1-k;
+      spr(c, 'i_star', VW/2 + 26 + Math.sin(i)*14, cy - 56 - k*30, { center:true });
+      c.globalAlpha = 1;
+    }
+    ctxt(c, VW/2, 170, busy.err ? 'THE TUTOR STOPPED' : busy.label, busy.err ? P.red : P.gold, 2, P.ink);
+    if (busy.err) {
+      wrap(busy.err, VW-60, 1).forEach((l,i) => ctxt(c, VW/2, 200+i*12, l, P.bone, 1));
+      if (UI.btn(c, VW/2-60, 380, 120, 28, 'OK', { col:'#3a2a5e', col2:'#5a4790' })) busy = null;
+      return;
+    }
+    const dots = '.'.repeat(1 + Math.floor(t*2)%3);
+    ctxt(c, VW/2, 194, 'reading your notes' + dots, P.grey, 1);
+    bar(c, 50, 348, VW-100, 8, ((t*.35)%1), P.purple, { shine:t*2 });
+    const n = (busy.streamed||'').length;
+    ctxt(c, VW/2, 364, n ? n.toLocaleString() + ' characters written' : 'thinking', P.grey, 1);
+    ctxt(c, VW/2, 392, 'this takes a few seconds — do not leave', P.grey, 1);
+  }
+
+  /* ==== PLAN ============================================================ */
+  function drawPlan(c) {
+    const plan = a().plan;
+    if (!plan) {
+      let y = 150;
+      panel(c, 14, y, VW-28, 120, '#241640', { r:4 });
+      ctxt(c, VW/2, y+12, 'NO PLAN YET', P.gold, 2);
+      ['Give the tutor your notes and an exam', 'date, and it will lay out what to',
+       'study on which day, working back', 'from the exam.'].forEach((l,i) =>
+        ctxt(c, VW/2, y+38+i*13, l, P.bone, 1));
+      y += 132;
+      const hasMat = a().material.length > 0;
+      if (UI.btn(c, 40, y, VW-80, 34, hasMat ? 'BUILD MY PLAN' : 'ADD NOTES FIRST',
+                 { col: hasMat?'#1a7331':'#3a2a5e', col2: hasMat?'#3fe07a':'#5a4790',
+                   glow: hasMat?P.gold:null, disabled: !AI.available() || !hasMat })) {
+        run('plan', 'BUILDING YOUR PLAN', onText => AI.plan(a().examDate, a().subject, onText));
+      }
+      if (!hasMat && UI.btn(c, 40, y+44, VW-80, 30, 'GO TO NOTES', { col:'#6a27c8', col2:P.purple }))
+        { tab = 1; scroll = 0; }
+      maxScroll = 0;
+      return;
+    }
+    let y = 134 + scroll;
+    const top = y;
+    if (plan.summary) {
+      panel(c, 10, y, VW-20, 34, '#2e1b50');
+      wrap(plan.summary, VW-36, 1).slice(0,2).forEach((l,i) => txt(c, 18, y+8+i*12, l, P.bone, 1));
+      y += 40;
+    }
+    /* today */
+    const today = new Date().toISOString().slice(0,10);
+    const sessions = plan.sessions || [];
+    const todays = sessions.find(s => s.date === today) || sessions.find(s => s.date >= today) || sessions[0];
+    if (todays) {
+      panel(c, 10, y, VW-20, 72, '#1a5a33', { r:4 });
+      pbox(c, 10, y, VW-20, 4, P.lime, 3);
+      txt(c, 18, y+8, todays.date === today ? 'TODAY' : 'NEXT UP  ' + todays.date, P.lime, 1);
+      txt(c, 18, y+20, String(todays.title||'').toUpperCase().slice(0,24), P.white, 2, P.shadow);
+      wrap(todays.focus||'', VW-120, 1).slice(0,2).forEach((l,i) => txt(c, 18, y+40+i*11, l, P.bone, 1));
+      txt(c, VW-60, y+8, (todays.minutes||30) + ' MIN', P.gold, 1);
+      const done = (a().doneDays||{})[todays.date];
+      if (UI.btn(c, VW-92, y+44, 82, 22, done ? 'DONE' : 'START',
+                 { col: done?'#3a2a5e':'#b3600f', col2: done?'#5a4790':P.gold, txt: done?P.grey:P.ink })) {
+        if (!a().doneDays) a().doneDays = {};
+        a().doneDays[todays.date] = 1; S.save();
+        SFX.play('levelup'); FX.confetti(VW/2, y+40, 40);
+        const mine = a().packs[0];
+        Game.go(mine ? 'map' : 'dex', mine ? { packId:mine.id } : { tab:1 });
+      }
+      y += 80;
+    }
+    txt(c, 14, y, 'THE WHOLE PLAN', P.gold, 1); y += 14;
+    for (const s of sessions) {
+      if (y > VH) break;
+      if (y > 110) {
+        const k = KIND[s.kind] || KIND.learn;
+        const isDone = (a().doneDays||{})[s.date];
+        panel(c, 10, y, VW-20, 40, isDone ? '#1a3a28' : '#2e1b50');
+        pbox(c, 10, y, 4, 40, k.c, 2);
+        txt(c, 20, y+5, s.date + '   ' + k.n, k.c, 1);
+        txt(c, 20, y+17, String(s.title||'').slice(0,26), isDone ? P.grey : P.white, 1, P.shadow);
+        wrap(String(s.focus||''), VW-46, 1).slice(0,1).forEach(l => txt(c, 20, y+29, l, P.grey, 1));
+        txt(c, VW-52, y+5, (s.minutes||30)+'m', P.bone, 1);
+        if (isDone) spr(c, 'i_star', VW-40, y+20);
+        const z = UI.zone(10, y, VW-20, 40, 'pl'+s.date);
+        if (z.click) { if (!a().doneDays) a().doneDays = {};
+                       a().doneDays[s.date] = isDone ? 0 : 1; S.save(); SFX.play('tap'); }
+      }
+      y += 44;
+    }
+    if (y < VH - 60) {
+      if (UI.btn(c, 20, y+6, VW-40, 30, 'RETUNE AROUND MY WEAK SPOTS',
+                 { col:'#2358c9', col2:P.blue, disabled:!AI.available() }))
+        run('retune', 'WORKING OUT YOUR WEAK SPOTS', onText => AI.retune(onText));
+      y += 40;
+      const dr = (a().drills||[])[0];
+      if (dr) {
+        panel(c, 10, y, VW-20, 84, '#241640');
+        txt(c, 18, y+6, 'LAST VERDICT', P.cyan, 1);
+        wrap(dr.verdict||'', VW-36, 1).slice(0,2).forEach((l,i) => txt(c, 18, y+20+i*11, l, P.bone, 1));
+        (dr.themes||[]).slice(0,2).forEach((th,i) => txt(c, 18, y+46+i*14, '- ' + th.name + ': ' + th.fix, P.grey, 1));
+        y += 92;
+      }
+      if (UI.btn(c, 20, y, VW-40, 28, 'START AGAIN FROM MY NOTES',
+                 { col:'#3a2a5e', col2:'#5a4790', disabled:!AI.available() }))
+        run('plan', 'REBUILDING YOUR PLAN', onText => AI.plan(a().examDate, a().subject, onText));
+      y += 36;
+    }
+    maxScroll = Math.max(0, (y - scroll) - VH + 60);
+  }
+
+  /* ==== NOTES =========================================================== */
+  function drawNotes(c) {
+    let y = 134 + scroll;
+    const mats = a().material;
+    if (UI.btn(c, 10, y, VW-20, 32, 'ADD STUDY MATERIAL',
+               { col:'#1a7331', col2:'#3fe07a', icon:'i_book', glow:P.gold }))
+      Sheet.addMaterial(() => { SFX.play('chest'); UI.toast('the tutor has read it', P.lime, 'i_book'); });
+    y += 40;
+    txt(c, 14, y, mats.length ? 'WHAT IT HAS READ' : 'IT HAS READ NOTHING YET', P.gold, 1);
+    y += 14;
+    if (!mats.length) {
+      panel(c, 10, y, VW-20, 56, '#241640');
+      ['Paste a chapter, a syllabus, a past paper','or your own messy notes. Anything you',
+       'are actually being tested on.'].forEach((l,i) => ctxt(c, VW/2, y+10+i*13, l, P.grey, 1));
+      y += 64;
+    }
+    mats.forEach((m,i) => {
+      if (y > VH) return;
+      panel(c, 10, y, VW-20, 40, '#2e1b50');
+      spr(c, 'i_book', 16, y+13);
+      txt(c, 34, y+6, m.name.toUpperCase().slice(0,24), P.white, 1, P.shadow);
+      txt(c, 34, y+18, m.text.length.toLocaleString() + ' characters', P.grey, 1);
+      txt(c, 34, y+29, m.text.replace(/\s+/g,' ').slice(0,38), P.grey, 1);
+      if (UI.btn(c, VW-44, y+9, 30, 22, 'X', { col:'#8a2a3a', col2:P.red, key:'dm'+i })) {
+        AI.dropMaterial(i); SFX.play('back');
+      }
+      y += 44;
+    });
+    if (mats.length) {
+      y += 6;
+      txt(c, 14, y, 'MAKE IT PLAYABLE', P.gold, 1); y += 14;
+      panel(c, 10, y, VW-20, 46, '#241640');
+      ['Turn everything above into a world on the','adventure map: battles, matching and a sequence.']
+        .forEach((l,i) => txt(c, 18, y+9+i*13, l, P.bone, 1));
+      y += 54;
+      if (UI.btn(c, 20, y, VW-40, 34, 'BUILD A WORLD FROM THIS',
+                 { col:'#6a27c8', col2:P.purple, glow:P.gold, disabled:!AI.available() }))
+        run('pack', 'BUILDING YOUR WORLD', onText => AI.pack(a().subject, onText));
+      y += 42;
+      const made = a().packs || [];
+      if (made.length) {
+        txt(c, 14, y, 'WORLDS FROM YOUR NOTES', P.gold, 1); y += 14;
+        made.forEach((g,i) => {
+          if (y > VH) return;
+          panel(c, 10, y, VW-20, 36, '#2e1b50');
+          pbox(c, 10, y, 4, 36, g.col, 2);
+          txt(c, 20, y+6, g.name, g.col, 1, P.shadow);
+          txt(c, 20, y+19, g.rows.length + ' questions   ' + (g.pairs?'+ matching':'') + (g.seq?' + sequence':''), P.grey, 1);
+          if (UI.btn(c, VW-70, y+6, 56, 24, 'PLAY', { col:'#1a7331', col2:'#3fe07a', key:'gp'+i }))
+            Game.go('map', { packId:g.id });
+          y += 40;
+        });
+      }
+    }
+    maxScroll = Math.max(0, (y - scroll) - VH + 60);
+  }
+
+  /* ==== TUTOR =========================================================== */
+  function drawTutor(c) {
+    let y = 134 + scroll;
+    if (!chat.length && !chatStream) {
+      panel(c, 10, y, VW-20, 96, '#241640', { r:4 });
+      AV.draw(c, 48, y+82, S.d.cfg, 'idle', Math.floor(t*3)%2, { scale:2, shadow:false });
+      txt(c, 86, y+10, 'THE TUTOR', P.gold, 2, P.shadow);
+      ['It has read everything in NOTES.','Ask it why you got something wrong,','or to explain a thing properly.']
+        .forEach((l,i) => txt(c, 86, y+32+i*13, l, P.bone, 1));
+      y += 104;
+    }
+    for (const m of chat) {
+      if (y > VH) break;
+      const mine = m.role === 'user';
+      const lines = wrap(m.content, VW-64, 1);
+      const h = lines.length*12 + 14;
+      if (y + h > 110) {
+        panel(c, mine ? 46 : 10, y, VW-56, h, mine ? '#2358c9' : '#241640');
+        if (!mine) spr(c, 'i_paw', 16, y+6);
+        lines.forEach((l,i) => txt(c, mine ? 56 : 32, y+7+i*12, l, mine ? P.white : P.bone, 1));
+      }
+      y += h + 6;
+    }
+    if (chatStream) {
+      const lines = wrap(chatStream, VW-64, 1);
+      const h = lines.length*12 + 14;
+      panel(c, 10, y, VW-56, h, '#241640');
+      spr(c, 'i_paw', 16, y+6);
+      lines.forEach((l,i) => txt(c, 32, y+7+i*12, l, P.bone, 1));
+      y += h + 6;
+    } else if (chat.length && chat[chat.length-1].role === 'user') {
+      ctxt(c, VW/2, y+6, 'thinking' + '.'.repeat(1+Math.floor(t*2)%3), P.grey, 1);
+      y += 24;
+    }
+    if (chatErr) { ctxt(c, VW/2, y+4, chatErr, P.red, 1); y += 18; }
+    y += 6;
+    if (UI.btn(c, 20, y, VW-40, 32, 'ASK A QUESTION',
+               { col:'#1a7331', col2:'#3fe07a', icon:'i_paw', disabled:!AI.available() || !!chatStream }))
+      Sheet.askBox(q => sendChat(q));
+    y += 40;
+    if (chat.length && UI.btn(c, 110, y, 140, 24, 'CLEAR', { col:'#3a2a5e', col2:'#5a4790' }))
+      { chat = []; chatStream = ''; chatErr = ''; }
+    if (chat.length) y += 32;
+    maxScroll = Math.max(0, (y - scroll) - VH + 60);
+  }
+
+  function sendChat(q) {
+    chat.push({ role:'user', content:q });
+    chatErr = ''; chatStream = '';
+    scroll = -Math.max(0, maxScroll);
+    AI.chat(chat.map(m => ({ role:m.role, content:m.content })),
+            ({ text }) => { chatStream = text; })
+      .then(text => { chat.push({ role:'assistant', content:text || chatStream });
+                      chatStream = ''; SFX.play('correct'); })
+      .catch(e => { chatStream = ''; chatErr = AI.errText(e); SFX.play('wrong'); });
+  }
+
+  /* used by the battle screen's "why was I wrong" button */
+  Game.explainQueue = null;
+})());
+</script>
+<script>
+/* =========================================================================
+   THE DEEP — the mine under the island.
+
+   A side-view tile world you fall into: gravity, jumping, digging, placing,
+   ore veins that get better the further down you go, and dark you need a
+   torch to see through. Terraria's loop, shrunk to a phone screen and wired
+   to the study game — rune doors and buried chests only open for a correct
+   answer, and anything that ambushes you asks a question before it bites.
+   ========================================================================= */
+Game.register('deep', (() => {
+  const TS = 16;                                   /* tile size, one grid for everything */
+  const WW = 56, WH = 120;                         /* world size in tiles */
+  const AIR=0, GRASS=1, DIRT=2, STONE=3, COPPER=4, SILVER=5, CRYSTAL=6,
+        BEDROCK=7, LOG=8, LEAF=9, RUNE=10, CHEST=11, TORCH=12, PLANK=13;
+
+  const TILE = {
+    [GRASS]:  { n:'GRASS',  hard:1, col:'#54d64a', col2:'#35ad3c', drop:'dirt' },
+    [DIRT]:   { n:'DIRT',   hard:1, col:'#b9773d', col2:'#8a5328', drop:'dirt' },
+    [STONE]:  { n:'STONE',  hard:2, col:'#8e9bb5', col2:'#6b789c', drop:'stone' },
+    [COPPER]: { n:'COPPER', hard:3, col:'#d98a4a', col2:'#a8501f', drop:'copper', glint:'#ffc48a' },
+    [SILVER]: { n:'SILVER', hard:4, col:'#cfd9ee', col2:'#8e9bb5', drop:'silver', glint:'#ffffff' },
+    [CRYSTAL]:{ n:'CRYSTAL',hard:5, col:'#a35cff', col2:'#6a27c8', drop:'crystal', glint:'#e0b6ff' },
+    [BEDROCK]:{ n:'BEDROCK',hard:99,col:'#3a3050', col2:'#241640' },
+    [LOG]:    { n:'WOOD',   hard:2, col:'#c08a4a', col2:'#8a5a2c', drop:'wood' },
+    [LEAF]:   { n:'LEAVES', hard:1, col:'#3fe07a', col2:'#1d9a52' },
+    [RUNE]:   { n:'RUNE DOOR', hard:99, col:'#ff5fb8', col2:'#a3157a' },
+    [CHEST]:  { n:'CHEST',  hard:99, col:'#ffd23f', col2:'#b3600f' },
+    [TORCH]:  { n:'TORCH',  hard:1, col:'#ffd23f', col2:'#ff9330', drop:'torch', light:7 },
+    [PLANK]:  { n:'PLANK',  hard:1, col:'#d9a45c', col2:'#a8703a', drop:'plank' }
+  };
+  const SOLID = t => t !== AIR && t !== TORCH;
+  const PLACEABLE = ['dirt','stone','wood','plank','torch'];
+  const PLACE_TILE = { dirt:DIRT, stone:STONE, wood:LOG, plank:PLANK, torch:TORCH };
+
+  let map, cat, cam, t, haul, bag, sel, mobs, quiz, msg, msgT, over, depthBest, breaking, pack, bank;
+  let surfH;
+  let touchL, touchR;
+
+  const idx = (x,y) => y*WW + x;
+  const get = (x,y) => y < 0 ? AIR : (x<0||x>=WW||y>=WH) ? BEDROCK : map[idx(x,y)];
+  const set = (x,y,v) => { if (x>=0&&y>=0&&x<WW&&y<WH) map[idx(x,y)] = v; };
+
+  /* ---- world generation ------------------------------------------------ */
+  function build() {
+    map = new Uint8Array(WW*WH);
+    surfH = new Int16Array(WW);
+    const r = srnd(Date.now() & 0xffff);
+    const surf = [];
+    let h = 12;
+    for (let x=0;x<WW;x++) {
+      h += Math.round(r()*2-1);
+      h = clamp(h, 9, 16);
+      surf[x] = h; surfH[x] = h;
+      for (let y=0;y<WH;y++) {
+        let v = AIR;
+        if (y === h) v = GRASS;
+        else if (y > h && y < h+4) v = DIRT;
+        else if (y >= h+4) v = STONE;
+        if (y >= WH-2) v = BEDROCK;
+        map[idx(x,y)] = v;
+      }
+      /* a few trees on the surface */
+      if (r() > .86 && x > 2 && x < WW-3) {
+        const th = 3 + Math.floor(r()*3);
+        for (let i=1;i<=th;i++) set(x, h-i, LOG);
+        for (let dx=-2;dx<=2;dx++) for (let dy=-2;dy<=0;dy++)
+          if (Math.abs(dx)+Math.abs(dy) < 3 && get(x+dx,h-th+dy) === AIR) set(x+dx, h-th+dy, LEAF);
+      }
+    }
+    /* caves */
+    for (let i=0;i<26;i++) {
+      let cx = 2+r()*(WW-4), cy = 22+r()*(WH-34), a = r()*TAU;
+      const len = 8 + r()*24;
+      for (let s2=0;s2<len;s2++) {
+        a += (r()-.5)*.6;
+        cx += Math.cos(a)*1.1; cy += Math.sin(a)*.6;
+        const rr = 0.9 + r()*1.2;
+        for (let dx=-rr;dx<=rr;dx++) for (let dy=-rr;dy<=rr;dy++)
+          if (dx*dx+dy*dy <= rr*rr) {
+            const tx = Math.round(cx+dx), ty = Math.round(cy+dy);
+            if (ty > surf[clamp(Math.round(cx),0,WW-1)]+2 && ty < WH-3) set(tx,ty,AIR);
+          }
+      }
+    }
+    /* ore veins — deeper is richer */
+    const vein = (kind, count, minY, maxY, size) => {
+      for (let i=0;i<count;i++) {
+        let cx = 1+r()*(WW-2), cy = minY + r()*(maxY-minY);
+        for (let s2=0;s2<size;s2++) {
+          cx += (r()-.5)*2.4; cy += (r()-.5)*2.4;
+          const tx = Math.round(cx), ty = Math.round(cy);
+          if (get(tx,ty) === STONE) set(tx,ty,kind);
+        }
+      }
+    };
+    vein(COPPER, 46, 18, WH-6, 7);
+    vein(SILVER, 26, 42, WH-6, 5);
+    vein(CRYSTAL, 16, 68, WH-4, 4);
+    /* rune doors guarding pockets of treasure, and buried chests */
+    for (let i=0;i<9;i++) {
+      const cx = 3 + Math.floor(r()*(WW-6)), cy = 26 + Math.floor(r()*(WH-36));
+      if (get(cx,cy) === AIR) continue;
+      for (let dx=-2;dx<=2;dx++) for (let dy=-2;dy<=2;dy++) set(cx+dx,cy+dy,AIR);
+      set(cx, cy, CHEST);
+      for (let dy=-3;dy<=3;dy++) set(cx+3, cy+dy, RUNE);
+      for (let dx=-3;dx<=3;dx++) { set(cx+dx, cy-3, BEDROCK); set(cx+dx, cy+3, BEDROCK); }
+      set(cx-3, cy, RUNE);
+    }
+    return surf;
+  }
+
+  /* ---- the cat --------------------------------------------------------- */
+  function spawn(surf) {
+    const sx = Math.floor(WW/2);
+    cat = { x:(sx+.5)*TS, y:(surf[sx]-1)*TS, vx:0, vy:0, w:11, h:20, onGround:false,
+            face:1, f:0, ft:0, hp:100, maxHp:100, digT:0, hurt:0 };
+  }
+  function solidAt(px, py) { return SOLID(get(Math.floor(px/TS), Math.floor(py/TS))); }
+  function collide(nx, ny) {
+    const hw = cat.w/2;
+    for (const [ox,oy] of [[-hw,-cat.h],[hw-1,-cat.h],[-hw,-cat.h/2],[hw-1,-cat.h/2],[-hw,-1],[hw-1,-1]])
+      if (solidAt(nx+ox, ny+oy)) return true;
+    return false;
+  }
+
+  /* ---- mobs ------------------------------------------------------------ */
+  function seedMobs() {
+    mobs = [];
+    const kinds = ['m_bat','m_slime','m_shroom'];
+    for (let i=0;i<14;i++) {
+      let x, y, tries = 0;
+      do { x = 2 + Math.floor(Math.random()*(WW-4)); y = 22 + Math.floor(Math.random()*(WH-30)); tries++; }
+      while (get(x,y) !== AIR && tries < 60);
+      if (get(x,y) !== AIR) continue;
+      mobs.push({ x:(x+.5)*TS, y:(y+.5)*TS, spr:pick(kinds), dir: Math.random()<.5?-1:1,
+                  t:rnd(0,9), alive:true });
+    }
+  }
+
+  /* ---- digging --------------------------------------------------------- */
+  function reachable(tx, ty) {
+    const cx = cat.x/TS, cy = (cat.y - cat.h/2)/TS;
+    return Math.abs(tx+.5-cx) <= 3.2 && Math.abs(ty+.5-cy) <= 3.2;
+  }
+  function dig(tx, ty) {
+    const v = get(tx,ty);
+    if (v === AIR) return;
+    const def = TILE[v];
+    if (!def) return;
+    if (v === RUNE)  { askQuiz('rune', { tx, ty }); return; }
+    if (v === CHEST) { askQuiz('chest', { tx, ty }); return; }
+    if (def.hard >= 99) { flash('too hard to break'); return; }
+    if (!breaking || breaking.tx !== tx || breaking.ty !== ty) breaking = { tx, ty, n:0 };
+    breaking.n++;
+    SFX.play(v === STONE || v >= COPPER ? 'mine' : 'chop');
+    FX.burst(tx*TS+8 - cam.x, ty*TS+8 - cam.y, 5, [def.col, def.col2], { speed:60, g:160, size:2 });
+    if (breaking.n >= def.hard) {
+      set(tx,ty,AIR); breaking = null;
+      FX.burst(tx*TS+8 - cam.x, ty*TS+8 - cam.y, 12, [def.col, def.col2], { speed:110, g:220 });
+      if (def.drop) {
+        haul[def.drop] = (haul[def.drop]||0) + 1;
+        bag[def.drop] = (bag[def.drop]||0) + 1;
+        FX.float(tx*TS+8 - cam.x, ty*TS - cam.y, '+1 ' + def.n, def.glint || P.white, { scale:1, life:.8 });
+      }
+      if (v === CRYSTAL) { SFX.play('rarity', 2); FX.stars(tx*TS+8-cam.x, ty*TS+8-cam.y, 10, P.purple); }
+    }
+  }
+  function place(tx, ty) {
+    const key = PLACEABLE[sel];
+    if (!bag[key]) { flash('none left'); return; }
+    if (get(tx,ty) !== AIR) return;
+    const bx = Math.floor(cat.x/TS), by = Math.floor((cat.y-cat.h/2)/TS);
+    if (tx === bx && (ty === by || ty === by+1)) return;      /* do not brick yourself in */
+    set(tx,ty, PLACE_TILE[key]);
+    bag[key]--;
+    SFX.play('build');
+    FX.dust(tx*TS+8-cam.x, ty*TS+8-cam.y, 4);
+  }
+  const flash = m => { msg = m; msgT = 1.3; };
+
+  /* ---- question gates --------------------------------------------------- */
+  function askQuiz(kind, at) {
+    const q = CONTENT.question(bank);
+    quiz = { kind, at, q, pick:-1, lock:0 };
+    SFX.play('power');
+  }
+  function resolveQuiz(i) {
+    const ok = quiz.q.o[i] === quiz.q.a;
+    quiz.pick = i; quiz.lock = 1.1; quiz.ok = ok;
+    S.dailyTick(1);
+    S.sawCard(bank, quiz.q.q, quiz.q.a); S.gotCard(bank, quiz.q.q, ok);
+    if (ok) {
+      SFX.play('correct');
+      if (quiz.kind === 'rune') {
+        for (let y=0;y<WH;y++) for (let x=0;x<WW;x++) if (get(x,y) === RUNE && Math.abs(x-quiz.at.tx)<6 && Math.abs(y-quiz.at.ty)<6) set(x,y,AIR);
+        flash('the runes let you through');
+      } else if (quiz.kind === 'chest') {
+        set(quiz.at.tx, quiz.at.ty, AIR);
+        const loot = { copper:rndi(3,8), silver:rndi(1,4), crystal:rndi(0,2) };
+        for (const k in loot) { haul[k] = (haul[k]||0)+loot[k]; bag[k] = (bag[k]||0)+loot[k]; }
+        S.pushChest(S.rollRarity(.25), pack.id);
+        flash('a chest, and it came home with you');
+        FX.confetti(VW/2, 300, 50);
+      } else if (quiz.kind === 'mob') {
+        quiz.at.alive = false;
+        FX.burst(quiz.at.x-cam.x, quiz.at.y-cam.y, 22, [P.red,P.white], { speed:150 });
+        flash('driven off');
+      }
+    } else {
+      SFX.play('wrong'); FX.shake(6,.3);
+      cat.hp -= 14; cat.hurt = .5;
+      if (quiz.kind === 'mob') { quiz.at.cool = 4; }
+      flash('wrong — that hurt');
+    }
+  }
+
+  /* ---- surfacing -------------------------------------------------------- */
+  function surface(died) {
+    const keep = died ? .5 : 1;
+    const got = {};
+    const give = (res, n) => { if (n > 0) { S.give(res, n); got[res] = n; } };
+    give('wood',  Math.floor((haul.wood||0)*keep) + Math.floor((haul.plank||0)*keep));
+    give('stone', Math.floor(((haul.stone||0) + (haul.dirt||0)*0.5)*keep));
+    give('coins', Math.floor(((haul.copper||0)*9 + (haul.silver||0)*22)*keep));
+    give('essence', Math.floor((haul.crystal||0)*3*keep));
+    const xp = Math.floor((depthBest*0.7 + (haul.crystal||0)*6)*keep);
+    S.addXp(xp);
+    S.d.stats.chopped += (haul.stone||0) + (haul.dirt||0);
+    S.save();
+    over = { died, got, xp, t:0 };
+    SFX.play(died ? 'lose' : 'win');
+    if (!died) FX.confetti(VW/2, 240, 70);
+  }
+
+  /* ====================================================================== */
+  return {
+    enter(data) {
+      t = 0; haul = {}; bag = { dirt:0, stone:0, wood:0, plank:6, torch:8 };
+      sel = 4; quiz = null; msg = ''; msgT = 0; over = null; depthBest = 0; breaking = null;
+      touchL = touchR = false;
+      pack = CONTENT.pack((data && data.packId)) || pick(S.unlockedPacks().filter(u=>u.open)).pack;
+      bank = pack.bank;
+      const surf = build();
+      spawn(surf);
+      seedMobs();
+      cam = { x: cat.x - VW/2, y: cat.y - VH/2 };
+      SFX.music(false); SFX.duck(.05);
+    },
+    exit() { SFX.duck(.16); SFX.music(true); },
+    back() { if (quiz) return; if (over) Game.go('island'); else surface(false); },
+
+    update(dt) {
+      t += dt;
+      if (msgT > 0) msgT -= dt;
+      if (over) { over.t += dt; return; }
+      if (quiz) { if (quiz.lock > 0) { quiz.lock -= dt; if (quiz.lock <= 0) quiz = null; } return; }
+      if (cat.hurt > 0) cat.hurt -= dt;
+      if (cat.land > 0) cat.land -= dt;
+
+      /* movement */
+      const acc = cat.onGround ? 900 : 420;
+      if (touchL) { cat.vx -= acc*dt; cat.face = -1; }
+      if (touchR) { cat.vx += acc*dt; cat.face = 1; }
+      if (!touchL && !touchR) cat.vx *= Math.pow(.0016, dt);
+      cat.vx = clamp(cat.vx, -78, 78);
+      cat.vy = Math.min(cat.vy + 620*dt, 320);
+
+      let nx = cat.x + cat.vx*dt;
+      if (!collide(nx, cat.y)) cat.x = nx;
+      else { cat.vx = 0;
+             /* step up a single block, the way Terraria lets you walk up a lip */
+             if (cat.onGround && !collide(nx, cat.y - TS) && !collide(cat.x, cat.y - TS)) cat.y -= TS; }
+      let ny = cat.y + cat.vy*dt;
+      if (!collide(cat.x, ny)) { cat.y = ny; cat.onGround = false; }
+      else { if (cat.vy > 0) { if (!cat.onGround && cat.vy > 120) { cat.land = .22; SFX.play('step'); FX.dust(cat.x-cam.x, cat.y-cam.y, 6); } cat.onGround = true; } cat.vy = 0;
+             while (collide(cat.x, cat.y)) cat.y -= 1; }
+      cat.x = clamp(cat.x, TS, (WW-1)*TS);
+
+      if (Math.abs(cat.vx) > 6 && cat.onGround) {
+        cat.ft += dt;
+        if (cat.ft > .12) { cat.ft = 0; cat.f = (cat.f+1)%4; if (cat.f%2===0) SFX.play('step'); }
+      } else cat.f = 0;
+
+      const depth = Math.max(0, Math.floor(cat.y/TS) - 14);
+      depthBest = Math.max(depthBest, depth);
+
+      /* mobs */
+      for (const m of mobs) {
+        if (!m.alive) continue;
+        m.t += dt;
+        if (m.cool) { m.cool -= dt; }
+        const nxm = m.x + m.dir*18*dt;
+        if (SOLID(get(Math.floor(nxm/TS), Math.floor(m.y/TS)))) m.dir *= -1; else m.x = nxm;
+        m.y += Math.sin(m.t*2)*.2;
+        if (!m.cool && Math.abs(m.x-cat.x) < 14 && Math.abs(m.y-(cat.y-cat.h/2)) < 16) {
+          askQuiz('mob', m);
+        }
+      }
+
+      /* camera, easing and clamped to the world */
+      cam.x += ((cat.x - VW/2) - cam.x) * Math.min(1, dt*6);
+      cam.y += ((cat.y - VH*0.46) - cam.y) * Math.min(1, dt*6);
+      cam.x = clamp(cam.x, 0, WW*TS - VW);
+      cam.y = clamp(cam.y, -40, WH*TS - VH);
+
+      if (cat.hp <= 0) surface(true);
+    },
+
+    draw(c) {
+      const depth = Math.max(0, Math.floor(cat.y/TS) - 14);
+      /* sky fades to rock as you go down */
+      const k = clamp(depth/46, 0, 1);
+      const sky = c.createLinearGradient(0,0,0,VH);
+      sky.addColorStop(0, k < 1 ? shade('#6cc8ff', -k*.92) : '#0a0714');
+      sky.addColorStop(1, k < 1 ? shade('#2c7ff0', -Math.min(1,k*1.1)*.95) : '#06040e');
+      c.fillStyle = sky; c.fillRect(0,0,VW,VH);
+      if (k < .6) { c.globalAlpha = 1-k/.6; drawCloud(c, 60 - (cam.x*.2)%400, 60 - cam.y*.15, 1.4, .5);
+                    drawCloud(c, 260 - (cam.x*.2)%400, 110 - cam.y*.15, 1.1, .4); c.globalAlpha = 1; }
+
+      const x0 = Math.floor(cam.x/TS)-1, x1 = x0 + Math.ceil(VW/TS)+2;
+      const y0 = Math.floor(cam.y/TS)-1, y1 = y0 + Math.ceil(VH/TS)+2;
+
+      /* light map: the cat carries one, torches add their own */
+      const lights = [{ x:cat.x, y:cat.y-cat.h/2, r:5.4 }];
+      for (let y=y0;y<=y1;y++) for (let x=x0;x<=x1;x++)
+        if (get(x,y) === TORCH) lights.push({ x:(x+.5)*TS, y:(y+.5)*TS, r:7 });
+
+      /* the wall layer: what you see through a hole in the rock is more rock,
+         not the sky. Terraria lives or dies on this. */
+      for (let y=Math.max(0,y0);y<=y1;y++) {
+        for (let x=Math.max(0,x0);x<Math.min(WW,x1);x++) {
+          const sh = surfH[x] == null ? 12 : surfH[x];
+          if (y <= sh) continue;
+          const sx = Math.round(x*TS - cam.x), sy = Math.round(y*TS - cam.y);
+          const deep = y - sh;
+          const wall = deep < 4 ? '#5e3719' : deep < 30 ? '#39304a' : '#241f33';
+          c.fillStyle = wall; c.fillRect(sx, sy, TS, TS);
+          c.fillStyle = rgba('#000000',.22);
+          c.fillRect(sx, sy, TS, 1); c.fillRect(sx, sy, 1, TS);
+          const wr = srnd(x*6151 + y*233);
+          for (let i=0;i<2;i++)
+            { c.fillStyle = rgba('#ffffff',.045);
+              c.fillRect(sx+Math.floor(wr()*(TS-2)), sy+Math.floor(wr()*(TS-2)), 2, 2); }
+        }
+      }
+
+      for (let y=y0;y<=y1;y++) {
+        for (let x=x0;x<=x1;x++) {
+          const v = get(x,y);
+          if (v === AIR) continue;
+          const def = TILE[v]; if (!def) continue;
+          const sx = Math.round(x*TS - cam.x), sy = Math.round(y*TS - cam.y);
+          if (v === TORCH) {
+            c.fillStyle = P.wood3; c.fillRect(sx+7, sy+6, 2, 9);
+            const fl = .8 + .2*Math.sin(t*9 + x);
+            c.fillStyle = P.orange; c.fillRect(sx+6, sy+2, 4, 5);
+            c.fillStyle = P.gold;   c.fillRect(sx+7, sy+1, 2, 4*fl);
+            continue;
+          }
+          /* body — flat, so a solid mass does not band into stripes */
+          c.fillStyle = def.col; c.fillRect(sx, sy, TS, TS);
+          /* only the faces actually touching air get shaded */
+          if (get(x,y+1) === AIR) { c.fillStyle = def.col2; c.fillRect(sx, sy+TS-3, TS, 3); }
+          if (get(x,y-1) === AIR) { c.fillStyle = shade(def.col,.34); c.fillRect(sx, sy, TS, 3); }
+          if (get(x-1,y) === AIR) { c.fillStyle = shade(def.col,.18); c.fillRect(sx, sy, 2, TS); }
+          if (get(x+1,y) === AIR) { c.fillStyle = shade(def.col2,-.25); c.fillRect(sx+TS-2, sy, 2, TS); }
+          /* texture, stable per tile so it never crawls */
+          const rr = srnd(x*7919 + y*104729);
+          for (let i=0;i<2;i++) {
+            const px = sx + Math.floor(rr()*(TS-3)), py = sy + 3 + Math.floor(rr()*(TS-5));
+            c.fillStyle = rgba(def.col2,.45); c.fillRect(px, py, 2, 2);
+          }
+          if (def.glint) {
+            const g = srnd(x*31 + y*17);
+            for (let i=0;i<3;i++) {
+              const px = sx + 2 + Math.floor(g()*(TS-5)), py = sy + 3 + Math.floor(g()*(TS-6));
+              c.fillStyle = def.glint; c.fillRect(px, py, 2, 2);
+              c.fillStyle = shade(def.glint,-.35); c.fillRect(px+2, py+2, 1, 1);
+            }
+          }
+          if (v === RUNE) {
+            const pl = .6+.4*Math.sin(t*3 + y);
+            c.globalAlpha = pl; c.fillStyle = P.pink;
+            c.fillRect(sx+4, sy+4, 8, 2); c.fillRect(sx+7, sy+4, 2, 8); c.fillRect(sx+4, sy+10, 8, 2);
+            c.globalAlpha = 1;
+          }
+          if (v === CHEST) { spr(c, 'chestSm', sx+2, sy+3, { scale:1 }); }
+          if (breaking && breaking.tx === x && breaking.ty === y) {
+            c.fillStyle = rgba('#000000',.35);
+            const n = breaking.n / (TILE[v].hard||1);
+            for (let i=0;i<8*n;i++) { const b = srnd(i*13+x+y);
+              c.fillRect(sx+Math.floor(b()*14), sy+Math.floor(b()*14), 2, 2); }
+          }
+        }
+      }
+
+      /* mobs */
+      for (const m of mobs) {
+        if (!m.alive) continue;
+        const sx = Math.round(m.x - cam.x), sy = Math.round(m.y - cam.y);
+        if (sx < -40 || sx > VW+40 || sy < -40 || sy > VH+40) continue;
+        spr(c, m.spr, sx, sy + Math.sin(m.t*3)*2, { center:true, scale:1, flip:m.dir<0 });
+        if (m.cool) { c.globalAlpha = .5; ctxt(c, sx, sy-16, 'zzz', P.white, 1, P.ink); c.globalAlpha = 1; }
+      }
+
+      /* the cat */
+      const pose = !cat.onGround ? 'attack' : Math.abs(cat.vx) > 6 ? 'walk' : cat.digT > 0 ? 'dig' : 'idle';
+      const sq = cat.land > 0 ? 1 + ease.out(1 - cat.land/.22)*0 + (cat.land/.22)*.34
+               : !cat.onGround ? (cat.vy < 0 ? .92 : 1.06) : 1;
+      AV.draw(c, cat.x - cam.x, cat.y - cam.y, S.d.cfg, pose, cat.f,
+              { scale:1, flip:cat.face < 0, shadow:false, squash:sq });
+      if (cat.hurt > 0) { c.globalAlpha = cat.hurt*1.6; c.fillStyle = P.red;
+                          c.fillRect(cat.x-cam.x-8, cat.y-cam.y-22, 16, 22); c.globalAlpha = 1; }
+
+      /* darkness, punched through by every light */
+      if (k > .05) {
+        const dark = surface2();
+        const d = dark.getContext('2d');
+        d.clearRect(0,0,VW,VH);
+        d.fillStyle = rgba('#05030c', Math.min(.93, k*1.05));
+        d.fillRect(0,0,VW,VH);
+        d.globalCompositeOperation = 'destination-out';
+        for (const L of lights) {
+          const lx = L.x - cam.x, ly = L.y - cam.y;
+          if (lx < -140 || lx > VW+140 || ly < -140 || ly > VH+140) continue;
+          const rad = L.r*TS*(0.94 + .06*Math.sin(t*6));
+          const g = d.createRadialGradient(lx, ly, rad*.18, lx, ly, rad);
+          g.addColorStop(0,'rgba(0,0,0,1)'); g.addColorStop(.55,'rgba(0,0,0,.72)');
+          g.addColorStop(1,'rgba(0,0,0,0)');
+          d.fillStyle = g; d.beginPath(); d.arc(lx, ly, rad, 0, TAU); d.fill();
+        }
+        d.globalCompositeOperation = 'source-over';
+        c.drawImage(dark, 0, 0);
+      }
+
+      FX.drawParts(c); FX.drawFloats(c);
+
+      /* --- touch: dig, place -------------------------------------------- */
+      if (!quiz && !over && Input.down && Input.y < VH-150) {
+        const tx = Math.floor((Input.x + cam.x)/TS), ty = Math.floor((Input.y + cam.y)/TS);
+        if (reachable(tx,ty)) {
+          cat.digT = .2;
+          if (get(tx,ty) === AIR) { if (Input.justDown) place(tx,ty); }
+          else if (Input.justDown || (t*7|0) !== ((t-.016)*7|0)) dig(tx,ty);
+          /* the target square */
+          const sx = tx*TS - cam.x, sy = ty*TS - cam.y;
+          c.strokeStyle = rgba(P.white,.8); c.lineWidth = 1;
+          c.strokeRect(Math.round(sx)+.5, Math.round(sy)+.5, TS-1, TS-1);
+        } else {
+          const sx = tx*TS - cam.x, sy = ty*TS - cam.y;
+          c.strokeStyle = rgba(P.red,.5); c.lineWidth = 1;
+          c.strokeRect(Math.round(sx)+.5, Math.round(sy)+.5, TS-1, TS-1);
+        }
+      }
+      if (cat.digT > 0) cat.digT -= 1/60;
+
+      drawHud(c, depth);
+      if (quiz) drawQuiz(c);
+      if (over) drawOver(c);
+    }
+  };
+
+  let _dark = null;
+  function surface2() { if (!_dark) _dark = surface(VW,VH); return _dark; }
+
+  /* ---------------------------------------------------------------------- */
+  function drawHud(c, depth) {
+    pbox(c, -2, -2, VW+4, 26, rgba(P.ink,.85), 3);
+    spr(c, 'i_heart', 6, 5);
+    bar(c, 22, 8, 76, 8, cat.hp/cat.maxHp, cat.hp > 30 ? P.green : P.red);
+    txt(c, 104, 9, 'DEPTH ' + depth + 'm', depth > 40 ? P.pink : P.bone, 1, P.shadow);
+    const worth = (haul.copper||0)*9 + (haul.silver||0)*22;
+    spr(c, 'i_coin', 196, 5); txt(c, 210, 9, String(worth), P.gold, 1, P.shadow);
+    spr(c, 'i_essence', 244, 5); txt(c, 258, 9, String(haul.crystal||0), P.purple, 1, P.shadow);
+    if (UI.btn(c, VW-64, 3, 60, 19, 'SURFACE', { col:'#1a7331', col2:'#3fe07a', shadow:false }))
+      surface(false);
+
+    if (msgT > 0) { c.globalAlpha = clamp(msgT,0,1);
+      ctxt(c, VW/2, 34, msg, P.gold, 1, P.ink); c.globalAlpha = 1; }
+
+    /* --- controls ------------------------------------------------------- */
+    const by = VH-92;
+    pbox(c, -2, by-8, VW+4, 104, rgba(P.ink,.9), 4);
+    /* hotbar */
+    for (let i=0;i<PLACEABLE.length;i++) {
+      const key = PLACEABLE[i], x = 8 + i*44;
+      const on = sel === i;
+      pbox(c, x-1, by-3, 42, 30, on ? P.gold : P.ink, 3);
+      pbox(c, x, by-2, 40, 28, '#241640', 3);
+      const tv = PLACE_TILE[key], def = TILE[tv];
+      c.fillStyle = def.col2; c.fillRect(x+12, by+4, 14, 14);
+      c.fillStyle = def.col;  c.fillRect(x+12, by+4, 14, 11);
+      c.fillStyle = shade(def.col,.3); c.fillRect(x+12, by+4, 14, 2);
+      txt(c, x+3, by+18, String(bag[key]||0), bag[key] ? P.white : P.grey, 1, P.shadow);
+      const z = UI.zone(x, by-2, 40, 28, 'hb'+i);
+      if (z.click) { sel = i; SFX.play('tap'); }
+    }
+    /* d-pad + jump */
+    const py = VH-58;
+    const L = UI.zone(8, py, 60, 52, 'L'), R = UI.zone(76, py, 60, 52, 'R');
+    touchL = L.down; touchR = R.down;
+    const padBtn = (zx, zy, w, h, label, down) => {
+      pbox(c, zx-1, zy-1+(down?2:0), w+2, h+2, P.ink, 4);
+      pbox(c, zx, zy+(down?2:0), w, h-(down?2:0), down ? '#5a4790' : '#3a2a5e', 3);
+      ctxt(c, zx+w/2, zy+h/2-4+(down?2:0), label, P.white, 2);
+    };
+    padBtn(8, py, 60, 52, '<', L.down);
+    padBtn(76, py, 60, 52, '>', R.down);
+    const J = UI.zone(VW-88, py, 80, 52, 'J');
+    padBtn(VW-88, py, 80, 52, 'JUMP', J.down);
+    if (J.down && cat.onGround) { cat.vy = -232; cat.onGround = false; SFX.play('pop'); FX.dust(cat.x-cam.x, cat.y-cam.y, 5); }
+    ctxt(c, VW/2, py+18, 'TAP THE ROCK', P.grey, 1);
+    ctxt(c, VW/2, py+30, 'TO DIG', P.grey, 1);
+  }
+
+  function drawQuiz(c) {
+    c.fillStyle = rgba(P.shadow,.93); c.fillRect(0,0,VW,VH);
+    const title = quiz.kind === 'rune' ? 'THE RUNES ASK' : quiz.kind === 'chest' ? 'THE CHEST IS LOCKED' : 'AMBUSHED!';
+    const col = quiz.kind === 'mob' ? P.red : P.pink;
+    ctxt(c, VW/2, 90, title, col, 3, P.ink);
+    if (quiz.kind === 'mob') spr(c, quiz.at.spr, VW/2, 160, { center:true, scale:3 });
+    else spr(c, quiz.kind === 'chest' ? 'chestSm' : 'crystal', VW/2, 160, { center:true, scale:3 });
+    panel(c, 14, 196, VW-28, 74, '#241640', { r:4 });
+    wrap(quiz.q.q, VW-46, 1).forEach((l,i) => ctxt(c, VW/2, 208+i*12, l, P.white, 1, P.shadow));
+    for (let i=0;i<quiz.q.o.length;i++) {
+      const y = 286 + i*56;
+      const show = quiz.pick >= 0;
+      const right = quiz.q.o[i] === quiz.q.a;
+      const bg  = show ? (right ? '#1a7331' : (quiz.pick===i ? '#8a2a3a' : '#2e1b50')) : '#3a2a5e';
+      const bg2 = show ? (right ? '#3fe07a' : (quiz.pick===i ? P.red : '#3f2a68')) : '#5a4790';
+      if (UI.btnWrap(c, 20, y, VW-40, 46, quiz.q.o[i], { col:bg, col2:bg2, key:'dq'+i, disabled:show })
+          && quiz.pick < 0) resolveQuiz(i);
+    }
+    if (quiz.pick >= 0)
+      ctxt(c, VW/2, VH-36, quiz.ok ? 'CORRECT' : 'THE ANSWER WAS: ' + quiz.q.a,
+           quiz.ok ? P.lime : P.red, quiz.ok ? 2 : 1, P.ink);
+  }
+
+  function drawOver(c) {
+    c.fillStyle = rgba(P.shadow,.94); c.fillRect(0,0,VW,VH);
+    const k = ease.back(clamp(over.t/.7,0,1));
+    c.save(); c.translate(VW/2,120); c.scale(k,k); c.translate(-VW/2,-120);
+    ctxt(c, VW/2, 100, over.died ? 'YOU BLACKED OUT' : 'BACK IN THE SUN', over.died ? P.red : P.gold, 3, P.ink);
+    c.restore();
+    ctxt(c, VW/2, 140, 'DEEPEST: ' + depthBest + 'm', P.cyan, 2, P.ink);
+    if (over.died) ctxt(c, VW/2, 164, 'you dropped half the haul', P.red, 1);
+    AV.draw(c, VW/2, 300, S.d.cfg, over.died ? 'hurt' : 'cheer', Math.floor(t*3)%2, { scale:3 });
+    panel(c, 40, 326, VW-80, 132, '#241640', { r:4 });
+    ctxt(c, VW/2, 336, 'WHAT YOU BROUGHT UP', P.gold, 1);
+    let i = 0;
+    for (const key in over.got) {
+      const y = 356 + i*20; i++;
+      spr(c, key === 'coins' ? 'i_coin' : 'i_'+key, 74, y);
+      txt(c, 94, y+3, '+' + over.got[key] + '  ' + key.toUpperCase(), P.white, 1, P.shadow);
+    }
+    if (!i) ctxt(c, VW/2, 380, 'nothing. not one rock.', P.grey, 1);
+    txt(c, 94, 356 + i*20 + 3, '+' + over.xp + '  XP', P.lime, 1, P.shadow);
+    if (UI.btn(c, 40, 486, 130, 34, 'AGAIN', { col:'#3a2a5e', col2:'#5a4790' })) Game.go('deep', { packId:pack.id });
+    if (UI.btn(c, 190, 486, 130, 34, 'HOME', { col:'#1a7331', col2:'#3fe07a', glow:P.gold })) Game.go('island');
+  }
+})());
+</script>
+<script>
+/* =========================================================================
+   LABS — the Gizmo half.
+
+   Not quizzes with pictures: things you actually drive. Pull the force up
+   and watch the crate accelerate; step the cell through mitosis and watch
+   the chromosomes line up and get dragged apart; cut the bar into sevenths
+   and see what a seventh actually looks like. Every lab then asks you a
+   question about the state YOU left it in, so the answer changes every time
+   and cannot be memorised.
+   ========================================================================= */
+Game.register('lab', (() => {
+  let t = 0, which = 0, sim = null, quiz = null, correctStreak = 0, answered = 0, done = null;
+
+  /* ---- a draggable slider --------------------------------------------- */
+  function slider(c, x, y, w, val, min, max, step, key, col) {
+    const h = 18;
+    pbox(c, x-1, y-1, w+2, h+2, P.ink, 3);
+    pbox(c, x, y, w, h, '#1b1030', 2);
+    const f = (val-min)/(max-min);
+    pbox(c, x+1, y+1, Math.max(1,Math.round((w-2)*f)), h-2, col || P.purple, 2);
+    c.fillStyle = shade(col || P.purple,.4); c.fillRect(x+1, y+1, Math.max(1,Math.round((w-2)*f)), 1);
+    const kx = x + 2 + (w-6)*f;
+    pbox(c, kx-4, y-3, 10, h+6, P.ink, 3);
+    pbox(c, kx-3, y-2, 8, h+4, P.bone, 2);
+    c.fillStyle = P.grey; c.fillRect(Math.round(kx), y+2, 1, h-4);
+    const z = UI.zone(x-8, y-8, w+16, h+16, key);
+    if (z.down) {
+      const nf = clamp((Input.x - x - 2)/(w-6), 0, 1);
+      const nv = Math.round((min + nf*(max-min))/step)*step;
+      if (nv !== val) SFX.play('hover');
+      return Math.round(nv*1000)/1000;
+    }
+    return val;
+  }
+  function stepper(c, x, y, label, val, fmt2, onMinus, onPlus, col) {
+    txt(c, x, y+6, label, col || P.cyan, 1);
+    if (UI.btn(c, x+96, y, 24, 20, '-', { col:'#3a2a5e', col2:'#5a4790', key:label+'-' })) onMinus();
+    ctxt(c, x+142, y+6, fmt2, P.white, 2, P.shadow);
+    if (UI.btn(c, x+166, y, 24, 20, '+', { col:'#3a2a5e', col2:'#5a4790', key:label+'+' })) onPlus();
+  }
+
+  /* ====================================================================== */
+  const LABS = [
+    /* ---------- 1. MITOSIS ------------------------------------------- */
+    {
+      name:'CELL DIVISION', sub:'step a cell through mitosis', col:'#3fe07a', icon:'i_paw',
+      tries:['Step to ANAPHASE and count the chromosomes.',
+             'Find the only phase where they sit in one row.',
+             'Watch where the nucleus disappears, and comes back.'],
+      init: () => ({ phase:0, anim:0 }),
+      PHASES: ['INTERPHASE','PROPHASE','METAPHASE','ANAPHASE','TELOPHASE','CYTOKINESIS'],
+      BLURB: [
+        'The cell grows and copies its DNA. Each chromosome is now two identical sister chromatids.',
+        'The copied chromosomes condense and become visible. The nuclear membrane breaks down.',
+        'The chromosomes line up along the equator of the cell, in one row.',
+        'Spindle fibres pull the sister chromatids apart, to opposite poles.',
+        'A nuclear membrane reforms around each group. Two nuclei now exist.',
+        'The cytoplasm pinches in two. Two genetically identical daughter cells.'
+      ],
+      update(s, dt) { s.anim = Math.min(1, s.anim + dt*2.2); },
+      draw(c, s, y0) {
+        const ph = s.phase, k = ease.out(s.anim);
+        const cx = VW/2, cy = y0 + 92;
+        /* cell body — one cell that pinches into two */
+        const split = ph >= 5 ? k : ph >= 4 ? .35 : 0;
+        const sep = split*26;
+        c.globalAlpha = .25; pxEllipse(c, cx, cy+46, 60, 10, '#000'); c.globalAlpha = 1;
+        for (const side of (split > .5 ? [-1,1] : [0])) {
+          const ox = side*sep;
+          pxEllipse(c, cx+ox, cy, split>.5?36:54, split>.5?36:42, '#1d9a52');
+          pxEllipse(c, cx+ox, cy, split>.5?33:51, split>.5?33:39, '#54d64a');
+          pxEllipse(c, cx+ox-10, cy-12, 12, 8, '#96f06a');
+        }
+        if (split > 0 && split <= .5) {                     /* the pinch */
+          c.fillStyle = '#1d9a52';
+          c.fillRect(cx-3, cy-40, 6, 12*split*2); c.fillRect(cx-3, cy+40-12*split*2, 6, 12*split*2);
+        }
+        /* nucleus present in interphase and again at telophase */
+        if (ph === 0 || ph >= 4) {
+          for (const side of (ph >= 4 ? [-1,1] : [0])) {
+            const ox = ph >= 4 ? side*sep : 0;
+            pxEllipse(c, cx+ox, cy, ph>=4?16:24, ph>=4?16:22, rgba('#2358c9',.55));
+            pxEllipse(c, cx+ox, cy, ph>=4?14:22, ph>=4?14:20, rgba('#49a7ff',.5));
+          }
+        }
+        /* four chromosomes, positioned by phase */
+        const COLS = ['#ff4d5e','#ffd23f','#a35cff','#46ecd5'];
+        for (let i=0;i<4;i++) {
+          const a = (i/4)*TAU + t*.2;
+          let x1, y1, x2, y2;
+          if (ph === 0)      { x1 = x2 = cx + Math.cos(a)*11; y1 = y2 = cy + Math.sin(a)*9; }
+          else if (ph === 1) { x1 = x2 = cx + Math.cos(a)*22; y1 = y2 = cy + Math.sin(a)*18; }
+          else if (ph === 2) { x1 = x2 = cx; y1 = y2 = cy - 27 + i*18; }
+          else if (ph === 3) { x1 = cx - lerp(0,30,k); x2 = cx + lerp(0,30,k); y1 = y2 = cy - 27 + i*18; }
+          else               { x1 = cx - sep; x2 = cx + sep; y1 = y2 = cy - 12 + (i%2)*10 + (i>1?6:0); }
+          const drawChrom = (x,y,pair) => {
+            c.fillStyle = P.ink;
+            c.fillRect(Math.round(x)-4, Math.round(y)-7, 8, 14);
+            c.fillStyle = COLS[i];
+            if (ph <= 2) {                                   /* two sister chromatids */
+              c.fillRect(Math.round(x)-3, Math.round(y)-6, 2, 12);
+              c.fillRect(Math.round(x)+1, Math.round(y)-6, 2, 12);
+              c.fillStyle = shade(COLS[i],-.3); c.fillRect(Math.round(x)-1, Math.round(y)-1, 2, 2);
+            } else {
+              c.fillRect(Math.round(x)-2, Math.round(y)-6, 4, 12);
+              c.fillStyle = shade(COLS[i],.35); c.fillRect(Math.round(x)-2, Math.round(y)-6, 4, 2);
+            }
+          };
+          if (ph === 3 || ph >= 4) { drawChrom(x1,y1); drawChrom(x2,y2); }
+          else drawChrom(x1,y1);
+          if (ph === 3) {                                    /* spindle fibres */
+            c.strokeStyle = rgba('#ffffff',.35); c.lineWidth = 1;
+            c.beginPath(); c.moveTo(cx-52, cy); c.lineTo(x1, y1); c.stroke();
+            c.beginPath(); c.moveTo(cx+52, cy); c.lineTo(x2, y2); c.stroke();
+          }
+        }
+        if (ph === 3) { for (const sx of [-52,52]) { c.fillStyle = P.white;
+          c.fillRect(cx+sx-2, cy-2, 4, 4); } }
+      },
+      controls(c, s, y0) {
+        const P2 = LABS[0].PHASES;
+        ctxt(c, VW/2, y0+4, P2[s.phase], LABS[0].col, 3, P.ink);
+        wrap(LABS[0].BLURB[s.phase], VW-44, 1).forEach((l,i) =>
+          ctxt(c, VW/2, y0+30+i*12, l, P.bone, 1));
+        const np = slider(c, 30, y0+74, VW-60, s.phase, 0, 5, 1, 'mph', LABS[0].col);
+        if (np !== s.phase) { s.phase = np; s.anim = 0; SFX.play('tap'); }
+        for (let i=0;i<6;i++) {
+          const x = 30 + (VW-60)*(i/5);
+          c.fillStyle = i <= s.phase ? LABS[0].col : P.grey;
+          c.fillRect(Math.round(x)-1, y0+96, 2, 4);
+        }
+        if (UI.btn(c, 30, y0+106, 96, 26, '< BACK', { col:'#3a2a5e', col2:'#5a4790' }) && s.phase > 0)
+          { s.phase--; s.anim = 0; }
+        if (UI.btn(c, VW-126, y0+106, 96, 26, 'NEXT >', { col:'#1a7331', col2:'#3fe07a' }) && s.phase < 5)
+          { s.phase++; s.anim = 0; }
+      },
+      quiz(s) {
+        const P2 = LABS[0].PHASES;
+        const modes = [
+          () => ({ q:'Which phase is the cell showing right now?', a:P2[s.phase],
+                   o:shuffle([P2[s.phase]].concat(shuffle(P2.filter(x=>x!==P2[s.phase])).slice(0,3))) }),
+          () => { const n = (s.phase+1)%6;
+                  return { q:'What comes straight after ' + P2[s.phase] + '?', a:P2[n],
+                           o:shuffle([P2[n]].concat(shuffle(P2.filter(x=>x!==P2[n])).slice(0,3))) }; },
+          () => ({ q:'In the phase on screen, the chromosomes are...', a:LABS[0].BLURB[s.phase].split('.')[0] + '.',
+                   o:shuffle([LABS[0].BLURB[s.phase].split('.')[0] + '.']
+                     .concat(shuffle(LABS[0].BLURB.filter((_,i)=>i!==s.phase)).slice(0,3).map(b=>b.split('.')[0]+'.'))) })
+        ];
+        return pick(modes)();
+      }
+    },
+
+    /* ---------- 2. FORCES --------------------------------------------- */
+    {
+      name:'FORCE AND MOTION', sub:'push a crate and watch F = ma', col:'#ffd23f', icon:'i_bolt',
+      tries:['Double the mass. What happens to acceleration?',
+             'Find a force and mass that give exactly 2 m/s2.',
+             'Turn friction on and see what force it takes to move at all.'],
+      init: () => ({ F:12, m:3, x:0, v:0, running:false, friction:false, trail:[] }),
+      update(s, dt) {
+        const a = (s.F - (s.friction ? 4*s.m : 0)) / s.m;
+        s.a = Math.max(0, a);
+        if (s.running) {
+          s.v += s.a*dt*6;
+          s.x += s.v*dt*6;
+          if (s.x > 260) { s.x = 260; s.v = 0; s.running = false; }
+        }
+      },
+      draw(c, s, y0) {
+        const gy = y0 + 126;
+        /* the track */
+        c.fillStyle = '#5f4635'; c.fillRect(14, gy, VW-28, 12);
+        c.fillStyle = '#7a5a42'; c.fillRect(14, gy, VW-28, 3);
+        for (let i=0;i<VW-28;i+=16) { c.fillStyle = rgba('#000',.2); c.fillRect(14+i, gy+4, 1, 8); }
+        /* metre marks */
+        for (let i=0;i<=5;i++) { const x = 20 + i*(VW-52)/5;
+          c.fillStyle = P.grey; c.fillRect(Math.round(x), gy+13, 1, 4);
+          txt(c, Math.round(x)-3, gy+18, String(i), P.grey, 1); }
+        /* the crate */
+        const bx = 24 + s.x, sz = 16 + s.m*2;
+        c.globalAlpha = .25; pxEllipse(c, bx+sz/2, gy+1, sz*.6, 3, '#000'); c.globalAlpha = 1;
+        pbox(c, bx-1, gy-sz-1, sz+2, sz+2, P.ink, 3);
+        pbox(c, bx, gy-sz, sz, sz, '#c08a4a', 2);
+        c.fillStyle = '#d9a45c'; c.fillRect(bx, gy-sz, sz, 3);
+        c.fillStyle = '#8a5a2c'; c.fillRect(bx+2, gy-sz+4, sz-4, 2); c.fillRect(bx+2, gy-6, sz-4, 2);
+        txt(c, bx+4, gy-sz/2-3, s.m + 'kg', P.ink, 1);
+        /* the force arrow, length proportional to F */
+        const al = 6 + s.F*1.6;
+        c.fillStyle = P.gold;
+        c.fillRect(Math.round(bx-al), gy-sz/2-2, al, 4);
+        for (let i=0;i<6;i++) c.fillRect(Math.round(bx-6+i), gy-sz/2-2-(5-i), 1, 4+(5-i)*2);
+        txt(c, Math.round(bx-al), gy-sz/2-14, s.F + ' N', P.gold, 1, P.ink);
+        if (s.friction && s.running) {
+          c.fillStyle = P.red;
+          c.fillRect(Math.round(bx+sz), gy-6, 10, 3);
+          FX.dust(bx+2, gy, 1, '#c9a06a');
+        }
+        /* the numbers, which are the point */
+        panel(c, 14, y0+8, VW-28, 58, '#241640');
+        const items = [['FORCE', s.F + ' N', P.gold], ['MASS', s.m + ' kg', P.cyan],
+                       ['ACCEL', (Math.round(s.a*100)/100) + ' m/s2', P.lime],
+                       ['SPEED', (Math.round(s.v*10)/10) + ' m/s', P.pink]];
+        items.forEach((it,i) => {
+          const x = 24 + (i%4)*((VW-40)/4);
+          ctxt(c, x + (VW-40)/8, y0+14, it[0], P.grey, 1);
+          ctxt(c, x + (VW-40)/8, y0+26, it[1], it[2], 2, P.shadow);
+        });
+        ctxt(c, VW/2, y0+50, 'a = F / m' + (s.friction ? '   minus friction' : ''), P.white, 1);
+      },
+      controls(c, s, y0) {
+        stepper(c, 22, y0+4, 'FORCE  N', s.F, String(s.F),
+                () => { s.F = clamp(s.F-2, 0, 40); }, () => { s.F = clamp(s.F+2, 0, 40); }, P.gold);
+        stepper(c, 22, y0+30, 'MASS  kg', s.m, String(s.m),
+                () => { s.m = clamp(s.m-1, 1, 10); }, () => { s.m = clamp(s.m+1, 1, 10); }, P.cyan);
+        if (UI.btn(c, 22, y0+58, 100, 26, s.running ? 'STOP' : 'RELEASE',
+                   { col: s.running?'#8a2a3a':'#1a7331', col2: s.running?P.red:'#3fe07a' }))
+          s.running = !s.running;
+        if (UI.btn(c, 130, y0+58, 96, 26, 'RESET', { col:'#3a2a5e', col2:'#5a4790' }))
+          { s.x = 0; s.v = 0; s.running = false; }
+        if (UI.btn(c, 234, y0+58, 104, 26, s.friction ? 'FRICTION ON' : 'FRICTION OFF',
+                   { col: s.friction?'#6a4a10':'#241640', col2: s.friction?P.gold:'#3a2a5e' }))
+          s.friction = !s.friction;
+      },
+      quiz(s) {
+        const a = Math.round(((s.F - (s.friction?4*s.m:0))/s.m)*100)/100;
+        const modes = [
+          () => ({ q:'With ' + s.F + ' N on ' + s.m + ' kg, what is the acceleration?',
+                   a:a + ' m/s2',
+                   o:shuffle([a + ' m/s2', (s.F*s.m) + ' m/s2', Math.round((s.m/s.F)*100)/100 + ' m/s2',
+                              (a+2) + ' m/s2']) }),
+          () => ({ q:'To double this acceleration, you could...',
+                   a:'Double the force',
+                   o:shuffle(['Double the force','Double the mass','Halve the force','Add friction']) }),
+          () => ({ q:'What force would give ' + s.m + ' kg an acceleration of 4 m/s2?',
+                   a:(s.m*4) + ' N',
+                   o:shuffle([(s.m*4) + ' N', (s.m+4) + ' N', Math.round(s.m/4*100)/100 + ' N', (s.m*8) + ' N']) })
+        ];
+        return pick(modes)();
+      }
+    },
+
+    /* ---------- 3. FRACTIONS ------------------------------------------ */
+    {
+      name:'FRACTION BAR', sub:'cut it up and see what it is worth', col:'#46ecd5', icon:'i_flask',
+      tries:['Make A and B equal without the same number of parts.',
+             'Find three different bars that are all 50%.',
+             'Make A exactly 0.375. How many parts did you need?'],
+      init: () => ({ n:4, m:1, n2:8, m2:2 }),
+      update() {},
+      draw(c, s, y0) {
+        const barW = VW-48;
+        const drawBar = (y, n, m, col, label) => {
+          pbox(c, 22, y, barW, 34, P.ink, 3);
+          for (let i=0;i<n;i++) {
+            const w = barW/n, x = 24 + i*w;
+            c.fillStyle = i < m ? col : '#2a1f45';
+            c.fillRect(Math.round(x), y+2, Math.ceil(w)-1, 30);
+            if (i < m) { c.fillStyle = shade(col,.35); c.fillRect(Math.round(x), y+2, Math.ceil(w)-1, 2); }
+            c.fillStyle = P.ink; c.fillRect(Math.round(x)-1, y+2, 1, 30);
+          }
+          const val = m/n;
+          txt(c, 22, y-11, label + '  ' + m + '/' + n, col, 1, P.ink);
+          const s2 = (Math.round(val*1000)/1000) + '   ' + (Math.round(val*1000)/10) + '%';
+          txt(c, VW-26-tw(s2,1), y-11, s2, P.bone, 1, P.ink);
+        };
+        drawBar(y0+22, s.n, s.m, LABS[2].col, 'A');
+        drawBar(y0+78, s.n2, s.m2, P.pink, 'B');
+        /* the verdict */
+        const a = s.m/s.n, b2 = s.m2/s.n2;
+        const same = Math.abs(a-b2) < 1e-9;
+        panel(c, 22, y0+120, barW, 26, same ? '#1a5a33' : '#241640');
+        ctxt(c, VW/2, y0+128,
+             same ? 'EQUAL — ' + s.m + '/' + s.n + ' = ' + s.m2 + '/' + s.n2
+                  : (a > b2 ? 'A IS BIGGER' : 'B IS BIGGER') + '   by ' + (Math.round(Math.abs(a-b2)*1000)/1000),
+             same ? P.lime : P.white, 1);
+      },
+      controls(c, s, y0) {
+        stepper(c, 16, y0+2, 'A  PARTS', s.n, String(s.n),
+                () => { s.n = clamp(s.n-1,1,12); s.m = clamp(s.m,0,s.n); },
+                () => { s.n = clamp(s.n+1,1,12); }, LABS[2].col);
+        stepper(c, 16, y0+26, 'A  SHADED', s.m, String(s.m),
+                () => { s.m = clamp(s.m-1,0,s.n); }, () => { s.m = clamp(s.m+1,0,s.n); }, LABS[2].col);
+        stepper(c, 16, y0+52, 'B  PARTS', s.n2, String(s.n2),
+                () => { s.n2 = clamp(s.n2-1,1,12); s.m2 = clamp(s.m2,0,s.n2); },
+                () => { s.n2 = clamp(s.n2+1,1,12); }, P.pink);
+        stepper(c, 16, y0+76, 'B  SHADED', s.m2, String(s.m2),
+                () => { s.m2 = clamp(s.m2-1,0,s.n2); }, () => { s.m2 = clamp(s.m2+1,0,s.n2); }, P.pink);
+      },
+      quiz(s) {
+        const pc = Math.round((s.m/s.n)*1000)/10;
+        const dec = Math.round((s.m/s.n)*1000)/1000;
+        const modes = [
+          () => ({ q:'Bar A is ' + s.m + '/' + s.n + '. What is that as a percentage?',
+                   a:pc + '%', o:shuffle([pc + '%', (s.m*10) + '%', (s.n*10) + '%',
+                                          (Math.round((s.n/Math.max(1,s.m))*1000)/10) + '%']) }),
+          () => ({ q:'Bar A is ' + s.m + '/' + s.n + '. What is that as a decimal?',
+                   a:String(dec), o:shuffle([String(dec), String(s.m) + '.' + s.n,
+                                             String(Math.round((s.n/Math.max(1,s.m))*100)/100), String(dec*2)]) }),
+          () => ({ q:'Which is bigger: ' + s.m + '/' + s.n + ' or ' + s.m2 + '/' + s.n2 + '?',
+                   a: (s.m/s.n) > (s.m2/s.n2) ? s.m + '/' + s.n
+                    : (s.m/s.n) < (s.m2/s.n2) ? s.m2 + '/' + s.n2 : 'They are equal',
+                   o:shuffle([s.m + '/' + s.n, s.m2 + '/' + s.n2, 'They are equal', 'Cannot tell']) })
+        ];
+        return pick(modes)();
+      }
+    }
+  ];
+
+  /* ====================================================================== */
+  function newQuiz() { quiz = { ...LABS[which].quiz(sim), pick:-1, lock:0 }; }
+
+  return {
+    enter(data) {
+      t = 0; which = (data && data.lab) || 0; answered = 0; correctStreak = 0; done = null;
+      sim = LABS[which].init(); quiz = null;
+      SFX.music(true);
+    },
+    back() { Game.go('study'); },
+    update(dt) {
+      t += dt;
+      LABS[which].update(sim, dt);
+      if (quiz && quiz.lock > 0) { quiz.lock -= dt; if (quiz.lock <= 0) quiz = null; }
+    },
+    draw(c) {
+      const L = LABS[which];
+      drawSky(c, t*.2, { top:'#12102c', mid:'#25204a', bot:'#3a3060', sun:false, stars:true });
+      c.fillStyle = rgba(P.ink,.35); c.fillRect(0,0,VW,VH);
+      UI.topBar(c);
+      if (UI.btn(c, 8, 34, 36, 22, '<', { col:'#4a3a70', col2:'#6b56a0' })) Game.go('study');
+      ctxt(c, VW/2, 36, L.name, L.col, 2, P.shadow);
+      ctxt(c, VW/2, 54, L.sub, P.grey, 1);
+
+      /* lab picker */
+      for (let i=0;i<LABS.length;i++)
+        if (UI.btn(c, 10 + i*114, 70, 110, 22, LABS[i].name.split(' ')[0],
+                   { col: which===i?'#6a27c8':'#2e1b50', col2: which===i?P.purple:'#3f2a68',
+                     txt: which===i?P.white:P.grey, key:'lb'+i }))
+          { which = i; sim = LABS[i].init(); quiz = null; answered = 0; }
+
+      /* the simulation */
+      panel(c, 8, 98, VW-16, 176, '#151030', { r:4 });
+      pbox(c, 8, 98, VW-16, 4, L.col, 3);
+      c.save(); c.beginPath(); c.rect(8, 102, VW-16, 172); c.clip();
+      L.draw(c, sim, 102);
+      c.restore();
+
+      /* the controls */
+      panel(c, 8, 280, VW-16, 142, '#241640', { r:4 });
+      L.controls(c, sim, 286);
+
+      /* check my understanding */
+      if (!quiz) {
+        panel(c, 8, 430, VW-16, 200, '#1b1030', { r:4 });
+        ctxt(c, VW/2, 440, 'CHANGE SOMETHING, THEN CHECK', P.gold, 1);
+        ctxt(c, VW/2, 454, 'the question is about the state you left it in', P.grey, 1);
+        if (UI.btn(c, 60, 470, VW-120, 28, 'CHECK MY UNDERSTANDING',
+                   { col:'#1a7331', col2:'#3fe07a', glow:P.gold })) { newQuiz(); SFX.play('power'); }
+        txt(c, 22, 512, 'TRY THIS', L.col, 1);
+        (L.tries || []).forEach((l,i) => txt(c, 22, 528+i*14, '- ' + l, P.bone, 1));
+      } else {
+        panel(c, 8, 430, VW-16, 200, '#1b1030', { r:4 });
+        wrap(quiz.q, VW-44, 1).forEach((l,i) => ctxt(c, VW/2, 438+i*12, l, P.white, 1, P.shadow));
+        for (let i=0;i<quiz.o.length;i++) {
+          const x = 16 + (i%2)*((VW-32)/2 + 2), y = 474 + Math.floor(i/2)*54;
+          const show = quiz.pick >= 0, right = quiz.o[i] === quiz.a;
+          const col  = show ? (right ? '#1a7331' : (quiz.pick===i ? '#8a2a3a' : '#2e1b50')) : '#3a2a5e';
+          const col2 = show ? (right ? '#3fe07a' : (quiz.pick===i ? P.red : '#3f2a68')) : '#5a4790';
+          if (UI.btnWrap(c, x, y, (VW-36)/2, 48, quiz.o[i], { col, col2, key:'lq'+i, disabled:show })
+              && quiz.pick < 0) {
+            quiz.pick = i; quiz.lock = 1.4;
+            const ok = right;
+            answered++; S.dailyTick(1);
+            S.sawCard('lab', quiz.q, quiz.a); S.gotCard('lab', quiz.q, ok);
+            if (ok) { correctStreak++; SFX.play('correct'); FX.stars(VW/2, y, 12, L.col);
+                      S.give('coins', 12); S.addXp(6);
+                      if (correctStreak % 3 === 0) { S.pushChest(S.rollRarity(0), null);
+                                                     UI.toast('A CHEST FOR THAT RUN', P.gold, 'i_trophy'); } }
+            else { correctStreak = 0; SFX.play('wrong'); FX.shake(4,.2); }
+          }
+        }
+        if (quiz.pick >= 0)
+          ctxt(c, VW/2, 586, quiz.o[quiz.pick] === quiz.a ? '+12 COINS  +6 XP' : 'ANSWER: ' + quiz.a,
+               quiz.o[quiz.pick] === quiz.a ? P.lime : P.red, 1);
+      }
+      if (answered) ctxt(c, VW/2, VH-8, answered + ' checked   streak ' + correctStreak, P.grey, 1);
+    }
+  };
 })());
 </script>

@@ -1,123 +1,140 @@
 # AETHERIA — SKY SCHOLARS
 
-A cozy pixel-art **study RPG** that is trying very hard to be a ranked mobile
-game. You make a character, you live on a floating island, and every question
-you answer is a sword swing.
+A cozy pixel-art **study RPG about cats**, built to get you through an exam.
+You make a cat, you live on a floating island, you dig a mine underneath it,
+and every question you answer is a claw swipe.
 
 **Play it:** open `aetheria/index.html` in any browser. No build step, no
-dependencies, no server. It is portrait-first and works with a thumb, but a
-mouse is fine. Everything saves to `localStorage`.
+dependencies, no server. Portrait-first, works with a thumb. Everything saves
+to `localStorage`.
 
-There is a single-file copy at `dist/aetheria.html` for hosts that cannot load
-sibling files — rebuild it with `node tools/build-artifact.mjs`.
+Single-file copy at `dist/aetheria.html` — rebuild with
+`node tools/build-artifact.mjs`.
 
 ---
 
-## The loop
+## The tutor
 
-1. **Make yourself.** Gender, build, skin, hair style, hair colour, shirt style,
-   shirt colour, trousers, and a name you type on a pixel keyboard. Your
-   character is drawn procedurally, so the hair colour you pick is the hair
-   colour in the battle cut-in.
-2. **Live on the island.** The main menu is not a menu. It is a floating island
-   with a plateau you can see the depth of. Your character wanders about on
-   their own — walking, sitting, dancing, cheering, falling asleep with little
-   Zs coming off them — and your pet trots along behind.
-3. **Go on an adventure.** A shelf of worlds, and inside each one a winding
-   trail of stops climbing into the sky. Battles, elites, a boss, and the
-   mini games in between.
-4. **Come home with the loot.** Chests, eggs, wood, stone, essence. Build,
-   upgrade, forge armour, craft items, hatch pets.
-5. **Climb.** Trophies move you up nine ranks. Rivals on the ladder drift up
-   and down while you are away, so the board is never the same twice.
+The headline feature, and the reason this is a study app and not just a game.
+Published as an Artifact, the page can ask Claude questions directly, so the
+cat tutor does four things:
 
-## Battle: your answer is the attack
+- **Reads your material.** Paste a chapter, a syllabus, a past paper, your own
+  messy notes, or drop in a `.txt` / `.md` / `.csv` file.
+- **Builds a dated revision plan.** Give it an exam date and it works backwards:
+  one session a day, each naming one specific topic from *your* notes, building
+  from recall to application to mixed practice, with two review days before the
+  exam and the day before left light.
+- **Turns your notes into a playable world.** It generates eighteen questions,
+  six matching pairs and an ordered sequence, and installs them as a real island
+  on the adventure map — battles, matching, sequences, a boss. Your own biology
+  notes become a place you fight through.
+- **Explains why you were wrong.** Get a question wrong in battle and a
+  **WHY WAS THAT WRONG?** button appears. There's a **HINT** button too, which
+  nudges without giving the answer away.
+- **Retunes around your weak spots.** It reads which cards you keep missing,
+  groups them into themes rather than a list, and rewrites your plan and your
+  drill around them.
 
-Each question deals you a **hand of four attack cards** — Ember Slash, Frost
-Lance, Rune Bolt, Quake Fist — one per answer. Only the true one connects.
+Opened straight off disk there is no Claude to ask, so every one of those says
+so plainly and the rest of the game carries on.
 
-- **Speed is damage.** The faster you answer, the bigger the multiplier. Answer
-  in the first fifth of the timer and it crits.
-- **Combos compound.** Every correct answer in a row raises the multiplier.
-  One wrong answer resets it and the monster hits you.
-- **Five answers buys a relic.** A three-way draft with animated icons —
-  Sharp Focus, Thorn Aura, Study Glasses, Lucky Die, Perfect Recall. They stack
-  for the rest of the run, Slay-the-Spire style.
-- **The FOCUS bar fills as you go.** When it is full you can spend it on an
-  **ULTIMATE**: speed lines, a full-screen cut-in of your own character, and a
-  number the monster does not enjoy.
-- **Eggs hatch mid-fight.** Every correct answer warms the egg in your pack.
-  When it is hot enough it cracks open in the middle of the battle and the pet
-  starts attacking alongside you.
-- **Some rounds are type-it-in.** Maths questions occasionally drop the cards
-  and hand you a number pad instead.
-- **Elites and bosses** telegraph a heavy strike a few turns out. Being correct
-  on the turn it lands halves it.
+## The labs
 
-## The mini games
+The Gizmo half: things you drive, not quizzes with pictures.
 
-| Stop | What it is |
+| Lab | What you do |
 |---|---|
-| **MATCH-UP** | Six pairs, sixty seconds, three seconds off the clock for every miss |
-| **SEQUENCE** | Put the stages in order — mitosis, the steps of solving an equation, sizes. It checks itself the moment the last one lands, and sends only the wrong ones back |
-| **GRAPH LAB** | A ghost line and two labelled points. Read off the gradient and the intercept and drag your line onto it |
-| **CHOPPING / MINING** | A timing bar with a gold perfect zone. Every third clean hit throws a bonus question at you for extra materials |
+| **CELL DIVISION** | Step a cell through all six phases. Chromosomes condense, line up, get dragged apart by spindle fibres, and the cell pinches in two. |
+| **FORCE AND MOTION** | Set force and mass, release the crate, watch `a = F/m` in the readout and in how fast it goes. Toggle friction and find out what it costs you. |
+| **FRACTION BAR** | Cut a bar into any number of parts, shade any number, and see the fraction, the decimal and the percentage at once. A second bar to compare against. |
+
+Every lab then asks a question **about the state you left it in** — so the
+answer changes every time and cannot be memorised.
+
+## The adventure
+
+A shelf of worlds, each a winding trail of ten stops climbing into the sky.
+
+**Battle is a card game.** Each question deals a hand of four attack cards, one
+per answer; only the true one connects. Fast answers multiply the damage and
+crit, combos compound, **five answers buys a relic** from a three-way draft, and
+a full **FOCUS** bar spends on an ultimate with a full-screen cut-in of your own
+cat. Eggs hatch mid-fight and the pet joins in. Maths rounds sometimes drop the
+cards and hand you a number pad.
+
+Between fights: matching, sequencing, a graph lab with a ghost line to read
+gradient and intercept off, and timing-bar chopping and mining.
+
+## THE DEEP
+
+A side-view mining world under the island. Gravity, jumping, digging, block
+placing, ore veins that get richer the further down you go, and darkness you
+need torches to see through.
+
+- Dirt, stone, copper, silver and crystal, each taking more hits than the last.
+- Caves with their own wall layer behind them, so daylight never leaks
+  through solid rock.
+- **Rune doors and buried chests only open for a correct answer.**
+- Cave creatures ambush you with a question — right and you drive it off, wrong
+  and it bites.
+- Surface with your haul, or black out down there and lose half of it.
 
 ## The base
 
 Eight buildings on eight plots: **Cottage, Sawmill, Quarry, Mana Well, Forge,
-Nestry, Library, Training**. Producers keep working with the tab shut and put a
-bubble over their head when they have something for you. The Forge turns
-materials into **Blade / Plate / Charm** gear that carries into every fight.
-The workshop crafts consumables on a timer — Elixir, Rune Bomb, Hourglass,
-Lens — and you can spend them mid-battle.
+Nestry, Library, Training**. Producers keep working with the tab shut. The Forge
+turns materials into Blade / Plate / Charm gear. The workshop crafts Elixirs,
+Rune Bombs, Hourglasses and Lenses on a timer, to spend mid-battle.
 
-## Chests
+## Ranks
 
-Clash-style. Answer a question to unlock the lid (get it right and the chest is
-richer), **swipe your thumb across it three times** to crack it open, then flip
-the rewards over one at a time — rays, rarity flash, confetti. Common, rare,
-epic and legendary.
+Nine ranks from Sprout to Legend. Trophies won and lost, a ladder of rival cats
+whose scores drift while you're away, and a duel mode where you race a rival's
+answer timer.
 
-## The study part, which is the actual point
+## The cats
 
-- **144 questions** across six subjects: algebra, straight-line graphs,
-  fractions and percentages, cells and mitosis, atoms and bonding, forces and
-  motion.
-- **The DEX** remembers every card you have met and how often you got it right.
-  Tap one to flip it over.
-- **REVIEW** builds a ten-card quickfire weighted towards the ones you keep
-  getting wrong. No monsters, just the cards.
-- **CUSTOM LESSONS** let you type your own term/answer pairs — tonight's
-  homework, French vocab, whatever — and take them into a real battle against a
-  real monster. Wrong options are generated from the other cards in your deck.
-- **A daily goal** of twenty questions, a day streak, and a chest for finishing.
+Your cat is painted procedurally at a fixed 30x40 grid, so fur, markings, eye
+colour and outfit are live values rather than forty hand-drawn variants. Six
+coat patterns (solid, tabby, tuxedo, calico, siamese, spotted), twelve coats,
+twelve marking colours, seven eye colours, four outfits, two builds. Every
+finished pose is stamped with a hard outline — the silhouette drawn four times,
+one pixel out, then the art on top — which is what gives everything the sticker
+look. Rivals on the ladder are cats too.
 
 ## How it is built
 
-No libraries, no build step, no images. The canvas is exactly 360x640 device
-pixels and CSS blows it up with `image-rendering: pixelated`, so a game pixel is
-always a clean square.
+No libraries, no build step, no image files. The canvas is exactly 360x640
+device pixels and CSS blows it up with `image-rendering: pixelated`.
 
 ```
 js/font.js     a 5x7 bitmap font — every word on screen is drawn from it
-js/util.js     maths, easing, palette, pixel panels and bars
+js/util.js     maths, easing, palette, pixel panels, bars, text fitting
 js/audio.js    a chiptune box: oscillators, envelopes, a two-bar island loop
 js/fx.js       particles, damage popups, shockwaves, screen shake, tweens
 js/art.js      hand-placed sprite grids + procedural islands, trees, buildings
-js/avatar.js   your character, painted from live colours and outlined
-js/content.js  the question banks, monsters, attack cards and relics
-js/state.js    the save file, the economy, the rank ladder, offline production
+js/avatar.js   your cat, painted from live colours and outlined
+js/content.js  question banks, monsters, attack cards, relics
+js/paste.js    the one sheet of real DOM: pasting and uploading material
+js/state.js    the save file, economy, rank ladder, offline production
 js/ui.js       immediate-mode pixel widgets
+js/ai.js       the tutor, against the artifact `sample` capability
 js/game.js     canvas, input, scene stack, transition wipe
-js/*.js        one file per scene: creator island build map battle minigames chest dex
+js/*.js        one file per scene: creator island study lab build map
+               battle minigames chest dex deep
 ```
+
+**One grid, whole-number zoom.** Every sprite is authored on a 16px grid and only
+ever drawn at a whole-number scale. Fractional zoom resamples art onto
+half-pixels, which is exactly what makes pixel art look mushy, so `spr()` and
+`AV.draw()` round the scale and the island picks between two sizes rather than a
+continuous one.
 
 Small things — icons, monsters, pets, props — are hand-placed pixels written as
 character grids with a palette per sprite. Big things — islands, trees,
-buildings — are assembled from 1px rectangles by arithmetic, which is why a
-sawmill can be three sizes and six upgrade levels without new art.
+buildings, the whole mine — are assembled from 1px rectangles by arithmetic.
 
-Everything is drawn: the resource counters, the rank chip, the trophy plaques,
-the keyboard. There is exactly one HTML element you can see, and it is the
-button on the title card that unlocks the audio context.
+Everything is drawn: the resource counters, the rank chip, the plan, the
+keyboard. The only DOM you ever see is the title-card button that unlocks
+audio, and the sheet for pasting your notes in.
