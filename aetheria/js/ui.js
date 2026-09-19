@@ -18,7 +18,11 @@ const UI = (() => {
         if (nv < .002 && target === 0) press.delete(k); else press.set(k, nv);
       }
       for (let i=toasts.length-1;i>=0;i--) { toasts[i].t += dt; if (toasts[i].t > toasts[i].life) toasts.splice(i,1); }
-      if (!Input.down) held = null;
+      /* Keep the held button alive through the frame that reports the
+         release. UI.frame runs before the scene draws, so clearing it the
+         moment the pointer lifts threw away every press that lasted longer
+         than one frame — which is every real press by a real finger. */
+      if (!Input.down && !Input.justUp) held = null;
     },
     toast(msg, col, icon) { toasts.unshift({ msg, col:col||P.white, icon, t:0, life:2.1 }); if (toasts.length > 4) toasts.pop(); },
 

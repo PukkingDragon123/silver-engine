@@ -55,9 +55,11 @@ const Game = (() => {
     Input.x = x; Input.y = y;
     if (e.cancelable && Input.down) e.preventDefault();
   }
-  function onUp(e) {
+  function onUp(e, cancelled) {
     if (!Input.down) return;
-    queueUp = true; Input.down = false;
+    /* a cancelled gesture (the browser deciding it was a scroll, a call
+       coming in) releases the pointer but must not count as a tap */
+    queueUp = !cancelled; Input.down = false;
     const dt = t - Input.downT;
     if (dt < .45 && Math.abs(Input.dx) > 26 && Math.abs(Input.dx) > Math.abs(Input.dy)) {
       Input.swipeX = Math.sign(Input.dx); Input.swiped = true;
@@ -67,7 +69,17 @@ const Game = (() => {
   cv.addEventListener('pointerdown', onDown);
   window.addEventListener('pointermove', onMove);
   window.addEventListener('pointerup', onUp);
-  window.addEventListener('pointercancel', onUp);
+  window.addEventListener('pointercancel', e => onUp(e, true));
+  window.addEventListener('blur', () => onUp(null, true));
+  /* touch fallback for anything without Pointer Events */
+  if (!window.PointerEvent) {
+    const t0 = e => { const t = e.changedTouches[0]; onDown({ clientX:t.clientX, clientY:t.clientY, cancelable:e.cancelable, preventDefault:() => e.preventDefault() }); };
+    const tm = e => { const t = e.changedTouches[0]; onMove({ clientX:t.clientX, clientY:t.clientY, cancelable:e.cancelable, preventDefault:() => e.preventDefault() }); };
+    cv.addEventListener('touchstart', t0, { passive:false });
+    window.addEventListener('touchmove', tm, { passive:false });
+    window.addEventListener('touchend', e => onUp(e));
+    window.addEventListener('touchcancel', e => onUp(e, true));
+  }
   cv.addEventListener('contextmenu', e => e.preventDefault());
   window.addEventListener('wheel', e => { Input.wheel += Math.sign(e.deltaY); }, { passive:true });
   window.addEventListener('keydown', e => {
